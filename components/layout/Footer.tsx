@@ -4,6 +4,7 @@
 import React from 'react';
 import { Heart, Facebook, Instagram, Twitter, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const Footer: React.FC = () => {
   return (
@@ -35,12 +36,13 @@ const Footer: React.FC = () => {
             transition={{ duration: 0.5 }}
           >
             <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#ff2e2e] to-[#5e17eb] rounded-lg flex items-center justify-center">
-                <Heart className="w-5 h-5 text-white" fill="white" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-transparent bg-clip-text">
-                TabooTalks
-              </span>
+            <Image
+                src="/assets/logo.png"
+                alt="TabooTalks Logo"
+                width={240}
+                height={140}
+                className=""
+              />
             </div>
 
             <p className="text-gray-300 mb-6">
@@ -72,9 +74,10 @@ const Footer: React.FC = () => {
             </div>
 
             <div className="flex space-x-2 mt-6">
-              <img src="/assets/payment/visa.svg" alt="Visa" className="h-8" />
-              <img src="/assets/payment/mastercard.svg" alt="Mastercard" className="h-8" />
-              <img src="/assets/payment/amex.svg" alt="Amex" className="h-8" />
+              <img src="/assets/visa.png" alt="Visa" className="h-8" />
+              <img src="/assets/mastercard.png" alt="Mastercard" className="h-8" />
+              <img src="/assets/amex.png" alt="Amex" className="h-8" />
+              <img src="/assets/pal.png" alt="PayPal" className="h-8" />
             </div>
           </motion.div>
 
