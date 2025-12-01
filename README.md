@@ -1,6 +1,6 @@
 # TabooTalks - Adult Dating & Chat Platform
 
-![TabooTalks Logo](./assets/logo.png)
+![TabooTalks Logo](./assets/shot.png)
 
 ## 🎯 Project Overview
 
