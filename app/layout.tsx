@@ -1,20 +1,45 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import  localFont from "next/font/local";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
+const dmSans = localFont({
+  src: [
+    {
+      path: '../public/fonts/DMSans-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/DMSans-Medium.ttf',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/DMSans-SemiBold.ttf',
+      weight: '600',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/DMSans-Bold.ttf',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/DMSans-ExtraBold.ttf',
+      weight: '800',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-dm-sans',
+  display: 'swap',
+})
 export const metadata: Metadata = {
   title: "TabooTalks",
   description: "Making meaningful connections, one chat at a time.",
+  keywords: 'adult conversations, taboo topics chat, premium chat app, adult conversations',
 };
 
 export default function RootLayout({
@@ -25,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={dmSans.className}
       >
         {children}
       </body>
