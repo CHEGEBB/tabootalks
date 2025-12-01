@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Heart } from 'lucide-react';
 import Button from '../ui/Button';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface NavigationProps {
   onGetStarted?: () => void;
@@ -42,12 +43,13 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-[#ff2e2e] to-[#5e17eb] rounded-lg flex items-center justify-center">
-                <Heart className="w-5 h-5 text-white" fill="white" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-transparent bg-clip-text">
-                TabooTalks
-              </span>
+              <Image
+                src="/assets/logo2.png"
+                alt="TabooTalks Logo"
+                width={240}
+                height={140}
+                className=""
+              />
             </motion.div>
           </div>
 
