@@ -14,6 +14,7 @@ import ProfileGrid from '@/components/sections/ProfileGrid';
 import CTASection from '@/components/sections/CTASection';
 import PreferenceModal from '@/components/ui/PreferenceModal';
 import { Heart, MessageCircle, Shield, Sparkles, Zap, Users } from 'lucide-react';
+import SignUpInterestSection from '@/components/sections/SignUpInterestSection';
 
 export default function LandingPage() {
   const [showPreferenceModal, setShowPreferenceModal] = useState(false);
@@ -35,6 +36,8 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <HeroSection onGetStarted={handleGetStarted} />
+
+      <SignUpInterestSection/>
       
       {/* Features Section */}
       <FeatureSection 

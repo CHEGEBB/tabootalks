@@ -1,25 +1,58 @@
 // components/sections/HeroSection.tsx
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { ArrowRight, Heart, MessageCircle, Sparkles } from 'lucide-react';
+import { ArrowRight, Heart, MessageCircle, Sparkles, Star, Zap, Camera } from 'lucide-react';
 
 interface HeroSectionProps {
   onGetStarted?: () => void;
 }
 
+const profiles = [
+  {
+    name: "Sophia",
+    age: 28,
+    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+    message: "Hey! I noticed you're new here. Welcome! 😊",
+    interest: "Photography"
+  },
+  {
+    name: "Emma",
+    age: 25,
+    image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150",
+    message: "Love your profile! Want to chat? ✨",
+    interest: "Travel"
+  },
+  {
+    name: "Isabella",
+    age: 27,
+    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    message: "What brings you here? 💭",
+    interest: "Music"
+  }
+];
+
 const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
+  const [currentProfile, setCurrentProfile] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentProfile((prev) => (prev + 1) % profiles.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const profile = profiles[currentProfile];
+
   return (
     <section className="relative min-h-screen flex items-center py-20 overflow-hidden bg-gradient-to-br from-white via-pink-50/20 to-purple-50/30">
       {/* Subtle background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Soft gradient orbs */}
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-pink-200/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl"></div>
         
-        {/* Minimal grid pattern */}
         <svg className="absolute inset-0 h-full w-full opacity-[0.02]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
@@ -38,7 +71,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            {/* Badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -49,7 +81,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
               <span className="text-sm font-semibold text-gray-700">Welcome to TabooTalks</span>
             </motion.div>
 
-            {/* Main Heading */}
             <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
               Connect with
               <br />
@@ -62,7 +93,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
               Start meaningful conversations with interesting people from around the world. Get <span className="font-bold text-purple-600">10 free credits</span> to begin your journey.
             </p>
 
-            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
               <motion.button
                 onClick={onGetStarted}
@@ -83,7 +113,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
               </motion.button>
             </div>
 
-            {/* Social Proof */}
             <div className="flex items-center gap-6">
               <div className="flex -space-x-3">
                 {[1, 2, 3, 4, 5].map((num) => (
@@ -108,145 +137,165 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
             </div>
           </motion.div>
 
-          {/* Right Column - Chat Preview */}
+          {/* Right Column - 3D Device Mockup with Animated Profiles */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, delay: 0.3 }}
-            className="relative"
+            className="relative lg:h-[700px] flex items-center justify-center"
           >
-            {/* Main chat card */}
-            <div className="relative">
-              {/* Chat interface mockup */}
-              <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden max-w-md mx-auto">
-                {/* Header */}
-                <div className="bg-gradient-to-r from-pink-600 to-purple-600 px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-full bg-white/20 border-2 border-white overflow-hidden">
-                        <Image
-                          src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100"
-                          alt="Profile"
-                          width={48}
-                          height={48}
-                          className="object-cover"
-                        />
+            {/* Phone mockup container with 3D effect */}
+            <div className="relative" style={{ perspective: '2000px' }}>
+              <motion.div
+                animate={{ 
+                  rotateY: [0, -5, 0],
+                  rotateX: [0, 2, 0]
+                }}
+                transition={{ 
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                style={{ transformStyle: 'preserve-3d' }}
+                className="relative"
+              >
+                {/* iPhone mockup */}
+                <div className="relative w-[340px] h-[680px] bg-gray-900 rounded-[50px] shadow-2xl border-[14px] border-gray-900 overflow-hidden">
+                  {/* Notch */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-6 bg-gray-900 rounded-b-3xl z-50"></div>
+                  
+                  {/* Screen content */}
+                  <div className="relative w-full h-full bg-white rounded-[36px] overflow-hidden">
+                    {/* App header */}
+                    <div className="bg-gradient-to-r from-pink-600 to-purple-600 px-6 py-4 pt-8">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-white text-xl font-bold">TabooTalks</div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                            <Heart className="w-4 h-4 text-white" />
+                          </div>
+                        </div>
                       </div>
-                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-400 border-2 border-white rounded-full"></div>
                     </div>
-                    <div className="flex-1 text-white">
-                      <div className="font-bold">Sophia, 28</div>
-                      <div className="text-sm text-white/90">Online now</div>
+
+                    {/* Animated profile cards stack */}
+                    <div className="relative h-[580px] bg-gray-50 p-4">
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={currentProfile}
+                          initial={{ scale: 0.8, opacity: 0, rotateY: 90 }}
+                          animate={{ scale: 1, opacity: 1, rotateY: 0 }}
+                          exit={{ scale: 0.8, opacity: 0, rotateY: -90 }}
+                          transition={{ duration: 0.6 }}
+                          className="absolute inset-4"
+                        >
+                          {/* Profile Card */}
+                          <div className="bg-white rounded-3xl shadow-xl overflow-hidden h-full flex flex-col">
+                            {/* Profile Image */}
+                            <div className="relative h-[380px]">
+                              <Image
+                                src={profile.image}
+                                alt={profile.name}
+                                fill
+                                className="object-cover"
+                              />
+                              {/* Gradient overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                              
+                              {/* Online badge */}
+                              <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-green-500 rounded-full px-3 py-1.5">
+                                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                                <span className="text-white text-xs font-semibold">Online</span>
+                              </div>
+
+                              {/* Interest badge */}
+                              <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5">
+                                <Star className="w-3.5 h-3.5 text-purple-600 fill-purple-600" />
+                                <span className="text-gray-800 text-xs font-semibold">{profile.interest}</span>
+                              </div>
+
+                              {/* Profile info */}
+                              <div className="absolute bottom-4 left-4 right-4">
+                                <h3 className="text-white text-2xl font-bold mb-1">
+                                  {profile.name}, {profile.age}
+                                </h3>
+                                <div className="flex items-center gap-2 text-white/90 text-sm">
+                                  <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                                  <span>2 km away</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Message preview */}
+                            <div className="flex-1 p-4 flex flex-col">
+                              <div className="bg-gray-50 rounded-2xl p-4 mb-3">
+                                <p className="text-gray-800 text-sm">{profile.message}</p>
+                              </div>
+
+                              {/* Action buttons */}
+                              <div className="flex gap-3 mt-auto">
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl py-3 text-white font-bold flex items-center justify-center gap-2 shadow-lg"
+                                >
+                                  <Heart className="w-5 h-5" />
+                                  Like
+                                </motion.button>
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  className="flex-1 bg-gray-100 rounded-2xl py-3 text-gray-700 font-bold flex items-center justify-center gap-2"
+                                >
+                                  <MessageCircle className="w-5 h-5" />
+                                  Chat
+                                </motion.button>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
+
+                      {/* Stacked cards behind effect */}
+                      <div className="absolute inset-x-8 bottom-2 h-full bg-white rounded-3xl shadow-lg -z-10 opacity-50"></div>
+                      <div className="absolute inset-x-12 bottom-0 h-full bg-white rounded-3xl shadow-md -z-20 opacity-30"></div>
                     </div>
-                    <Heart className="w-6 h-6 text-white/80" />
                   </div>
                 </div>
 
-                {/* Messages */}
-                <div className="p-6 space-y-4 bg-gray-50 min-h-[400px]">
-                  {/* Received message */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.8 }}
-                    className="flex gap-2"
-                  >
-                    <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm max-w-[80%]">
-                      <p className="text-gray-800 text-sm">Hey! I noticed you're new here. Welcome! 😊</p>
-                    </div>
-                  </motion.div>
-
-                  {/* Sent message */}
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 1.2 }}
-                    className="flex gap-2 justify-end"
-                  >
-                    <div className="bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl rounded-tr-sm px-4 py-3 text-white shadow-sm max-w-[80%]">
-                      <p className="text-sm">Hi Sophia! Thanks, excited to be here!</p>
-                    </div>
-                  </motion.div>
-
-                  {/* Received message */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 1.6 }}
-                    className="flex gap-2"
-                  >
-                    <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm max-w-[80%]">
-                      <p className="text-gray-800 text-sm">What brings you to TabooTalks?</p>
-                    </div>
-                  </motion.div>
-
-                  {/* Typing indicator */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 2 }}
-                    className="flex gap-2"
-                  >
-                    <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-                      <div className="flex gap-1.5">
-                        <motion.div
-                          className="w-2 h-2 bg-gray-400 rounded-full"
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 1, repeat: Infinity, delay: 0 }}
-                        />
-                        <motion.div
-                          className="w-2 h-2 bg-gray-400 rounded-full"
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-                        />
-                        <motion.div
-                          className="w-2 h-2 bg-gray-400 rounded-full"
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
-
-                {/* Input */}
-                <div className="px-6 py-4 bg-white border-t border-gray-100">
-                  <div className="flex items-center gap-3 bg-gray-100 rounded-full px-4 py-3">
-                    <MessageCircle className="w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Type a message..."
-                      className="flex-1 bg-transparent border-none outline-none text-sm text-gray-600 placeholder-gray-400"
-                      disabled
-                    />
-                    <div className="w-8 h-8 flex items-center justify-center bg-gradient-to-r from-pink-600 to-purple-600 rounded-full">
-                      <ArrowRight className="w-4 h-4 text-white" />
-                    </div>
+                {/* Floating badges around phone */}
+                <motion.div
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -top-6 -right-8 bg-white rounded-2xl shadow-2xl px-4 py-3 border border-pink-100"
+                >
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-pink-600 fill-pink-600" />
+                    <span className="text-sm font-bold text-gray-800">250+ Profiles</span>
                   </div>
-                </div>
-              </div>
+                </motion.div>
 
-              {/* Floating elements around chat */}
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -top-6 -right-6 bg-white rounded-2xl shadow-xl px-4 py-3 border border-pink-100"
-              >
-                <div className="flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-pink-600 fill-pink-600" />
-                  <span className="text-sm font-bold text-gray-800">250+ Profiles</span>
-                </div>
-              </motion.div>
+                <motion.div
+                  animate={{ y: [0, 10, 0] }}
+                  transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                  className="absolute -bottom-6 -left-8 bg-white rounded-2xl shadow-2xl px-4 py-3 border border-purple-100"
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-purple-600" />
+                    <span className="text-sm font-bold text-gray-800">10 Free Credits</span>
+                  </div>
+                </motion.div>
 
-              <motion.div
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                className="absolute -bottom-6 -left-6 bg-white rounded-2xl shadow-xl px-4 py-3 border border-purple-100"
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-600" />
-                  <span className="text-sm font-bold text-gray-800">10 Free Credits</span>
-                </div>
+                <motion.div
+                  animate={{ x: [0, 10, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                  className="absolute top-1/2 -left-12 bg-white rounded-2xl shadow-2xl px-4 py-3 border border-blue-100"
+                >
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-bold text-gray-800">Instant Match</span>
+                  </div>
+                </motion.div>
               </motion.div>
             </div>
           </motion.div>
