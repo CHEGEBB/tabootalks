@@ -54,8 +54,8 @@ const MissionSection: React.FC = () => {
               </p>
               
               <p>
-                We created TabooTalks because we believe that connecting with others shouldn't 
-                feel like a chore or a gamble. In today's digital world, genuine conversations 
+                We created TabooTalks because we believe that connecting with others shouldn&apos;t 
+                feel like a chore or a gamble. In today&apos;s digital world, genuine conversations 
                 have become rare, replaced by endless swiping and superficial interactions.
               </p>
               
@@ -66,7 +66,7 @@ const MissionSection: React.FC = () => {
               </p>
               
               <p>
-                We've stripped away the noise and built a platform where the focus is on what 
+                We&apos;ve stripped away the noise and built a platform where the focus is on what 
                 truly matters – the connection between two people who want to talk, share, and 
                 possibly create something special together.
               </p>

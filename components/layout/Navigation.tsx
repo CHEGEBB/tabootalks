@@ -70,7 +70,7 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
             
             <Button 
               onClick={onGetStarted}
-              className="bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white"
+              className="bg-[#ff2e2e] text-white"
             >
               Get Started
             </Button>
@@ -120,7 +120,7 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
                   setMobileMenuOpen(false);
                   onGetStarted && onGetStarted();
                 }}
-                className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white"
+                className="w-full bg-[#ff2e2e] text-white"
               >
                 Get Started
               </Button>

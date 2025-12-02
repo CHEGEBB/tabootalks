@@ -165,7 +165,7 @@ const Footer: React.FC = () => {
           >
             <h4 className="font-bold mb-6 text-white text-xl">GET IN TOUCH</h4>
             <p className="text-gray-300 mb-4">
-              We'd love to hear from you! Reach out to us for any questions or support.
+              We&apos;d love to hear from you! Reach out to us for any questions or support.
             </p>
             <div className="flex items-center space-x-3 mb-6">
               <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">

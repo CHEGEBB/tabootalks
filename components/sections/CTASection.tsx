@@ -49,7 +49,7 @@ const CTASection: React.FC<CTASectionProps> = ({ onGetStarted }) => {
           
           {/* Subheading */}
           <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Join thousands who've already discovered the joy of authentic connection. Get started with <span className="font-bold text-purple-600">10 free credits</span> today!
+            Join thousands who&apos;ve already discovered the joy of authentic connection. Get started with <span className="font-bold text-purple-600">10 free credits</span> today!
           </p>
 
           {/* CTA Button */}
