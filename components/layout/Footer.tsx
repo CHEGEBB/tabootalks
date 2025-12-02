@@ -37,6 +37,7 @@ const Footer = () => {
           alt=""
           width={480}
           height={200}
+          quality={100}
           className="w-32 h-auto sm:w-48 md:w-64 lg:w-80"
         />
       </div>
@@ -53,6 +54,7 @@ const Footer = () => {
           alt=""
           width={480}
           height={200}
+          quality={100}
           className="w-28 h-auto sm:w-40 md:w-52 lg:w-64"
         />
       </div>
