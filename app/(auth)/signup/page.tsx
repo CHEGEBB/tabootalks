@@ -47,8 +47,63 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-white relative overflow-hidden">
-      {/* Left Side - Diagonal Masonry FULL COVERAGE */}
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white relative overflow-hidden">
+      {/* Top Section - Mobile Image Container & Logo */}
+      <div className="lg:hidden relative h-64 overflow-hidden bg-gray-900">
+        {/* Mobile Diagonal Masonry */}
+        <div className="absolute inset-0 overflow-hidden" style={{ transform: 'rotate(-45deg) scale(3)', transformOrigin: 'center' }}>
+          
+          {/* ROW 1 - Mobile Version */}
+          <motion.div
+            animate={{ x: ['0%', '-50%'] }}
+            transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+            className="absolute -top-6 left-0 flex"
+          >
+            {[...Array(4)].map((_, setIdx) => (
+              <React.Fragment key={`mob-row1-${setIdx}`}>
+                <div className="flex-shrink-0 w-[150px] h-[150px]">
+                  <img src={allImages[(setIdx * 5) % allImages.length]} alt="" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-shrink-0 w-[100px] h-[100px]">
+                  <img src={allImages[(setIdx * 5 + 1) % allImages.length]} alt="" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-shrink-0 flex flex-col w-[180px] h-[250px]">
+                  <div className="w-full h-[125px]">
+                    <img src={allImages[(setIdx * 5 + 2) % allImages.length]} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="w-full h-[125px]">
+                    <img src={allImages[(setIdx * 5 + 3) % allImages.length]} alt="" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              </React.Fragment>
+            ))}
+          </motion.div>
+
+        </div>
+
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70 z-10" />
+
+        {/* Mobile Logo & Text */}
+        <div className="relative z-20 flex flex-col justify-center items-center text-center h-full px-6">
+          <div className="mb-4">
+            <img src="/assets/logo.png" alt="TabooTalks" className="h-10 mx-auto" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+            <h1 className="hidden text-3xl font-bold bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] bg-clip-text text-transparent">TabooTalks</h1>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2 leading-tight">Welcome to a new way of connecting</h2>
+          <p className="text-sm text-white/90">Join 250+ amazing profiles today</p>
+          
+          {/* Mobile Floating Words */}
+          <div className="flex gap-2 justify-center flex-wrap mt-3">
+            {floatingWords.slice(0, 3).map((word, idx) => (
+              <motion.div key={word} initial={{ opacity: 0, y: 10 }} animate={{ opacity: [0.7, 1, 0.7], y: [0, -5, 0] }} transition={{ duration: 3, repeat: Infinity, delay: idx * 0.3 }} className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-white text-xs font-semibold border border-white/30">
+                {word}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Left Side - Diagonal Masonry FULL COVERAGE */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gray-900">
         <div className="absolute inset-0 overflow-hidden" style={{ transform: 'rotate(-45deg) scale(2.5)', transformOrigin: 'center' }}>
           
@@ -167,7 +222,7 @@ const SignupPage = () => {
         </div>
       </div>
 
-      {/* Floating Badges - SCATTERED AROUND */}
+      {/* Desktop Floating Badges - Only show on desktop */}
       <div className="hidden lg:block absolute left-[42%] top-[1%] z-30">
         <motion.div animate={{ y: [0, -15, 0], rotate: [0, 3, 0] }} transition={{ duration: 4, repeat: Infinity }} className="bg-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 border-2 border-[#ff2e2e]/20">
           <div className="w-12 h-12 bg-gradient-to-br from-[#ff2e2e] to-[#ff2e2e]/80 rounded-full flex items-center justify-center">
@@ -195,17 +250,12 @@ const SignupPage = () => {
         </motion.div>
       </div>
 
-      {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
+      {/* Right Side - Form (Bottom on mobile) */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8 relative z-10">
         <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-md">
-          <div className="lg:hidden text-center mb-8">
-            <img src="/assets/logo.png" alt="TabooTalks" className="h-12 mx-auto" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-            <h1 className="hidden text-4xl font-bold bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] bg-clip-text text-transparent">TabooTalks</h1>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Create Your Account</h2>
-            <p className="text-gray-600">Join thousands of users having amazing conversations</p>
+          <div className="mb-6 lg:mb-8">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Create Your Account</h2>
+            <p className="text-gray-600 text-sm lg:text-base">Join thousands of users having amazing conversations</p>
           </div>
 
           <button onClick={handleGoogleSignUp} className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 text-gray-700 font-semibold py-3.5 rounded-xl hover:border-gray-300 hover:shadow-md transition-all mb-6">
@@ -223,12 +273,12 @@ const SignupPage = () => {
             <span className="absolute bg-white px-4 text-gray-500 text-sm font-medium">OR</span>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-4 lg:space-y-5">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your name" className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all text-gray-900" />
+                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your name" className="w-full pl-12 pr-4 py-3 lg:py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all text-gray-900" />
               </div>
             </div>
 
@@ -236,7 +286,7 @@ const SignupPage = () => {
               <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all text-gray-900" />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full pl-12 pr-4 py-3 lg:py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all text-gray-900" />
               </div>
             </div>
 
@@ -244,7 +294,7 @@ const SignupPage = () => {
               <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Create a password" className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all text-gray-900" />
+                <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Create a password" className="w-full pl-12 pr-12 py-3 lg:py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all text-gray-900" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -252,8 +302,8 @@ const SignupPage = () => {
             </div>
 
             <label className="flex items-start gap-3 cursor-pointer group">
-              <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="w-5 h-5 mt-0.5 accent-[#5e17eb] cursor-pointer rounded" />
-              <span className="text-sm text-gray-600 leading-relaxed">I agree to the <span className="text-[#5e17eb] font-semibold hover:underline cursor-pointer">Terms of Service</span> and <span className="text-[#5e17eb] font-semibold hover:underline cursor-pointer">Privacy Policy</span>. I confirm I am 18+ years old.</span>
+              <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="w-5 h-5 mt-0.5 accent-[#5e17eb] cursor-pointer rounded flex-shrink-0" />
+              <span className="text-xs lg:text-sm text-gray-600 leading-relaxed">I agree to the <span className="text-[#5e17eb] font-semibold hover:underline cursor-pointer">Terms of Service</span> and <span className="text-[#5e17eb] font-semibold hover:underline cursor-pointer">Privacy Policy</span>. I confirm I am 18+ years old.</span>
             </label>
 
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSubmit} className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all">Create Account</motion.button>
