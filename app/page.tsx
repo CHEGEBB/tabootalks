@@ -36,19 +36,27 @@ export default function LandingPage() {
       <HeroSection onGetStarted={handleGetStarted} />
 
       {/* Features Section */}
-      <FeatureSection />
+      <div id="features">
+        <FeatureSection />
+      </div>
       
       {/* Sign Up Interest Section */}
       <SignUpInterestSection onGetStarted={handleGetStarted} />
       
       {/* Community Showcase - Infinite Scroll */}
-      <InfiniteProfileScroll />
+      <div id="community">
+        <InfiniteProfileScroll />
+      </div>
       
       {/* Our Mission Section */}
-      <MissionSection />
+      <div id="mission">
+        <MissionSection />
+      </div>
       
       {/* Three-Step Journey */}
-      <JourneySteps />
+      <div id="journey">
+        <JourneySteps />
+      </div>
       
       {/* Featured Profiles Grid */}
       <ProfileGrid onGetStarted={handleGetStarted} />
