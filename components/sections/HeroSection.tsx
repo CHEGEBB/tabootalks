@@ -14,21 +14,21 @@ const profiles = [
   {
     name: "Sophia",
     age: 28,
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=450",
     message: "Hey! I noticed you're new here. Welcome! 😊",
     interest: "Photography"
   },
   {
     name: "Emma",
     age: 25,
-    image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150",
+    image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=450",
     message: "Love your profile! Want to chat? ✨",
     interest: "Travel"
   },
   {
     name: "Isabella",
     age: 27,
-    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=450",
     message: "What brings you here? 💭",
     interest: "Music"
   }
