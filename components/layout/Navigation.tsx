@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Heart } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import Button from '../ui/Button';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -25,6 +25,21 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const offset = 80; // Height of navbar
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+    setMobileMenuOpen(false);
+  };
+
   return (
     <motion.nav 
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
@@ -39,9 +54,10 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
           {/* Logo */}
           <div className="flex items-center">
             <motion.div 
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 cursor-pointer"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <Image
                 src="/assets/logo2.png"
@@ -55,9 +71,30 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="#features" className="text-gray-700 hover:text-[#ff2e2e] font-medium transition-colors">Features</Link>
-            <Link href="#community" className="text-gray-700 hover:text-[#ff2e2e] font-medium transition-colors">Community</Link>
-            <Link href="#mission" className="text-gray-700 hover:text-[#ff2e2e] font-medium transition-colors">Our Mission</Link>
+            <button 
+              onClick={() => scrollToSection('features')} 
+              className="text-gray-700 hover:text-[#ff2e2e] font-medium transition-colors"
+            >
+              Features
+            </button>
+            <button 
+              onClick={() => scrollToSection('community')} 
+              className="text-gray-700 hover:text-[#ff2e2e] font-medium transition-colors"
+            >
+              Community
+            </button>
+            <button 
+              onClick={() => scrollToSection('mission')} 
+              className="text-gray-700 hover:text-[#ff2e2e] font-medium transition-colors"
+            >
+              Mission
+            </button>
+            <button 
+              onClick={() => scrollToSection('journey')} 
+              className="text-gray-700 hover:text-[#ff2e2e] font-medium transition-colors"
+            >
+              How It Works
+            </button>
             
             <motion.button 
               className="px-6 py-2 text-gray-700 hover:text-[#ff2e2e] transition-colors font-medium"
@@ -100,15 +137,30 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
             className="md:hidden bg-white border-t border-gray-100"
           >
             <div className="px-4 pt-2 pb-6 space-y-4">
-              <Link href="#features" className="block py-2 text-gray-700 hover:text-[#ff2e2e] font-medium">
+              <button 
+                onClick={() => scrollToSection('features')} 
+                className="block w-full text-left py-2 text-gray-700 hover:text-[#ff2e2e] font-medium"
+              >
                 Features
-              </Link>
-              <Link href="#community" className="block py-2 text-gray-700 hover:text-[#ff2e2e] font-medium">
+              </button>
+              <button 
+                onClick={() => scrollToSection('community')} 
+                className="block w-full text-left py-2 text-gray-700 hover:text-[#ff2e2e] font-medium"
+              >
                 Community
-              </Link>
-              <Link href="#mission" className="block py-2 text-gray-700 hover:text-[#ff2e2e] font-medium">
-                Our Mission
-              </Link>
+              </button>
+              <button 
+                onClick={() => scrollToSection('mission')} 
+                className="block w-full text-left py-2 text-gray-700 hover:text-[#ff2e2e] font-medium"
+              >
+                Mission
+              </button>
+              <button 
+                onClick={() => scrollToSection('journey')} 
+                className="block w-full text-left py-2 text-gray-700 hover:text-[#ff2e2e] font-medium"
+              >
+                How It Works
+              </button>
               <button 
                 onClick={() => window.location.href = '/login'} 
                 className="block w-full text-left py-2 text-gray-700 hover:text-[#ff2e2e] font-medium"
