@@ -245,7 +245,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
                                 <motion.button
                                   whileHover={{ scale: 1.05 }}
                                   whileTap={{ scale: 0.95 }}
-                                  className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl py-3 text-white font-bold flex items-center justify-center gap-2 shadow-lg"
+                                  className="flex-1 bg-[#ff2e2e] rounded-2xl py-3 text-white font-bold flex items-center justify-center gap-2 shadow-lg"
                                 >
                                   <Heart className="w-5 h-5" />
                                   Like
