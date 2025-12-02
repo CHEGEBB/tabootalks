@@ -37,7 +37,6 @@ export default function LandingPage() {
       {/* Hero Section */}
       <HeroSection onGetStarted={handleGetStarted} />
 
-      <SignUpInterestSection/>
       
       {/* Features Section */}
       <FeatureSection 
@@ -80,6 +79,8 @@ export default function LandingPage() {
           },
         ]}
       />
+            <SignUpInterestSection/>
+
       
       {/* Community Showcase - Infinite Scroll */}
       <InfiniteProfileScroll />

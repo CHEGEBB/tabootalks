@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { ArrowRight, Heart, MessageCircle, Sparkles, Star, Zap, Camera } from 'lucide-react';
+import { ArrowRight, Heart, MessageCircle, Sparkles, Star, Zap, Camera, User } from 'lucide-react';
 
 interface HeroSectionProps {
   onGetStarted?: () => void;
@@ -167,12 +167,19 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
                   {/* Screen content */}
                   <div className="relative w-full h-full bg-white rounded-[36px] overflow-hidden">
                     {/* App header */}
-                    <div className="bg-gradient-to-r from-pink-600 to-purple-600 px-6 py-4 pt-8">
+                    <div className="bg-[#5e17eb] px-6 py-4 pt-8">
                       <div className="flex items-center justify-between mb-3">
-                        <div className="text-white text-xl font-bold">TabooTalks</div>
+                        <div className="text-white text-xl font-bold">
+                          <Image
+                          src="/assets/logo.png"
+                          alt='logo'
+                          width={100}
+                          height={50}
+                          />
+                        </div>
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                            <Heart className="w-4 h-4 text-white" />
+                            <User className="w-4 h-4 text-white" />
                           </div>
                         </div>
                       </div>
@@ -197,6 +204,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
                                 src={profile.image}
                                 alt={profile.name}
                                 fill
+                                quality={100}
                                 className="object-cover"
                               />
                               {/* Gradient overlay */}
