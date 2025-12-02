@@ -107,7 +107,7 @@ const InfiniteProfileScroll: React.FC = () => {
           </h2>
           
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Stop swiping through endless profiles looking for "the one." Start meaningful conversations with interesting people who are actually here to talk. No ghosting. No filters. Just real connection.
+            Stop swiping through endless profiles looking for &ldquo;the one.&rdquo; Start meaningful conversations with interesting people who are actually here to talk. No ghosting. No filters. Just real connection.
           </p>
 
           <div className="mt-8 flex items-center justify-center gap-6 text-sm text-gray-500">

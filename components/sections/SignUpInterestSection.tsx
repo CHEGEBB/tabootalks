@@ -75,7 +75,7 @@ const SignUpInterestSection: React.FC<SignUpInterestSectionProps> = ({ onGetStar
             {/* Header */}
             <div className="mb-8 md:mb-12">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-4 leading-tight">
-                Let's get you{' '}
+                Let&apos;s get you{' '}
                 <span className="text-[#ff2e2e]">started</span>
               </h2>
               <p className="text-base md:text-lg text-gray-600">
@@ -86,7 +86,7 @@ const SignUpInterestSection: React.FC<SignUpInterestSectionProps> = ({ onGetStar
             {/* Name Input */}
             <div className="mb-6 md:mb-8">
               <label className="text-gray-900 font-semibold text-base md:text-lg mb-2 md:mb-3 block">
-                What's your name?
+                What&apos;s your name?
               </label>
               <input
                 type="text"
@@ -135,7 +135,7 @@ const SignUpInterestSection: React.FC<SignUpInterestSectionProps> = ({ onGetStar
             {/* I am looking for */}
             <div className="mb-8 md:mb-10">
               <label className="text-gray-900 font-semibold text-base md:text-lg mb-2 md:mb-3 block">
-                I'm interested in
+                I&apos;m interested in
               </label>
               <div className="flex flex-wrap gap-3 md:gap-4">
                 <motion.button

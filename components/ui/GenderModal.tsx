@@ -35,7 +35,7 @@ const GenderModal: React.FC<GenderModalProps> = ({ isOpen, onClose, onSubmit }) 
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-gray-900">Let's Get Started</h3>
+          <h3 className="text-2xl font-bold text-gray-900">Let&apos;s Get Started</h3>
           <button 
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition"

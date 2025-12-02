@@ -146,7 +146,7 @@ const PreferenceModal: React.FC<PreferenceModalProps> = ({
                   exit={{ x: -20, opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <p className="text-gray-600 mb-6">Select who you're interested in</p>
+                  <p className="text-gray-600 mb-6">Select who you&apos;re interested in</p>
                   
                   <div className="space-y-3">
                     <button 

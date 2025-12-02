@@ -84,7 +84,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
             <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
               Connect with
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
+              <span className="text-transparent bg-clip-text bg-[#5e17eb]">
                 Real People
               </span>
             </h1>
@@ -98,7 +98,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
                 onClick={onGetStarted}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
-                className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all"
+                className="group inline-flex items-center justify-center gap-2 bg-[#5e17eb] text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all"
               >
                 Get Started Free
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -107,7 +107,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-full font-bold text-lg shadow-md hover:shadow-lg transition-all"
+                className="inline-flex items-center justify-center gap-2 bg-[#ff2e2e] border-2 border-gray-200 text-white px-8 py-4 rounded-full font-bold text-lg shadow-md hover:shadow-lg transition-all"
               >
                 Explore Profiles
               </motion.button>
