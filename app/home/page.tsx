@@ -247,20 +247,20 @@ export default function HomePage() {
     <div className="min-h-screen bg-white text-gray-900">
       <LayoutController />
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        <div className="flex gap-8">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Main Feed - Single Column */}
-          <div className="flex-1 max-w-2xl mx-auto">
+          <div className="flex-1 max-w-2xl mx-auto w-full">
             {/* Feed Header with Tabs */}
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-2xl font-bold text-gray-900">Discover People</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-0">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Discover People</h2>
                   {/* Tabs for All Posts / Following */}
                   <div className="flex bg-gray-100 rounded-lg p-1">
                     <button
                       onClick={() => setActiveTab('all')}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
                         activeTab === 'all'
                           ? 'bg-white text-[#5e17eb] shadow-sm'
                           : 'text-gray-600 hover:text-gray-900'
@@ -270,7 +270,7 @@ export default function HomePage() {
                     </button>
                     <button
                       onClick={() => setActiveTab('following')}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
                         activeTab === 'following'
                           ? 'bg-white text-[#5e17eb] shadow-sm'
                           : 'text-gray-600 hover:text-gray-900'
@@ -280,18 +280,18 @@ export default function HomePage() {
                     </button>
                   </div>
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2.5 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors">
-                  <Filter size={18} />
-                  <span className="text-sm font-medium">Filters</span>
+                <button className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2.5 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors self-start">
+                  <Filter className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                  <span className="text-xs sm:text-sm font-medium">Filters</span>
                 </button>
               </div>
               
-              {/* Stories/Online Users - No horizontal scrollbar */}
-              <div className="flex gap-6 mb-8 pb-3 px-1 overflow-hidden">
+              {/* Stories/Online Users */}
+              <div className="flex gap-4 sm:gap-6 mb-6 sm:mb-8 pb-3 px-1 overflow-x-auto">
                 {suggestedPeople.slice(0, 4).map(person => (
                   <div key={person.id} className="flex flex-col items-center flex-shrink-0">
                     <div className="relative mb-2">
-                      <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[#5e17eb] p-0.5">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[#5e17eb] p-0.5">
                         <Image
                           src={person.imageUrl}
                           alt={person.username}
@@ -301,10 +301,10 @@ export default function HomePage() {
                         />
                       </div>
                       {person.isOnline && (
-                        <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                        <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
                       )}
                     </div>
-                    <span className="text-sm font-medium text-gray-900">{person.username}</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-900">{person.username}</span>
                     <span className="text-xs text-gray-500">{person.compatibility}% match</span>
                   </div>
                 ))}
@@ -312,18 +312,18 @@ export default function HomePage() {
             </div>
 
             {/* Posts - Single Column */}
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
               {filteredPosts.map(post => (
                 <div
                   key={post.id}
                   className="border border-gray-200 rounded-xl overflow-hidden bg-white"
                 >
                   {/* Post Header with Follow button next to three dots */}
-                  <div className="p-5">
+                  <div className="p-4 sm:p-5">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         <div className="relative">
-                          <div className="w-14 h-14 rounded-full overflow-hidden">
+                          <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full overflow-hidden">
                             <Image
                               src={post.imageUrl}
                               alt={post.username}
@@ -333,21 +333,21 @@ export default function HomePage() {
                             />
                           </div>
                           {post.isOnline && (
-                            <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                            <div className="absolute bottom-0 right-0 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
                           )}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-lg text-gray-900">
+                        <div className="max-w-[180px] sm:max-w-none">
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <h3 className="font-semibold text-sm sm:text-lg text-gray-900 truncate">
                               {post.username}, {post.age}
                             </h3>
                             {post.isVerified && (
-                              <CheckCircle size={18} className="text-blue-500 fill-blue-100" />
+                              <CheckCircle className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] text-blue-500 fill-blue-100 flex-shrink-0" />
                             )}
                           </div>
-                          <div className="flex items-center gap-2 text-gray-500 text-sm">
-                            <MapPin size={14} />
-                            <span>{post.location}</span>
+                          <div className="flex items-center flex-wrap gap-1 text-gray-500 text-xs sm:text-sm">
+                            <MapPin className="w-3 h-3 sm:w-[14px] sm:h-[14px]" />
+                            <span className="truncate">{post.location}</span>
                             <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
                             <span>{post.distance}</span>
                             <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
@@ -357,10 +357,10 @@ export default function HomePage() {
                       </div>
                       
                       {/* Follow button and three dots */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2">
                         <button
                           onClick={() => handleFollow(post.id)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          className={`flex items-center gap-1 px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                             post.isFollowing
                               ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
                               : 'bg-[#5e17eb] text-white hover:bg-[#4a13c4]'
@@ -368,18 +368,18 @@ export default function HomePage() {
                         >
                           {post.isFollowing ? (
                             <>
-                              <UserCheck size={16} />
-                              Following
+                              <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                              <span className="hidden sm:inline">Following</span>
                             </>
                           ) : (
                             <>
-                              <UserPlus size={16} />
-                              Follow
+                              <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                              <span className="hidden sm:inline">Follow</span>
                             </>
                           )}
                         </button>
-                        <button className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                          <MoreVertical size={20} />
+                        <button className="p-1.5 sm:p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                          <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                       </div>
                     </div>
@@ -387,7 +387,7 @@ export default function HomePage() {
 
                   {/* Post Image */}
                   <div 
-                    className="relative h-[500px] cursor-pointer group"
+                    className="relative h-[300px] sm:h-[400px] md:h-[500px] cursor-pointer group"
                     onClick={() => openImageModal(post.imageUrl)}
                   >
                     <Image
@@ -400,27 +400,27 @@ export default function HomePage() {
                   </div>
 
                   {/* Post Actions - Premium Design */}
-                  <div className="p-5">
-                    <div className="flex items-center justify-between mb-5">
-                      <div className="flex items-center gap-4">
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-center justify-between mb-4 sm:mb-5">
+                      <div className="flex items-center gap-2 sm:gap-4">
                         {/* Like button */}
                         <button
                           onClick={() => handleLike(post.id)}
                           className="relative group"
                         >
                           {likingPost === post.id && (
-                            <div className="absolute -inset-2">
+                            <div className="absolute -inset-1 sm:-inset-2">
                               <div className="absolute inset-0 animate-ping bg-[#ff2e2e]/20 rounded-full"></div>
                             </div>
                           )}
-                          <div className={`p-3 rounded-full transition-all duration-300 group-hover:scale-110 ${
+                          <div className={`p-2 sm:p-3 rounded-full transition-all duration-300 group-hover:scale-110 ${
                             post.isLiked 
                               ? 'bg-[#ff2e2e]/10 text-[#ff2e2e]' 
                               : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
                           }`}>
                             <Heart
-                              size={22}
-                              className={post.isLiked ? 'fill-[#ff2e2e]' : ''}
+                              className="w-5 h-5 sm:w-[22px] sm:h-[22px]"
+                              fill={post.isLiked ? '#ff2e2e' : 'none'}
                             />
                           </div>
                         </button>
@@ -428,9 +428,9 @@ export default function HomePage() {
                         {/* Chat button */}
                         <button 
                           onClick={() => handleChat(post.id)}
-                          className="p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300 hover:scale-110 relative group"
+                          className="p-2 sm:p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300 hover:scale-110 relative group"
                         >
-                          <MessageCircle size={22} />
+                          <MessageCircle className="w-5 h-5 sm:w-[22px] sm:h-[22px]" />
                           <span className="absolute -top-1 -right-1 text-xs bg-[#5e17eb] text-white rounded-full px-1.5 py-0.5 font-medium">
                             1
                           </span>
@@ -439,72 +439,72 @@ export default function HomePage() {
                         {/* Gift button */}
                         <button 
                           onClick={() => handleGift(post.id)}
-                          className="p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300 hover:scale-110"
+                          className="p-2 sm:p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300 hover:scale-110"
                         >
-                          <Gift size={22} />
+                          <Gift className="w-5 h-5 sm:w-[22px] sm:h-[22px]" />
                         </button>
 
                         {/* Camera button */}
-                        <button className="p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300 hover:scale-110">
-                          <Camera size={22} />
+                        <button className="p-2 sm:p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300 hover:scale-110">
+                          <Camera className="w-5 h-5 sm:w-[22px] sm:h-[22px]" />
                         </button>
                       </div>
                       
                       {/* View Profile Button */}
                       <button
                         onClick={() => handleViewProfile(post.id)}
-                        className="flex items-center gap-2 px-5 py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-all duration-300 hover:scale-105"
+                        className="flex items-center gap-1 px-3 py-2 sm:px-5 sm:py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-all duration-300 hover:scale-105"
                       >
-                        <Eye size={18} />
-                        View Profile
+                        <Eye className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                        <span className="text-xs sm:text-sm">View Profile</span>
                       </button>
                     </div>
 
                     {/* Likes Count */}
-                    <div className="mb-4">
-                      <span className="font-semibold text-gray-900">{formatNumber(post.likes)} likes</span>
-                      <span className="mx-3 text-gray-300">•</span>
-                      <span className="text-gray-600">{post.comments} messages</span>
+                    <div className="mb-3 sm:mb-4">
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">{formatNumber(post.likes)} likes</span>
+                      <span className="mx-2 sm:mx-3 text-gray-300">•</span>
+                      <span className="text-gray-600 text-sm sm:text-base">{post.comments} messages</span>
                     </div>
 
                     {/* Caption */}
-                    <div className="mb-5">
-                      <span className="font-semibold text-gray-900 mr-2">{post.username}</span>
-                      <span className="text-gray-800">{post.caption}</span>
+                    <div className="mb-3 sm:mb-5">
+                      <span className="font-semibold text-gray-900 mr-2 text-sm sm:text-base">{post.username}</span>
+                      <span className="text-gray-800 text-sm sm:text-base">{post.caption}</span>
                     </div>
 
                     {/* Interests */}
-                    <div className="flex flex-wrap gap-2 mb-6">
+                    <div className="flex flex-wrap gap-1 sm:gap-2 mb-4 sm:mb-6">
                       {post.interests.map((interest, idx) => (
-                        <span key={idx} className="px-4 py-2 bg-gray-100 text-sm rounded-full text-gray-700 hover:bg-gray-200 transition-colors duration-200">
+                        <span key={idx} className="px-2 sm:px-4 py-1 sm:py-2 bg-gray-100 text-xs sm:text-sm rounded-full text-gray-700 hover:bg-gray-200 transition-colors duration-200">
                           {interest}
                         </span>
                       ))}
                     </div>
 
                     {/* Send Message Section */}
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 sm:gap-3">
                       <div className="flex-1 relative">
                         <input 
                           type="text" 
                           placeholder={`Send a message to ${post.username}...`}
-                          className="w-full px-4 py-3.5 text-sm border border-gray-300 rounded-lg outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all duration-300"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3.5 text-xs sm:text-sm border border-gray-300 rounded-lg outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all duration-300"
                         />
-                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-                            <Sparkles size={18} />
+                        <div className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 sm:gap-2">
+                          <button className="p-1 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                            <Sparkles className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                           </button>
-                          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-                            <Zap size={18} />
+                          <button className="p-1 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                            <Zap className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                           </button>
                         </div>
                       </div>
                       <button
                         onClick={() => handleChat(post.id)}
-                        className="px-6 bg-[#ff2e2e] text-white rounded-lg font-medium hover:bg-[#e62626] transition-all duration-300 hover:scale-105 flex items-center gap-2"
+                        className="px-3 sm:px-6 bg-[#ff2e2e] text-white rounded-lg font-medium hover:bg-[#e62626] transition-all duration-300 hover:scale-105 flex items-center gap-1 sm:gap-2"
                       >
-                        <MessageCircle size={18} />
-                        Send
+                        <MessageCircle className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                        <span className="text-xs sm:text-sm">Send</span>
                       </button>
                     </div>
                   </div>
@@ -516,8 +516,6 @@ export default function HomePage() {
           {/* Right Sidebar - Fixed */}
           <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="sticky top-24 space-y-6">
-             
-
               {/* Suggestions */}
               <div className="p-6 border border-gray-200 rounded-xl bg-white ">
                 <div className="flex items-center justify-between mb-5">
