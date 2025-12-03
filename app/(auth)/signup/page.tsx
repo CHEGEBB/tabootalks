@@ -1,17 +1,60 @@
+/* eslint-disable react-hooks/purity */
 'use client';
 
-import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, User, Gift, Sparkles, MessageCircle, Users } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Mail, Lock, Eye, EyeOff, User, Sparkles, Camera, Heart, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
+import Image from 'next/image';
 
-const SignupPage = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+interface FormData {
+  gender: string;
+  goals: string[];
+  bio: string;
+  profilePic: string | null;
+  name: string;
+  email: string;
+  password: string;
+}
+
+interface Illustration {
+  id: number;
+  image: string;
+  title: string;
+  description: string;
+  color: string;
+}
+
+interface ParticlePosition {
+  x: number;
+  y: number;
+  scale: number;
+}
+
+const SignupWizard = () => {
+  const [step, setStep] = useState<number>(0);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [windowWidth, setWindowWidth] = useState<number>(0);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [formData, setFormData] = useState<FormData>({
+    gender: '',
+    goals: [],
+    bio: '',
+    profilePic: null,
+    name: '',
+    email: '',
+    password: ''
+  });
+
+  // Handle window resize for responsive adjustments
+  useEffect(() => {
+    setIsMounted(true);
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const allImages = [
     'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&h=500&fit=crop',
@@ -30,317 +73,883 @@ const SignupPage = () => {
     'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=500&h=500&fit=crop',
     'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=500&h=500&fit=crop',
     'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=500&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1519058082700-08a0b56da9b4?w=500&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1503443207922-dff7d543fd0e?w=500&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?w=500&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1507101105822-7472b28e22ac?w=500&h=500&fit=crop',
   ];
 
-  const floatingWords = ['Connect', 'Chat', 'Flirt', 'Explore', 'Match'];
-
-  const handleGoogleSignUp = () => {
-    setShowWelcomeModal(true);
-  };
-
-  const handleSubmit = () => {
-    if (!agreeTerms) {
-      alert('Please agree to Terms and Privacy Policy');
-      return;
+  // SVG illustration data
+  const illustrationData = useMemo<Illustration[]>(() => [
+    {
+      id: 1,
+      image: '/assets/illustrations/match.svg',
+      title: "Find Your Match",
+      description: "Discover meaningful connections",
+      color: '#f87171'
+    },
+    {
+      id: 2,
+      image: '/assets/illustrations/connect.svg',
+      title: "Instant Connect",
+      description: "Meet like-minded people",
+      color: '#f87171'
+    },
+    {
+      id: 3,
+      image: '/assets/illustrations/chat.svg',
+      title: "Free Chat",
+      description: "Start conversations easily",
+      color: '#f87171'
+    },
+    {
+      id: 4,
+      image: '/assets/illustrations/heart.svg',
+      title: "Build Bonds",
+      description: "Create lasting relationships",
+      color: '#f87171'
+    },
+    {
+      id: 5,
+      image: '/assets/illustrations/self.svg',
+      title: "Be Yourself",
+      description: "Show your true personality",
+      color: '#f87171'
+    },
+    {
+      id: 6,
+      image: '/assets/illustrations/safe.svg',
+      title: "Secure & Safe",
+      description: "Your privacy is protected",
+      color: '#f87171'
+    },
+    {
+      id: 7,
+      image: '/assets/illustrations/protect.svg',
+      title: "Always Protected",
+      description: "Secure your account",
+      color: '#f87171'
+    },
+    {
+      id: 8,
+      image: '/assets/illustrations/start.svg',
+      title: "Ready to Start",
+      description: "Begin your journey now",
+      color: '#f87171'
     }
-    setShowWelcomeModal(true);
+  ], []);
+
+  const currentIllustration = illustrationData[step] || illustrationData[0];
+  const totalSteps = 8;
+
+  const handleNext = () => {
+    if (step < totalSteps - 1) {
+      setStep(step + 1);
+    }
   };
+
+  const handleSkip = () => {
+    if (step < totalSteps - 1) {
+      setStep(step + 1);
+    }
+  };
+
+  const toggleGoal = (goal: string) => {
+    if (formData.goals.includes(goal)) {
+      setFormData({ ...formData, goals: formData.goals.filter(g => g !== goal) });
+    } else {
+      if (formData.goals.length < 3) {
+        setFormData({ ...formData, goals: [...formData.goals, goal] });
+      }
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, profilePic: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Animation variants for steps
+  const stepVariants: Variants = {
+    hidden: { opacity: 0, scale: 0.92, y: 30 },
+    visible: { 
+      opacity: 1, 
+      scale: 1, 
+      y: 0,
+      transition: {
+        type: "spring",
+        damping: 20,
+        stiffness: 100
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      scale: 0.92, 
+      y: -30,
+      transition: {
+        duration: 0.2
+      }
+    }
+  };
+
+  // Safe random values for particles (FEWER PARTICLES)
+  const particlePositions = useMemo<ParticlePosition[]>(() => 
+    Array.from({ length: 5 }, () => ({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      scale: Math.random() * 0.5 + 0.5
+    }))
+  , []);
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-white relative overflow-hidden">
-      {/* Top Section - Mobile Image Container & Logo */}
-      <div className="lg:hidden relative h-64 overflow-hidden bg-gray-900">
-        {/* Mobile Diagonal Masonry */}
-        <div className="absolute inset-0 overflow-hidden" style={{ transform: 'rotate(-45deg) scale(3)', transformOrigin: 'center' }}>
-          
-          {/* ROW 1 - Mobile Version */}
-          <motion.div
-            animate={{ x: ['0%', '-50%'] }}
-            transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
-            className="absolute -top-6 left-0 flex"
-          >
-            {[...Array(4)].map((_, setIdx) => (
-              <React.Fragment key={`mob-row1-${setIdx}`}>
-                <div className="flex-shrink-0 w-[150px] h-[150px]">
-                  <img src={allImages[(setIdx * 5) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-shrink-0 w-[100px] h-[100px]">
-                  <img src={allImages[(setIdx * 5 + 1) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-shrink-0 flex flex-col w-[180px] h-[250px]">
-                  <div className="w-full h-[125px]">
-                    <img src={allImages[(setIdx * 5 + 2) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="w-full h-[125px]">
-                    <img src={allImages[(setIdx * 5 + 3) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-              </React.Fragment>
-            ))}
-          </motion.div>
+    <div className="min-h-screen w-full relative overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+      {/* Background - NO CHANGES */}
+      <div className="absolute inset-0 overflow-hidden">
+        <motion.div
+          animate={{ x: ['0%', '-50%'] }}
+          transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+          className="absolute top-0 left-0 flex"
+        >
+          {[...Array(6)].map((_, setIdx) => (
+            <React.Fragment key={`row1-${setIdx}`}>
+              {[...Array(4)].map((_, imgIdx) => (
+                <div 
+                  key={`row1-${setIdx}-${imgIdx}`} 
+                  className={`flex-shrink-0 ${windowWidth < 768 ? 'w-[220px] h-[180px]' : 'w-[320px] h-[240px]'}`}
+                >
+                  <div className="w-full h-full p-1">
+                    <Image 
+                      src={allImages[(setIdx * 4 + imgIdx) % allImages.length]} 
+                      alt="" 
+                      width={320}
+                      height={240}
 
-        </div>
-
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70 z-10" />
-
-        {/* Mobile Logo & Text */}
-        <div className="relative z-20 flex flex-col justify-center items-center text-center h-full px-6">
-          <div className="mb-4">
-            <img src="/assets/logo.png" alt="TabooTalks" className="h-10 mx-auto" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-            <h1 className="hidden text-3xl font-bold bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] bg-clip-text text-transparent">TabooTalks</h1>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2 leading-tight">Welcome to a new way of connecting</h2>
-          <p className="text-sm text-white/90">Join 250+ amazing profiles today</p>
-          
-          {/* Mobile Floating Words */}
-          <div className="flex gap-2 justify-center flex-wrap mt-3">
-            {floatingWords.slice(0, 3).map((word, idx) => (
-              <motion.div key={word} initial={{ opacity: 0, y: 10 }} animate={{ opacity: [0.7, 1, 0.7], y: [0, -5, 0] }} transition={{ duration: 3, repeat: Infinity, delay: idx * 0.3 }} className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-white text-xs font-semibold border border-white/30">
-                {word}
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop Left Side - Diagonal Masonry FULL COVERAGE */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gray-900">
-        <div className="absolute inset-0 overflow-hidden" style={{ transform: 'rotate(-45deg) scale(2.5)', transformOrigin: 'center' }}>
-          
-          {/* ROW 1 */}
-          <motion.div
-            animate={{ x: ['0%', '-50%'] }}
-            transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}
-            className="absolute -top-64 left-0 flex"
-          >
-            {[...Array(8)].map((_, setIdx) => (
-              <React.Fragment key={`row1-${setIdx}`}>
-                <div className="flex-shrink-0 w-[450px] h-[450px]">
-                  <img src={allImages[(setIdx * 5) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-shrink-0 w-[350px] h-[450px]">
-                  <img src={allImages[(setIdx * 5 + 1) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-shrink-0 flex flex-col w-[300px] h-[450px]">
-                  <div className="w-full h-[225px]">
-                    <img src={allImages[(setIdx * 5 + 2) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="w-full h-[225px]">
-                    <img src={allImages[(setIdx * 5 + 3) % allImages.length]} alt="" className="w-full h-full object-cover" />
+                      className="w-full h-full object-cover rounded-lg opacity-80"
+                    />
                   </div>
                 </div>
-                <div className="flex-shrink-0 w-[400px] h-[450px]">
-                  <img src={allImages[(setIdx * 5 + 4) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                </div>
-              </React.Fragment>
-            ))}
-          </motion.div>
-
-          {/* ROW 2 */}
-          <motion.div
-            animate={{ x: ['-50%', '0%'] }}
-            transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}
-            className="absolute top-[300px] left-0 flex"
-          >
-            {[...Array(8)].map((_, setIdx) => (
-              <React.Fragment key={`row2-${setIdx}`}>
-                <div className="flex-shrink-0 flex flex-row w-[500px] h-[400px]">
-                  <div className="w-[250px] h-full">
-                    <img src={allImages[(setIdx * 4) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="w-[250px] h-full">
-                    <img src={allImages[(setIdx * 4 + 1) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-                <div className="flex-shrink-0 w-[420px] h-[400px]">
-                  <img src={allImages[(setIdx * 4 + 2) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-shrink-0 flex flex-col w-[280px] h-[400px]">
-                  <div className="w-full h-[200px]">
-                    <img src={allImages[(setIdx * 4 + 3) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="w-full h-[200px]">
-                    <img src={allImages[(setIdx * 4 + 1) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-              </React.Fragment>
-            ))}
-          </motion.div>
-
-          {/* ROW 3 - FILLS BOTTOM */}
-          <motion.div
-            animate={{ x: ['0%', '-50%'] }}
-            transition={{ duration: 45, repeat: Infinity, ease: 'linear' }}
-            className="absolute top-[650px] left-0 flex"
-          >
-            {[...Array(8)].map((_, setIdx) => (
-              <React.Fragment key={`row3-${setIdx}`}>
-                <div className="flex-shrink-0 w-[380px] h-[500px]">
-                  <img src={allImages[(setIdx * 3) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-shrink-0 flex flex-col w-[320px] h-[500px]">
-                  <div className="w-full h-[250px]">
-                    <img src={allImages[(setIdx * 3 + 1) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="w-full h-[250px]">
-                    <img src={allImages[(setIdx * 3 + 2) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-                <div className="flex-shrink-0 w-[440px] h-[500px]">
-                  <img src={allImages[(setIdx * 3 + 3) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-shrink-0 flex flex-row w-[460px] h-[500px]">
-                  <div className="w-[230px] h-full">
-                    <img src={allImages[(setIdx * 3 + 4) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="w-[230px] h-full">
-                    <img src={allImages[(setIdx * 3 + 5) % allImages.length]} alt="" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-              </React.Fragment>
-            ))}
-          </motion.div>
-
-        </div>
-
-        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70 z-10" />
-
-        <div className="relative z-20 flex flex-col justify-center items-center text-center px-16 w-full">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-            <div className="mb-8">
-              <img src="/assets/logo.png" alt="TabooTalks" className="h-14 mx-auto" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-              <h1 className="hidden text-5xl font-bold bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] bg-clip-text text-transparent">TabooTalks</h1>
-            </div>
-            <h2 className="text-5xl font-bold text-white mb-4 leading-tight drop-shadow-2xl">Welcome to a new<br />way of connecting</h2>
-            <p className="text-xl text-white/90 mb-8 drop-shadow-xl">Join 250+ amazing profiles today</p>
-            <div className="flex gap-3 justify-center flex-wrap">
-              {floatingWords.map((word, idx) => (
-                <motion.div key={word} initial={{ opacity: 0, y: 20 }} animate={{ opacity: [0.7, 1, 0.7], y: [0, -10, 0] }} transition={{ duration: 3, repeat: Infinity, delay: idx * 0.5 }} className="px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white text-sm font-semibold border border-white/30">{word}</motion.div>
               ))}
+            </React.Fragment>
+          ))}
+        </motion.div>
+
+        <motion.div
+          animate={{ x: ['-50%', '0%'] }}
+          transition={{ duration: 55, repeat: Infinity, ease: 'linear' }}
+          className={`absolute ${windowWidth < 768 ? 'top-[180px]' : 'top-[240px]'} left-0 flex`}
+        >
+          {[...Array(6)].map((_, setIdx) => (
+            <React.Fragment key={`row2-${setIdx}`}>
+              {[...Array(4)].map((_, imgIdx) => (
+                <div 
+                  key={`row2-${setIdx}-${imgIdx}`} 
+                  className={`flex-shrink-0 ${windowWidth < 768 ? 'w-[240px] h-[180px]' : 'w-[340px] h-[240px]'}`}
+                >
+                  <div className="w-full h-full p-1">
+                    <Image
+                      src={allImages[(setIdx * 4 + imgIdx + 5) % allImages.length]} 
+                      alt="" 
+                      width={320}
+                      height={240}
+                      className="w-full h-full object-cover rounded-lg opacity-80"
+                    />
+                  </div>
+                </div>
+              ))}
+            </React.Fragment>
+          ))}
+        </motion.div>
+
+        <motion.div
+          animate={{ x: ['0%', '-50%'] }}
+          transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}
+          className={`absolute ${windowWidth < 768 ? 'top-[360px]' : 'top-[480px]'} left-0 flex`}
+        >
+          {[...Array(6)].map((_, setIdx) => (
+            <React.Fragment key={`row3-${setIdx}`}>
+              {[...Array(4)].map((_, imgIdx) => (
+                <div 
+                  key={`row3-${setIdx}-${imgIdx}`} 
+                  className={`flex-shrink-0 ${windowWidth < 768 ? 'w-[200px] h-[180px]' : 'w-[300px] h-[240px]'}`}
+                >
+                  <div className="w-full h-full p-1">
+                    <Image
+                      src={allImages[(setIdx * 4 + imgIdx + 10) % allImages.length]} 
+                      alt="" 
+                      width={320}
+                      height={240}
+                      className="w-full h-full object-cover rounded-lg opacity-80"
+                    />
+                  </div>
+                </div>
+              ))}
+            </React.Fragment>
+          ))}
+        </motion.div>
+
+        <motion.div
+          animate={{ x: ['-50%', '0%'] }}
+          transition={{ duration: 58, repeat: Infinity, ease: 'linear' }}
+          className={`absolute ${windowWidth < 768 ? 'top-[540px]' : 'top-[720px]'} left-0 flex`}
+        >
+          {[...Array(6)].map((_, setIdx) => (
+            <React.Fragment key={`row4-${setIdx}`}>
+              {[...Array(4)].map((_, imgIdx) => (
+                <div 
+                  key={`row4-${setIdx}-${imgIdx}`} 
+                  className={`flex-shrink-0 ${windowWidth < 768 ? 'w-[230px] h-[180px]' : 'w-[330px] h-[240px]'}`}
+                >
+                  <div className="w-full h-full p-1">
+                    <Image
+                      src={allImages[(setIdx * 4 + imgIdx + 15) % allImages.length]} 
+                      alt="" 
+                      width={320}
+                      height={240}
+                      className="w-full h-full object-cover rounded-lg opacity-80"
+                    />
+                  </div>
+                </div>
+              ))}
+            </React.Fragment>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900/85 to-black/90 z-10" />
+
+      {/* Animated Particles - FEWER PARTICLES */}
+      {isMounted && (
+        <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+          {particlePositions.map((pos, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 rounded-full bg-red-500 opacity-30"
+              initial={{ 
+                x: `${pos.x}%`, 
+                y: `${pos.y}%`,
+                scale: pos.scale
+              }}
+              animate={{ 
+                x: [
+                  `${pos.x}%`, 
+                  `${(pos.x + 30) % 100}%`,
+                  `${pos.x}%`
+                ],
+                y: [
+                  `${pos.y}%`, 
+                  `${(pos.y + 20) % 100}%`,
+                  `${pos.y}%`
+                ],
+                opacity: [0.2, 0.5, 0.2]
+              }}
+              transition={{ 
+                duration: 20 + Math.random() * 10,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Logo - Top Left - Desktop only */}
+      <div className="absolute top-6 left-6 z-30 hidden md:flex items-center gap-2">
+        <Image
+          src="/assets/logo.png"
+          alt="Taboo Talks Logo"
+          width={240}
+          height={60}
+          className="object-contain"
+          priority
+        />
+      </div>
+
+      {/* MAIN CONTAINER */}
+      <div className="relative z-20 min-h-screen flex items-center justify-center p-3 md:p-4">
+        <div className="w-full max-w-4xl lg:max-w-5xl flex flex-col md:flex-row items-stretch">
+          
+          {/* MOBILE: SVG Display (Top) */}
+          <div className="md:hidden w-full mb-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
+              <div className="relative w-32 h-32 mx-auto mb-3">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative w-28 h-28">
+                    <Image
+                      src={currentIllustration.image}
+                      alt={currentIllustration.title}
+                      fill
+                      className="object-contain"
+                      sizes="112px"
+                      priority
+                    />
+                  </div>
+                </div>
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 360],
+                    scale: [1, 1.05, 1]
+                  }}
+                  transition={{ 
+                    rotate: { duration: 25, repeat: Infinity, ease: "linear" },
+                    scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                  }}
+                  className="absolute inset-0 rounded-full"
+                  style={{ 
+                    backgroundColor: `${currentIllustration.color}10`,
+                    border: `2px dashed ${currentIllustration.color}30`
+                  }}
+                />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-bold mb-1" style={{ color: currentIllustration.color }}>
+                  {currentIllustration.title}
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  {currentIllustration.description}
+                </p>
+              </div>
             </div>
-          </motion.div>
+          </div>
+
+          {/* LEFT SIDE: FORM - Made smaller */}
+          <div className="w-full md:w-2/5 lg:w-5/12">
+            <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden backdrop-blur-sm bg-white/95 border border-gray-200">
+              <div className="relative z-10">
+                {/* Logo - Mobile & Desktop */}
+                <div className="flex items-center justify-center p-6 pb-4">
+                  <Image
+                    src="/assets/logo2.png"
+                    alt="Taboo Talks Logo"
+                    width={140} 
+                    height={40}
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="px-6 pb-2">
+                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb]"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${((step + 1) / totalSteps) * 100}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 text-center mt-2 font-medium">
+                    {step + 1}/{totalSteps} Questions
+                  </p>
+                </div>
+
+                {/* Step Content - Adjusted height */}
+                <div className="h-[58vh] md:h-[480px] overflow-y-auto px-6 pb-6">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={step}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      variants={stepVariants}
+                    >
+                      {/* Step 0: Welcome */}
+                  {step === 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }} 
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-center"
+                    >
+                      <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">Welcome to Taboo Talks!</h3>
+                      <p className="text-gray-600 mb-6 px-2 text-sm md:text-base">Your story begins here. Complete a quick quiz to discover connections that truly resonate with you.</p>
+                      
+                      {/* Active Users Display */}
+                      <div className="bg-gray-50 rounded-2xl p-4 md:p-5 mb-6 shadow-sm border border-gray-100">
+                        <div className="flex items-center justify-center mb-3">
+                          <div className="flex -space-x-3 md:-space-x-4">
+                            {[0, 1, 2, 3, 4].map((idx) => (
+                              <motion.div
+                                key={idx}
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 0.3 + (idx * 0.1), type: "spring", damping: 15 }}
+                                className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 md:border-3 border-white overflow-hidden shadow-md"
+                                style={{ zIndex: 5 - idx }}
+                              >
+                                <img 
+                                  src={allImages[idx]} 
+                                  alt="" 
+                                  className="w-full h-full object-cover"
+                                />
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
+                        <motion.div
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.8 }}
+                        >
+                          <p className="text-base md:text-lg font-bold text-gray-900">50,000+ Active Users</p>
+                          <p className="text-xs md:text-sm text-gray-600">Join the community today</p>
+                        </motion.div>
+                      </div>
+                      
+                      <motion.button
+                        onClick={handleNext}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full bg-[#ff2e2e] text-white font-bold py-3 md:py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2 text-sm md:text-base"
+                      >
+                        <span>Let&apos;s go!</span>
+                        <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                      </motion.button>
+                    </motion.div>
+                  )}
+
+                      {/* Step 1: Gender Preference */}
+                      {step === 1 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-4 text-center">Who would you like to date?</h3>
+                          <div className="space-y-2">
+                            {['Men', 'Women', 'Both'].map((gender) => (
+                              <motion.button
+                                key={gender}
+                                onClick={() => setFormData({ ...formData, gender: gender.toLowerCase() })}
+                                className={`w-full border-red-300 border-2 py-3 rounded-full font-semibold transition-all flex items-center justify-center text-sm ${
+                                  formData.gender === gender.toLowerCase()
+                                    ? 'bg-[#5e17eb] border-2 border-red-400 text-white shadow-lg'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                                whileHover={{ scale: formData.gender !== gender.toLowerCase() ? 1.02 : 1 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                {gender}
+                              </motion.button>
+                            ))}
+                          </div>
+                          <motion.button
+                            onClick={handleNext}
+                            disabled={!formData.gender}
+                            className="w-full mt-4 bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            whileHover={{ scale: formData.gender ? 1.02 : 1 }}
+                            whileTap={{ scale: formData.gender ? 0.98 : 1 }}
+                          >
+                            Continue
+                          </motion.button>
+                        </motion.div>
+                      )}
+
+                      {/* Step 2: Goals */}
+                      {step === 2 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">What is your goal here?</h3>
+                          <p className="text-xs text-gray-500 text-center mb-3">Up to 3 answers possible</p>
+                          <div className="flex flex-wrap gap-2 justify-center mb-4">
+                            {['Chat', 'Find friends', 'Have fun', "I'm bored", 'Get attention', 'Meet people'].map((goal) => (
+                              <motion.button
+                                key={goal}
+                                onClick={() => toggleGoal(goal)}
+                                className={`px-3 py-1.5 border-2 border-red-300 rounded-full font-medium transition-all text-xs ${
+                                  formData.goals.includes(goal)
+                                    ? 'bg-[#5e17eb] text-white shadow-lg'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                {goal}
+                              </motion.button>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <motion.button
+                              onClick={handleSkip}
+                              className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-3 rounded-full hover:bg-gray-50 transition-all text-sm"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Skip
+                            </motion.button>
+                            <motion.button
+                              onClick={handleNext}
+                              disabled={formData.goals.length === 0}
+                              className="flex-1 bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                              whileHover={{ scale: formData.goals.length > 0 ? 1.02 : 1 }}
+                              whileTap={{ scale: formData.goals.length > 0 ? 0.98 : 1 }}
+                            >
+                              Continue
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Step 3: Bio */}
+                      {step === 3 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">Tell others about yourself</h3>
+                          <p className="text-xs text-gray-400 text-center mb-3">Ex: I love watching football with friends.</p>
+                          <div className="relative">
+                            <textarea
+                              value={formData.bio}
+                              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                              placeholder="Write here..."
+                              className="w-full h-24 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 resize-none text-gray-900 shadow-sm text-sm"
+                              maxLength={500}
+                            />
+                            {formData.bio.length > 0 && (
+                              <div className="absolute right-3 bottom-3 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+                                {formData.bio.length}/500
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-2 mt-4">
+                            <motion.button
+                              onClick={handleSkip}
+                              className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-3 rounded-full hover:bg-gray-50 transition-all text-sm"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Skip
+                            </motion.button>
+                            <motion.button
+                              onClick={handleNext}
+                              className="flex-1 bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all text-sm"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Continue
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Step 4: Profile Picture */}
+                      {step === 4 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">Add a profile picture</h3>
+                          <p className="text-xs text-gray-500 text-center mb-3">Pictures get more attention!</p>
+                          
+                          <div className="flex justify-center mb-4">
+                            <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-gray-100 flex items-center justify-center shadow-lg cursor-pointer relative group">
+                              <label htmlFor="profile-pic" className="absolute inset-0 cursor-pointer flex items-center justify-center">
+                                <div className="text-center">
+                                  <Camera className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                                  <p className="text-xs text-gray-500 font-medium">Upload Photo</p>
+                                </div>
+                              </label>
+                            </div>
+                          </div>
+
+                          <input
+                            type="file"
+                            id="profile-pic"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                          
+                          <div className="flex gap-2 mt-4">
+                            <motion.button
+                              onClick={handleSkip}
+                              className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-3 rounded-full hover:bg-gray-50 transition-all text-sm"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Skip
+                            </motion.button>
+                            <motion.button
+                              onClick={handleNext}
+                              className="flex-1 bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all text-sm"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Continue
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Step 5: Name */}
+                      {step === 5 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">What should we call you?</h3>
+                          <div className="relative mb-3">
+                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="text"
+                              value={formData.name}
+                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                              placeholder="e.g. Alex"
+                              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-gray-900 text-sm"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 text-center mb-4">Can be changed anytime</p>
+                          <motion.button
+                            onClick={handleNext}
+                            disabled={!formData.name}
+                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            whileHover={{ scale: formData.name ? 1.02 : 1 }}
+                            whileTap={{ scale: formData.name ? 0.98 : 1 }}
+                          >
+                            Continue
+                          </motion.button>
+                        </motion.div>
+                      )}
+
+                      {/* Step 6: Email */}
+                      {step === 6 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">Your email address?</h3>
+                          <div className="relative mb-3">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                              placeholder="alex@example.com"
+                              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-gray-900 text-sm"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 text-center mb-4">Email used for account security</p>
+                          <motion.button
+                            onClick={handleNext}
+                            disabled={!formData.email}
+                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            whileHover={{ scale: formData.email ? 1.02 : 1 }}
+                            whileTap={{ scale: formData.email ? 0.98 : 1 }}
+                          >
+                            Continue
+                          </motion.button>
+                        </motion.div>
+                      )}
+
+                      {/* Step 7: Password */}
+                      {step === 7 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">Create password</h3>
+                          <div className="relative mb-3">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type={showPassword ? 'text' : 'password'}
+                              value={formData.password}
+                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                              placeholder="Enter a strong password"
+                              className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-gray-900 text-sm"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                          
+                          {formData.password && (
+                            <div className="mb-3">
+                              <div className="flex gap-1 mb-1">
+                                <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 3 ? 'bg-red-400' : 'bg-gray-200'}`}></div>
+                                <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 6 ? 'bg-orange-400' : 'bg-gray-200'}`}></div>
+                                <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 8 ? 'bg-yellow-400' : 'bg-gray-200'}`}></div>
+                                <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 10 ? 'bg-green-400' : 'bg-gray-200'}`}></div>
+                              </div>
+                              <p className="text-xs text-gray-500 text-right">
+                                {formData.password.length < 6 ? 'Weak' : 
+                                 formData.password.length < 8 ? 'Fair' :
+                                 formData.password.length < 10 ? 'Good' : 'Strong'}
+                              </p>
+                            </div>
+                          )}
+                          
+                          <p className="text-xs text-gray-400 text-center mb-4">Reset password anytime</p>
+                          <motion.button
+                            onClick={handleNext}
+                            disabled={!formData.password || formData.password.length < 6}
+                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            whileHover={{ scale: formData.password && formData.password.length >= 6 ? 1.02 : 1 }}
+                            whileTap={{ scale: formData.password && formData.password.length >= 6 ? 0.98 : 1 }}
+                          >
+                            Continue
+                          </motion.button>
+                        </motion.div>
+                      )}
+
+                      {/* Step 8: Final */}
+                      {step === 8 && (
+                        <motion.div 
+                          initial={{ opacity: 0 }} 
+                          animate={{ opacity: 1 }}
+                          className="py-2 text-center"
+                        >
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", damping: 12 }}
+                            className="w-12 h-12 bg-[#ff2e2e] rounded-full flex items-center justify-center mx-auto mb-3"
+                          >
+                            <Sparkles className="w-6 h-6 text-white" />
+                          </motion.div>
+                          
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">You&apos;re all set!</h3>
+                          <p className="text-gray-600 mb-4 text-sm">How our platform works:</p>
+                          
+                          <div className="bg-gray-50 rounded-xl p-4 mb-4 text-left space-y-3 shadow-sm border border-gray-100">
+                            <div className="flex items-start gap-2">
+                              <div className="w-6 h-6 bg-[#ff2e2e] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-white text-xs font-bold">1</span>
+                              </div>
+                              <p className="text-xs text-gray-700">Free registration. Premium features require credits.</p>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <div className="w-6 h-6 bg-[#5e17eb] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-white text-xs font-bold">2</span>
+                              </div>
+                              <p className="text-xs text-gray-700">Safe platform. We can&apos;t guarantee conversation outcomes.</p>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <div className="w-6 h-6 bg-[#ff2e2e] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-white text-xs font-bold">3</span>
+                              </div>
+                              <p className="text-xs text-gray-700">Privacy first. Report inappropriate behavior.</p>
+                            </div>
+                          </div>
+
+                          <motion.button
+                            onClick={() => {
+                              alert('Account created successfully! Welcome to TabooTalks!');
+                            }}
+                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <Heart className="w-4 h-4" />
+                            <span>Start Meeting People</span>
+                          </motion.button>
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE: SVG ILLUSTRATION - Desktop only, larger */}
+          <div className="hidden md:flex md:w-3/5 lg:w-7/12 items-center justify-center p-6 lg:p-8 bg-white/80 rounded-3xl border-red-400 border-solid border-2 ml-4">
+            <div className="relative w-full h-full max-w-xl">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="relative w-full h-full flex flex-col items-center justify-center"
+              >
+                {/* Large SVG Illustration */}
+                <div className="relative w-64 h-64 lg:w-80 lg:h-80 mb-6">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative w-56 h-56 lg:w-72 lg:h-72">
+                      <Image
+                        src={currentIllustration.image}
+                        alt={currentIllustration.title}
+                        fill
+                        className="object-contain drop-shadow-2xl"
+                        priority
+                        sizes="(max-width: 1024px) 224px, 288px"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Animated background ring */}
+                  <motion.div
+                    animate={{ 
+                      rotate: [0, 360],
+                      scale: [1, 1.1, 1]
+                    }}
+                    transition={{ 
+                      rotate: { duration: 20, repeat: Infinity, ease: "linear" },
+                      scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                    }}
+                    className="absolute inset-0 rounded-full"
+                    style={{ 
+                      backgroundColor: `${currentIllustration.color}08`,
+                      border: `3px dashed ${currentIllustration.color}40`
+                    }}
+                  />
+                </div>
+
+                {/* Text Content */}
+                <div className="text-center max-w-md">
+                  <motion.h2
+                    key={`title-${step}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-3xl lg:text-4xl font-bold mb-3"
+                    style={{ color: currentIllustration.color }}
+                  >
+                    {currentIllustration.title}
+                  </motion.h2>
+                  <motion.p
+                    key={`desc-${step}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="text-gray-600 text-lg lg:text-xl mb-6"
+                  >
+                    {currentIllustration.description}
+                  </motion.p>
+
+                  {/* Progress indicator */}
+                  <div className="flex justify-center gap-2 mb-8">
+                    {Array.from({ length: totalSteps }).map((_, idx) => (
+                      <motion.div
+                        key={idx}
+                        animate={{ 
+                          scale: idx === step ? 1.3 : 1,
+                          backgroundColor: idx === step ? currentIllustration.color : '#e5e7eb'
+                        }}
+                        className="w-2.5 h-2.5 rounded-full transition-all"
+                      />
+                    ))}
+                  </div>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold" style={{ color: currentIllustration.color }}>50K+</div>
+                      <div className="text-sm text-gray-500">Active Users</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold" style={{ color: currentIllustration.color }}>99%</div>
+                      <div className="text-sm text-gray-500">Satisfied</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold" style={{ color: currentIllustration.color }}>24/7</div>
+                      <div className="text-sm text-gray-500">Support</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step indicator */}
+                <div className="absolute top-4 right-4">
+                  <div className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm">
+                    <span className="text-sm font-medium text-gray-700">Step {step + 1}/{totalSteps}</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Desktop Floating Badges - Only show on desktop */}
-      <div className="hidden lg:block absolute left-[42%] top-[1%] z-30">
-        <motion.div animate={{ y: [0, -15, 0], rotate: [0, 3, 0] }} transition={{ duration: 4, repeat: Infinity }} className="bg-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 border-2 border-[#ff2e2e]/20">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#ff2e2e] to-[#ff2e2e]/80 rounded-full flex items-center justify-center">
-            <MessageCircle className="w-6 h-6 text-white" />
-          </div>
-          <div><p className="font-bold text-gray-900">1000+</p><p className="text-xs text-gray-600">Messages</p></div>
-        </motion.div>
-      </div>
-
-      <div className="hidden lg:block absolute left-[1%] top-[0%] z-30">
-        <motion.div animate={{ y: [0, 20, 0], rotate: [0, -5, 0] }} transition={{ duration: 5, repeat: Infinity, delay: 1 }} className="bg-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 border-2 border-[#5e17eb]/20">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#5e17eb] to-[#5e17eb]/80 rounded-full flex items-center justify-center">
-            <Users className="w-6 h-6 text-white" />
-          </div>
-          <div><p className="font-bold text-gray-900">250+</p><p className="text-xs text-gray-600">Profiles</p></div>
-        </motion.div>
-      </div>
-
-      <div className="hidden lg:block absolute left-[1%] bottom-[0%] z-30">
-        <motion.div animate={{ y: [0, -15, 0], rotate: [0, 3, 0] }} transition={{ duration: 4.5, repeat: Infinity, delay: 2 }} className="bg-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 border-2 border-[#10b981]/20">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#10b981] to-[#10b981]/80 rounded-full flex items-center justify-center">
-            <Gift className="w-6 h-6 text-white" />
-          </div>
-          <div><p className="font-bold text-gray-900">10 FREE</p><p className="text-xs text-gray-600">Credits</p></div>
-        </motion.div>
-      </div>
-
-      {/* Right Side - Form (Bottom on mobile) */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8 relative z-10">
-        <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-md">
-          <div className="mb-6 lg:mb-8">
-            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Create Your Account</h2>
-            <p className="text-gray-600 text-sm lg:text-base">Join thousands of users having amazing conversations</p>
-          </div>
-
-          <button onClick={handleGoogleSignUp} className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 text-gray-700 font-semibold py-3.5 rounded-xl hover:border-gray-300 hover:shadow-md transition-all mb-6">
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-            </svg>
-            Continue with Google
-          </button>
-
-          <div className="relative flex items-center justify-center my-6">
-            <div className="border-t border-gray-200 w-full"></div>
-            <span className="absolute bg-white px-4 text-gray-500 text-sm font-medium">OR</span>
-          </div>
-
-          <div className="space-y-4 lg:space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your name" className="w-full pl-12 pr-4 py-3 lg:py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all text-gray-900" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full pl-12 pr-4 py-3 lg:py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all text-gray-900" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Create a password" className="w-full pl-12 pr-12 py-3 lg:py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all text-gray-900" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </div>
-
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="w-5 h-5 mt-0.5 accent-[#5e17eb] cursor-pointer rounded flex-shrink-0" />
-              <span className="text-xs lg:text-sm text-gray-600 leading-relaxed">I agree to the <span className="text-[#5e17eb] font-semibold hover:underline cursor-pointer">Terms of Service</span> and <span className="text-[#5e17eb] font-semibold hover:underline cursor-pointer">Privacy Policy</span>. I confirm I am 18+ years old.</span>
-            </label>
-
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSubmit} className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all">Create Account</motion.button>
-          </div>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">Already have an account? <Link href="/login" className="text-[#5e17eb] font-semibold hover:underline cursor-pointer">Sign in</Link></p>
-          </div>
-        </motion.div>
-      </div>
-
-      <AnimatePresence>
-        {showWelcomeModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowWelcomeModal(false)}>
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', duration: 0.5 }} className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <div className="text-center">
-                <motion.div animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }} transition={{ duration: 0.6 }} className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#ff2e2e] to-[#5e17eb] rounded-full mb-6">
-                  <Gift className="w-10 h-10 text-white" />
-                </motion.div>
-                <h3 className="text-3xl font-bold text-gray-900 mb-3">Welcome to TabooTalks!</h3>
-                <p className="text-gray-600 mb-6">Your account has been created successfully</p>
-                <div className="bg-gradient-to-br from-[#5e17eb]/10 to-[#ff2e2e]/10 rounded-2xl p-6 mb-6 border-2 border-[#5e17eb]/20">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <Sparkles className="text-[#ff2e2e]" size={24} />
-                    <span className="text-4xl font-bold bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] bg-clip-text text-transparent">10 FREE</span>
-                  </div>
-                  <p className="text-lg font-semibold text-gray-900 mb-1">Credits Added!</p>
-                  <p className="text-sm text-gray-600">Start chatting with amazing profiles now</p>
-                </div>
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowWelcomeModal(false)} className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all">Start Exploring</motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
 
-export default SignupPage;
+export default SignupWizard;
