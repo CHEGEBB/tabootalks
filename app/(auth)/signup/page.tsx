@@ -420,9 +420,9 @@ const SignupWizard = () => {
 
           {/* LEFT SIDE: FORM - Made smaller */}
           <div className="w-full  md:w-2/5 lg:w-5/12 ">
-            <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden backdrop-blur-sm bg-white/95 border border-gray-200">
-              <div className="relative z-10">
-                {/* Logo - Mobile & Desktop */}
+            <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden backdrop-blur-sm bg-white/95 border border-gray-200 ">
+            <div className="relative z-10  h-[480px] sm:h-[100px] md:h-full">
+            {/* Logo - Mobile & Desktop */}
                 <div className="flex items-center justify-center p-6 pb-4">
                   <Image
                     src="/assets/logo2.png"

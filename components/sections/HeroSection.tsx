@@ -107,6 +107,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
+                onClick={onGetStarted}
                 className="inline-flex items-center justify-center gap-2 bg-[#ff2e2e] border-2 border-gray-200 text-white px-8 py-4 rounded-full font-bold text-lg shadow-md hover:shadow-lg transition-all"
               >
                 Explore Profiles
