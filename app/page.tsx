@@ -18,7 +18,7 @@ export default function LandingPage() {
   const [showPreferenceModal, setShowPreferenceModal] = useState(false);
   
   const handleGetStarted = () => {
-    setShowPreferenceModal(true);
+    window.location.href = '/signup';
   };
 
   const handlePreferenceSubmit = (data: { gender: string; lookingFor: string; name: string; birthday: string }) => {
