@@ -5,6 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Mail, Lock, Eye, EyeOff, User, Sparkles, Camera, Heart, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface FormData {
   gender: string;
@@ -35,6 +36,9 @@ const SignupWizard = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [windowWidth, setWindowWidth] = useState<number>(0);
   const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [showSuccess, setShowSuccess] = useState<boolean>(false);
+  const router = useRouter();
+  
   const [formData, setFormData] = useState<FormData>({
     gender: '',
     goals: [],
@@ -145,6 +149,9 @@ const SignupWizard = () => {
   const handleNext = () => {
     if (step < totalSteps - 1) {
       setStep(step + 1);
+    } else {
+      // Final step - show success message
+      setShowSuccess(true);
     }
   };
 
@@ -175,6 +182,11 @@ const SignupWizard = () => {
     }
   };
 
+  const handleContinueToHome = () => {
+    // Navigate to home page
+    router.push('/home');
+  };
+
   // Animation variants for steps
   const stepVariants: Variants = {
     hidden: { opacity: 0, scale: 0.92, y: 30 },
@@ -198,6 +210,20 @@ const SignupWizard = () => {
     }
   };
 
+  // Success message variants
+  const successVariants: Variants = {
+    hidden: { opacity: 0, scale: 0.9 },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      transition: {
+        type: "spring",
+        damping: 20,
+        stiffness: 100
+      }
+    }
+  };
+
   // Safe random values for particles (FEWER PARTICLES)
   const particlePositions = useMemo<ParticlePosition[]>(() => 
     Array.from({ length: 5 }, () => ({
@@ -209,6 +235,99 @@ const SignupWizard = () => {
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+      {/* SUCCESS MODAL OVERLAY */}
+      <AnimatePresence>
+        {showSuccess && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+            >
+              {/* Success Modal */}
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={successVariants}
+                className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
+              >
+                {/* Modal Header */}
+                <div className="bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] p-6 text-center">
+                  <h2 className="text-2xl font-bold text-white">Taboo Talks</h2>
+                </div>
+
+                {/* Modal Content */}
+                <div className="p-6">
+                  {/* Success Icon */}
+                  <div className="flex justify-center mb-4">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                      <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-center text-gray-900 mb-4">Well done!</h3>
+                  
+                  <p className="text-gray-600 text-center mb-6">
+                    Before you continue, please briefly read how our platform works:
+                  </p>
+
+                  {/* Platform Info */}
+                  <div className="space-y-4 mb-6">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#ff2e2e] flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">1</span>
+                      </div>
+                      <p className="text-gray-700 text-sm">
+                        Registration and browsing are free. However, for certain functions like chats or messages, you need credits.
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#5e17eb] flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">2</span>
+                      </div>
+                      <p className="text-gray-700 text-sm">
+                        We provide a communication platform but cannot guarantee success for your conversations.
+                      </p>
+                    </div>
+
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#ff2e2e] flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">3</span>
+                      </div>
+                      <p className="text-gray-700 text-sm">
+                        You will be connected with top users who use TabooTalks for free as long as they want.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-gray-200 my-4"></div>
+
+                  {/* Continue Button */}
+                  <motion.button
+                    onClick={handleContinueToHome}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-3 rounded-full shadow-lg hover:shadow-xl transition-all"
+                  >
+                    Continue
+                  </motion.button>
+
+                  <p className="text-xs text-gray-500 text-center mt-4">
+                    By continuing, you agree to our Terms and Privacy Policy
+                  </p>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Background - NO CHANGES */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
@@ -229,7 +348,6 @@ const SignupWizard = () => {
                       alt="" 
                       width={320}
                       height={240}
-
                       className="w-full h-full object-cover rounded-lg opacity-80"
                     />
                   </div>
@@ -419,15 +537,15 @@ const SignupWizard = () => {
           </div>
 
           {/* LEFT SIDE: FORM - Made smaller */}
-          <div className="w-full  md:w-2/5 lg:w-5/12 ">
-            <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden backdrop-blur-sm bg-white/95 border border-gray-200 ">
-            <div className="relative z-10  h-[480px] sm:h-[100px] md:h-full">
-            {/* Logo - Mobile & Desktop */}
+          <div className="w-full md:w-2/5 lg:w-5/12">
+            <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden backdrop-blur-sm border border-gray-200">
+              <div className="relative z-10 h-[480px] sm:h-[100px] md:h-full">
+                {/* Logo - Mobile & Desktop */}
                 <div className="flex items-center justify-center p-6 pb-4">
                   <Image
                     src="/assets/logo2.png"
                     alt="Taboo Talks Logo"
-                    width={140} 
+                    width={140}
                     height={40}
                     className="object-contain"
                     priority
@@ -460,61 +578,61 @@ const SignupWizard = () => {
                       variants={stepVariants}
                     >
                       {/* Step 0: Welcome */}
-                  {step === 0 && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }} 
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                      className="text-center"
-                    >
-                      <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">Welcome to Taboo Talks!</h3>
-                      <p className="text-gray-600 mb-6 px-2 text-sm md:text-base">Your story begins here. Complete a quick quiz to discover connections that truly resonate with you.</p>
-                      
-                      {/* Active Users Display */}
-                      <div className="bg-gray-50 rounded-2xl p-4 md:p-5 mb-6 shadow-sm border border-gray-100">
-                        <div className="flex items-center justify-center mb-3">
-                          <div className="flex -space-x-3 md:-space-x-4">
-                            {[0, 1, 2, 3, 4].map((idx) => (
-                              <motion.div
-                                key={idx}
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: 0.3 + (idx * 0.1), type: "spring", damping: 15 }}
-                                className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 md:border-3 border-white overflow-hidden shadow-md"
-                                style={{ zIndex: 5 - idx }}
-                              >
-                                <Image
-                                  src={allImages[idx]} 
-                                  alt="" 
-                                  width={320}
-                                  height={240}
-                                  className="w-full h-full object-cover"
-                                />
-                              </motion.div>
-                            ))}
-                          </div>
-                        </div>
-                        <motion.div
-                          initial={{ opacity: 0, y: 5 }}
+                      {step === 0 && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }} 
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.8 }}
+                          transition={{ delay: 0.1 }}
+                          className="text-center"
                         >
-                          <p className="text-base md:text-lg font-bold text-gray-900">50,000+ Active Users</p>
-                          <p className="text-xs md:text-sm text-gray-600">Join the community today</p>
+                          <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">Welcome to Taboo Talks!</h3>
+                          <p className="text-gray-600 mb-6 px-2 text-sm md:text-base">Your story begins here. Complete a quick quiz to discover connections that truly resonate with you.</p>
+                          
+                          {/* Active Users Display */}
+                          <div className="bg-gray-50 rounded-2xl p-4 md:p-5 mb-6 shadow-sm border border-gray-100">
+                            <div className="flex items-center justify-center mb-3">
+                              <div className="flex -space-x-3 md:-space-x-4">
+                                {[0, 1, 2, 3, 4].map((idx) => (
+                                  <motion.div
+                                    key={idx}
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.3 + (idx * 0.1), type: "spring", damping: 15 }}
+                                    className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 md:border-3 border-white overflow-hidden shadow-md"
+                                    style={{ zIndex: 5 - idx }}
+                                  >
+                                    <Image
+                                      src={allImages[idx]} 
+                                      alt="" 
+                                      width={320}
+                                      height={240}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </motion.div>
+                                ))}
+                              </div>
+                            </div>
+                            <motion.div
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.8 }}
+                            >
+                              <p className="text-base md:text-lg font-bold text-gray-900">50,000+ Active Users</p>
+                              <p className="text-xs md:text-sm text-gray-600">Join the community today</p>
+                            </motion.div>
+                          </div>
+                          
+                          <motion.button
+                            onClick={handleNext}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 md:py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2 text-sm md:text-base"
+                          >
+                            <span>Let&apos;s go!</span>
+                            <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                          </motion.button>
                         </motion.div>
-                      </div>
-                      
-                      <motion.button
-                        onClick={handleNext}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full bg-[#ff2e2e] text-white font-bold py-3 md:py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2 text-sm md:text-base"
-                      >
-                        <span>Let&apos;s go!</span>
-                        <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
-                      </motion.button>
-                    </motion.div>
-                  )}
+                      )}
 
                       {/* Step 1: Gender Preference */}
                       {step === 1 && (
@@ -779,61 +897,7 @@ const SignupWizard = () => {
                             whileHover={{ scale: formData.password && formData.password.length >= 6 ? 1.02 : 1 }}
                             whileTap={{ scale: formData.password && formData.password.length >= 6 ? 0.98 : 1 }}
                           >
-                            Continue
-                          </motion.button>
-                        </motion.div>
-                      )}
-
-                      {/* Step 8: Final */}
-                      {step === 8 && (
-                        <motion.div 
-                          initial={{ opacity: 0 }} 
-                          animate={{ opacity: 1 }}
-                          className="py-2 text-center"
-                        >
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: "spring", damping: 12 }}
-                            className="w-12 h-12 bg-[#ff2e2e] rounded-full flex items-center justify-center mx-auto mb-3"
-                          >
-                            <Sparkles className="w-6 h-6 text-white" />
-                          </motion.div>
-                          
-                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">You&apos;re all set!</h3>
-                          <p className="text-gray-600 mb-4 text-sm">How our platform works:</p>
-                          
-                          <div className="bg-gray-50 rounded-xl p-4 mb-4 text-left space-y-3 shadow-sm border border-gray-100">
-                            <div className="flex items-start gap-2">
-                              <div className="w-6 h-6 bg-[#ff2e2e] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-white text-xs font-bold">1</span>
-                              </div>
-                              <p className="text-xs text-gray-700">Free registration. Premium features require credits.</p>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <div className="w-6 h-6 bg-[#5e17eb] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-white text-xs font-bold">2</span>
-                              </div>
-                              <p className="text-xs text-gray-700">Safe platform. We can&apos;t guarantee conversation outcomes.</p>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <div className="w-6 h-6 bg-[#ff2e2e] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-white text-xs font-bold">3</span>
-                              </div>
-                              <p className="text-xs text-gray-700">Privacy first. Report inappropriate behavior.</p>
-                            </div>
-                          </div>
-
-                          <motion.button
-                            onClick={() => {
-                              alert('Account created successfully! Welcome to TabooTalks!');
-                            }}
-                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <Heart className="w-4 h-4" />
-                            <span>Start Meeting People</span>
+                            Complete Signup
                           </motion.button>
                         </motion.div>
                       )}
@@ -844,9 +908,9 @@ const SignupWizard = () => {
             </div>
           </div>
 
-          {/* RIGHT SIDE: SVG ILLUSTRATION - Desktop only, larger */}
-          <div className="hidden md:flex md:w-3/5 lg:w-7/12 items-center justify-center p-6 lg:p-8 bg-white/80 rounded-3xl border-red-400 border-solid border-2 ml-4">
-            <div className="relative w-full h-full max-w-xl">
+          {/* RIGHT SIDE: SVG ILLUSTRATION - Desktop only, REDUCED SIZE */}
+          <div className="hidden md:flex md:w-3/5 lg:w-7/12 items-center justify-center p-4 lg:p-6 bg-white/80 rounded-3xl border-red-400 border-solid border-2 ml-3">
+            <div className="relative w-full h-full max-w-lg">
               <motion.div
                 key={step}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -854,17 +918,17 @@ const SignupWizard = () => {
                 transition={{ duration: 0.5 }}
                 className="relative w-full h-full flex flex-col items-center justify-center"
               >
-                {/* Large SVG Illustration */}
-                <div className="relative w-64 h-64 lg:w-80 lg:h-80 mb-6">
+                {/* Large SVG Illustration - REDUCED SIZE */}
+                <div className="relative w-56 h-56 lg:w-64 lg:h-64 mb-4">
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative w-56 h-56 lg:w-72 lg:h-72">
+                    <div className="relative w-48 h-48 lg:w-56 lg:h-56">
                       <Image
                         src={currentIllustration.image}
                         alt={currentIllustration.title}
                         fill
-                        className="object-contain drop-shadow-2xl"
+                        className="object-contain drop-shadow-lg"
                         priority
-                        sizes="(max-width: 1024px) 224px, 288px"
+                        sizes="(max-width: 1024px) 192px, 224px"
                       />
                     </div>
                   </div>
@@ -873,7 +937,7 @@ const SignupWizard = () => {
                   <motion.div
                     animate={{ 
                       rotate: [0, 360],
-                      scale: [1, 1.1, 1]
+                      scale: [1, 1.05, 1]
                     }}
                     transition={{ 
                       rotate: { duration: 20, repeat: Infinity, ease: "linear" },
@@ -882,18 +946,18 @@ const SignupWizard = () => {
                     className="absolute inset-0 rounded-full"
                     style={{ 
                       backgroundColor: `${currentIllustration.color}08`,
-                      border: `3px dashed ${currentIllustration.color}40`
+                      border: `2px dashed ${currentIllustration.color}40`
                     }}
                   />
                 </div>
 
                 {/* Text Content */}
-                <div className="text-center max-w-md">
+                <div className="text-center max-w-sm">
                   <motion.h2
                     key={`title-${step}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-3xl lg:text-4xl font-bold mb-3"
+                    className="text-2xl lg:text-3xl font-bold mb-2"
                     style={{ color: currentIllustration.color }}
                   >
                     {currentIllustration.title}
@@ -903,46 +967,46 @@ const SignupWizard = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="text-gray-600 text-lg lg:text-xl mb-6"
+                    className="text-gray-600 text-base lg:text-lg mb-4"
                   >
                     {currentIllustration.description}
                   </motion.p>
 
                   {/* Progress indicator */}
-                  <div className="flex justify-center gap-2 mb-8">
+                  <div className="flex justify-center gap-1.5 mb-6">
                     {Array.from({ length: totalSteps }).map((_, idx) => (
                       <motion.div
                         key={idx}
                         animate={{ 
-                          scale: idx === step ? 1.3 : 1,
+                          scale: idx === step ? 1.2 : 1,
                           backgroundColor: idx === step ? currentIllustration.color : '#e5e7eb'
                         }}
-                        className="w-2.5 h-2.5 rounded-full transition-all"
+                        className="w-2 h-2 rounded-full transition-all"
                       />
                     ))}
                   </div>
 
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 text-center">
+                  {/* Stats - Smaller */}
+                  <div className="grid grid-cols-3 gap-3 text-center">
                     <div>
-                      <div className="text-2xl font-bold" style={{ color: currentIllustration.color }}>50K+</div>
-                      <div className="text-sm text-gray-500">Active Users</div>
+                      <div className="text-xl font-bold" style={{ color: currentIllustration.color }}>50K+</div>
+                      <div className="text-xs text-gray-500">Active Users</div>
                     </div>
                     <div>
-                      <div className="text-2xl font-bold" style={{ color: currentIllustration.color }}>99%</div>
-                      <div className="text-sm text-gray-500">Satisfied</div>
+                      <div className="text-xl font-bold" style={{ color: currentIllustration.color }}>99%</div>
+                      <div className="text-xs text-gray-500">Satisfied</div>
                     </div>
                     <div>
-                      <div className="text-2xl font-bold" style={{ color: currentIllustration.color }}>24/7</div>
-                      <div className="text-sm text-gray-500">Support</div>
+                      <div className="text-xl font-bold" style={{ color: currentIllustration.color }}>24/7</div>
+                      <div className="text-xs text-gray-500">Support</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Step indicator */}
-                <div className="absolute top-4 right-4">
-                  <div className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm">
-                    <span className="text-sm font-medium text-gray-700">Step {step + 1}/{totalSteps}</span>
+                <div className="absolute top-3 right-3">
+                  <div className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm shadow-sm">
+                    <span className="text-xs font-medium text-gray-700">Step {step + 1}/{totalSteps}</span>
                   </div>
                 </div>
               </motion.div>
