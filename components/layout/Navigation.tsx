@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Languages } from 'lucide-react';
 import Button from '../ui/Button';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -51,6 +51,7 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
+
           {/* Logo */}
           <div className="flex items-center">
             <motion.div 
@@ -111,6 +112,18 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
             >
               Get Started
             </Button>
+
+            {/* LANGUAGE SWITCHER (DESKTOP) */}
+            <div className="flex items-center space-x-3 ml-4">
+              <Languages className="w-5 h-5 text-gray-600" />
+              <Link href="/" locale="en" className="text-gray-700 hover:text-[#ff2e2e] font-medium">
+                EN
+              </Link>
+              <span className="text-gray-400">|</span>
+              <Link href="/" locale="de" className="text-gray-700 hover:text-[#ff2e2e] font-medium">
+                DE
+              </Link>
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
@@ -176,6 +189,30 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
               >
                 Get Started
               </Button>
+
+              {/* LANGUAGE SWITCHER (MOBILE) */}
+              <div className="pt-4 border-t border-gray-200">
+                <p className="text-sm text-gray-500 mb-2">Language</p>
+                <div className="flex items-center space-x-4">
+                  <Link 
+                    href="/" 
+                    locale="en"
+                    className="text-gray-700 font-medium hover:text-[#ff2e2e]"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    English
+                  </Link>
+                  <Link 
+                    href="/" 
+                    locale="de"
+                    className="text-gray-700 font-medium hover:text-[#ff2e2e]"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Deutsch
+                  </Link>
+                </div>
+              </div>
+
             </div>
           </motion.div>
         )}
