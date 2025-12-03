@@ -1,15 +1,41 @@
+/* eslint-disable react-hooks/purity */
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Mail, Lock, Eye, EyeOff, User, Gift, Sparkles, Camera, Upload, Heart } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Mail, Lock, Eye, EyeOff, User, Sparkles, Camera, Heart, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Image from 'next/image';
 
+interface FormData {
+  gender: string;
+  goals: string[];
+  bio: string;
+  profilePic: string | null;
+  name: string;
+  email: string;
+  password: string;
+}
+
+interface Illustration {
+  id: number;
+  image: string;
+  title: string;
+  description: string;
+  color: string;
+}
+
+interface ParticlePosition {
+  x: number;
+  y: number;
+  scale: number;
+}
+
 const SignupWizard = () => {
-  const [step, setStep] = useState(0);
-  const [showPassword, setShowPassword] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(0);
-  const [formData, setFormData] = useState({
+  const [step, setStep] = useState<number>(0);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [windowWidth, setWindowWidth] = useState<number>(0);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [formData, setFormData] = useState<FormData>({
     gender: '',
     goals: [],
     bio: '',
@@ -21,10 +47,11 @@ const SignupWizard = () => {
 
   // Handle window resize for responsive adjustments
   useEffect(() => {
+    setIsMounted(true);
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
     };
-    handleResize(); // Set initial value
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -52,6 +79,67 @@ const SignupWizard = () => {
     'https://images.unsplash.com/photo-1507101105822-7472b28e22ac?w=500&h=500&fit=crop',
   ];
 
+  // SVG illustration data
+  const illustrationData = useMemo<Illustration[]>(() => [
+    {
+      id: 1,
+      image: '/assets/illustrations/match.svg',
+      title: "Find Your Match",
+      description: "Discover meaningful connections",
+      color: '#f87171'
+    },
+    {
+      id: 2,
+      image: '/assets/illustrations/connect.svg',
+      title: "Instant Connect",
+      description: "Meet like-minded people",
+      color: '#f87171'
+    },
+    {
+      id: 3,
+      image: '/assets/illustrations/chat.svg',
+      title: "Free Chat",
+      description: "Start conversations easily",
+      color: '#f87171'
+    },
+    {
+      id: 4,
+      image: '/assets/illustrations/heart.svg',
+      title: "Build Bonds",
+      description: "Create lasting relationships",
+      color: '#f87171'
+    },
+    {
+      id: 5,
+      image: '/assets/illustrations/self.svg',
+      title: "Be Yourself",
+      description: "Show your true personality",
+      color: '#f87171'
+    },
+    {
+      id: 6,
+      image: '/assets/illustrations/safe.svg',
+      title: "Secure & Safe",
+      description: "Your privacy is protected",
+      color: '#f87171'
+    },
+    {
+      id: 7,
+      image: '/assets/illustrations/protect.svg',
+      title: "Always Protected",
+      description: "Secure your account",
+      color: '#f87171'
+    },
+    {
+      id: 8,
+      image: '/assets/illustrations/start.svg',
+      title: "Ready to Start",
+      description: "Begin your journey now",
+      color: '#f87171'
+    }
+  ], []);
+
+  const currentIllustration = illustrationData[step] || illustrationData[0];
   const totalSteps = 8;
 
   const handleNext = () => {
@@ -66,7 +154,7 @@ const SignupWizard = () => {
     }
   };
 
-  const toggleGoal = (goal) => {
+  const toggleGoal = (goal: string) => {
     if (formData.goals.includes(goal)) {
       setFormData({ ...formData, goals: formData.goals.filter(g => g !== goal) });
     } else {
@@ -76,18 +164,19 @@ const SignupWizard = () => {
     }
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({ ...formData, profilePic: reader.result });
+        setFormData({ ...formData, profilePic: reader.result as string });
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const modalVariants = {
+  // Animation variants for steps
+  const stepVariants: Variants = {
     hidden: { opacity: 0, scale: 0.92, y: 30 },
     visible: { 
       opacity: 1, 
@@ -109,14 +198,19 @@ const SignupWizard = () => {
     }
   };
 
-  // Different row configurations based on screen size
-  const getRowCount = () => windowWidth < 768 ? 3 : 4;
+  // Safe random values for particles (FEWER PARTICLES)
+  const particlePositions = useMemo<ParticlePosition[]>(() => 
+    Array.from({ length: 5 }, () => ({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      scale: Math.random() * 0.5 + 0.5
+    }))
+  , []);
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden bg-gradient-to-br from-gray-900 to-black">
-      {/* Animated Masonry Background */}
+      {/* Background - NO CHANGES */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Row 1 - Moving Left */}
         <motion.div
           animate={{ x: ['0%', '-50%'] }}
           transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
@@ -130,9 +224,12 @@ const SignupWizard = () => {
                   className={`flex-shrink-0 ${windowWidth < 768 ? 'w-[220px] h-[180px]' : 'w-[320px] h-[240px]'}`}
                 >
                   <div className="w-full h-full p-1">
-                    <img 
+                    <Image 
                       src={allImages[(setIdx * 4 + imgIdx) % allImages.length]} 
                       alt="" 
+                      width={320}
+                      height={240}
+
                       className="w-full h-full object-cover rounded-lg opacity-80"
                     />
                   </div>
@@ -142,7 +239,6 @@ const SignupWizard = () => {
           ))}
         </motion.div>
 
-        {/* Row 2 - Moving Right */}
         <motion.div
           animate={{ x: ['-50%', '0%'] }}
           transition={{ duration: 55, repeat: Infinity, ease: 'linear' }}
@@ -156,9 +252,11 @@ const SignupWizard = () => {
                   className={`flex-shrink-0 ${windowWidth < 768 ? 'w-[240px] h-[180px]' : 'w-[340px] h-[240px]'}`}
                 >
                   <div className="w-full h-full p-1">
-                    <img 
+                    <Image
                       src={allImages[(setIdx * 4 + imgIdx + 5) % allImages.length]} 
                       alt="" 
+                      width={320}
+                      height={240}
                       className="w-full h-full object-cover rounded-lg opacity-80"
                     />
                   </div>
@@ -168,7 +266,6 @@ const SignupWizard = () => {
           ))}
         </motion.div>
 
-        {/* Row 3 - Moving Left */}
         <motion.div
           animate={{ x: ['0%', '-50%'] }}
           transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}
@@ -182,9 +279,11 @@ const SignupWizard = () => {
                   className={`flex-shrink-0 ${windowWidth < 768 ? 'w-[200px] h-[180px]' : 'w-[300px] h-[240px]'}`}
                 >
                   <div className="w-full h-full p-1">
-                    <img 
+                    <Image
                       src={allImages[(setIdx * 4 + imgIdx + 10) % allImages.length]} 
                       alt="" 
+                      width={320}
+                      height={240}
                       className="w-full h-full object-cover rounded-lg opacity-80"
                     />
                   </div>
@@ -194,7 +293,6 @@ const SignupWizard = () => {
           ))}
         </motion.div>
 
-        {/* Row 4 - Moving Right */}
         <motion.div
           animate={{ x: ['-50%', '0%'] }}
           transition={{ duration: 58, repeat: Infinity, ease: 'linear' }}
@@ -208,9 +306,11 @@ const SignupWizard = () => {
                   className={`flex-shrink-0 ${windowWidth < 768 ? 'w-[230px] h-[180px]' : 'w-[330px] h-[240px]'}`}
                 >
                   <div className="w-full h-full p-1">
-                    <img 
+                    <Image
                       src={allImages[(setIdx * 4 + imgIdx + 15) % allImages.length]} 
                       alt="" 
+                      width={320}
+                      height={240}
                       className="w-full h-full object-cover rounded-lg opacity-80"
                     />
                   </div>
@@ -224,40 +324,42 @@ const SignupWizard = () => {
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900/85 to-black/90 z-10" />
 
-      {/* Animated Particles */}
-      <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 rounded-full bg-red-500 opacity-30"
-            initial={{ 
-              x: Math.random() * 100 + "%", 
-              y: Math.random() * 100 + "%",
-              scale: Math.random() * 0.5 + 0.5
-            }}
-            animate={{ 
-              x: [
-                Math.random() * 100 + "%", 
-                Math.random() * 100 + "%",
-                Math.random() * 100 + "%"
-              ],
-              y: [
-                Math.random() * 100 + "%", 
-                Math.random() * 100 + "%",
-                Math.random() * 100 + "%"
-              ],
-              opacity: [0.2, 0.5, 0.2]
-            }}
-            transition={{ 
-              duration: 20 + Math.random() * 10,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-          />
-        ))}
-      </div>
+      {/* Animated Particles - FEWER PARTICLES */}
+      {isMounted && (
+        <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+          {particlePositions.map((pos, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 rounded-full bg-red-500 opacity-30"
+              initial={{ 
+                x: `${pos.x}%`, 
+                y: `${pos.y}%`,
+                scale: pos.scale
+              }}
+              animate={{ 
+                x: [
+                  `${pos.x}%`, 
+                  `${(pos.x + 30) % 100}%`,
+                  `${pos.x}%`
+                ],
+                y: [
+                  `${pos.y}%`, 
+                  `${(pos.y + 20) % 100}%`,
+                  `${pos.y}%`
+                ],
+                opacity: [0.2, 0.5, 0.2]
+              }}
+              transition={{ 
+                duration: 20 + Math.random() * 10,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            />
+          ))}
+        </div>
+      )}
 
-      {/* Logo - Top Left - Only visible on desktop */}
+      {/* Logo - Top Left - Desktop only */}
       <div className="absolute top-6 left-6 z-30 hidden md:flex items-center gap-2">
         <Image
           src="/assets/logo.png"
@@ -265,499 +367,586 @@ const SignupWizard = () => {
           width={240}
           height={60}
           className="object-contain"
+          priority
         />
       </div>
 
-      {/* Wizard Modal */}
-      <div className="relative z-20 min-h-screen flex items-center justify-center p-4">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden backdrop-blur-sm bg-white/95"
-          >
-            {/* Modal Header with Progress */}
-            <div className="p-6 pb-4">
-              {/* Logo - Centered - Visible on all devices */}
-              <div className="flex items-center justify-center mb-4">
-                <Image
-                  src="/assets/logo2.png"
-                  alt="Taboo Talks Logo"
-                  width={200}
-                  height={60}
-                  className="object-contain"
-                />
-              </div>
-              
-              {/* Progress Bar */}
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+      {/* MAIN CONTAINER */}
+      <div className="relative z-20 min-h-screen flex items-center justify-center p-3 md:p-4">
+        <div className="w-full max-w-4xl lg:max-w-5xl flex flex-col md:flex-row items-stretch">
+          
+          {/* MOBILE: SVG Display (Top) */}
+          <div className="md:hidden w-full mb-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
+              <div className="relative w-32 h-32 mx-auto mb-3">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative w-28 h-28">
+                    <Image
+                      src={currentIllustration.image}
+                      alt={currentIllustration.title}
+                      fill
+                      className="object-contain"
+                      sizes="112px"
+                      priority
+                    />
+                  </div>
+                </div>
                 <motion.div
-                  className="h-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb]"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${((step + 1) / totalSteps) * 100}%` }}
-                  transition={{ duration: 0.3 }}
+                  animate={{ 
+                    rotate: [0, 360],
+                    scale: [1, 1.05, 1]
+                  }}
+                  transition={{ 
+                    rotate: { duration: 25, repeat: Infinity, ease: "linear" },
+                    scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                  }}
+                  className="absolute inset-0 rounded-full"
+                  style={{ 
+                    backgroundColor: `${currentIllustration.color}10`,
+                    border: `2px dashed ${currentIllustration.color}30`
+                  }}
                 />
               </div>
-              <p className="text-sm text-gray-500 text-center mt-2 font-medium">{step + 1}/{totalSteps} Questions</p>
+              <div className="text-center">
+                <h3 className="text-lg font-bold mb-1" style={{ color: currentIllustration.color }}>
+                  {currentIllustration.title}
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  {currentIllustration.description}
+                </p>
+              </div>
             </div>
+          </div>
 
-            {/* Step Content */}
-            <div className="px-6 pb-6">
-              {/* Step 0: Welcome */}
-              {step === 0 && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }} 
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-center py-8"
-                >
-                  <h3 className="text-3xl font-bold text-gray-900 mb-3">Welcome to Taboo Talks!</h3>
-                  <p className="text-gray-600 mb-8 px-2">Your story begins here. Complete a quick quiz to discover connections that truly resonate with you.</p>
-                  
-                  {/* Active Users Display */}
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 mb-8 shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-center mb-3">
-                      <div className="flex -space-x-4">
-                        {[0, 1, 2, 3, 4].map((idx) => (
-                          <motion.div
-                            key={idx}
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.3 + (idx * 0.1), type: "spring", damping: 15 }}
-                            className="w-14 h-14 rounded-full border-4 border-white overflow-hidden shadow-md"
-                            style={{ zIndex: 5 - idx }}
-                          >
-                            <img 
-                              src={allImages[idx]} 
-                              alt="" 
-                              className="w-full h-full object-cover"
-                            />
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.8 }}
-                    >
-                      <p className="text-lg font-bold text-gray-900">50,000+ Active Users</p>
-                      <p className="text-sm text-gray-600">Join the community today</p>
-                    </motion.div>
-                  </div>
-                  
-                  <motion.button
-                    onClick={handleNext}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full bg-[#ff2e2e] text-white font-bold py-4 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2"
-                  >
-                    <span>Let's go!</span>
-                    <motion.svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      width="20" 
-                      height="20" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round"
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <path d="M5 12h14"></path>
-                      <path d="m12 5 7 7-7 7"></path>
-                    </motion.svg>
-                  </motion.button>
-                </motion.div>
-              )}
-
-              {/* Step 1: Gender Preference */}
-              {step === 1 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Who would you like to date?</h3>
-                  <div className="space-y-3">
-                    <motion.button
-                      onClick={() => setFormData({ ...formData, gender: 'men' })}
-                      className={`w-full py-4 rounded-full font-semibold transition-all flex items-center justify-center ${
-                        formData.gender === 'men'
-                          ? 'bg-[#5e17eb] text-white shadow-lg'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                      whileHover={{ scale: formData.gender !== 'men' ? 1.02 : 1 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Men
-                    </motion.button>
-                    <motion.button
-                      onClick={() => setFormData({ ...formData, gender: 'women' })}
-                      className={`w-full py-4 rounded-full font-semibold transition-all flex items-center justify-center ${
-                        formData.gender === 'women'
-                          ? 'bg-[#5e17eb] text-white shadow-lg'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                      whileHover={{ scale: formData.gender !== 'women' ? 1.02 : 1 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Women
-                    </motion.button>
-                    <motion.button
-                      onClick={() => setFormData({ ...formData, gender: 'both' })}
-                      className={`w-full py-4 rounded-full font-semibold transition-all flex items-center justify-center ${
-                        formData.gender === 'both'
-                          ? 'bg-[#5e17eb] text-white shadow-lg'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                      whileHover={{ scale: formData.gender !== 'both' ? 1.02 : 1 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Both
-                    </motion.button>
-                  </div>
-                  <motion.button
-                    onClick={handleNext}
-                    disabled={!formData.gender}
-                    className="w-full mt-6 bg-[#ff2e2e] text-white font-bold py-4 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    whileHover={{ scale: formData.gender ? 1.02 : 1 }}
-                    whileTap={{ scale: formData.gender ? 0.98 : 1 }}
-                  >
-                    Continue
-                  </motion.button>
-                </motion.div>
-              )}
-
-              {/* Step 2: Goals */}
-              {step === 2 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 text-center">What is your goal here?</h3>
-                  <p className="text-sm text-gray-500 text-center mb-6">Up to 3 answers possible</p>
-                  <div className="flex flex-wrap gap-2 justify-center mb-6">
-                    {['Chat', 'Find friends', 'Have fun', "I'm bored", 'Get attention', 'Meet people'].map((goal) => (
-                      <motion.button
-                        key={goal}
-                        onClick={() => toggleGoal(goal)}
-                        className={`px-4 py-2 rounded-full font-medium transition-all ${
-                          formData.goals.includes(goal)
-                            ? 'bg-[#5e17eb] text-white shadow-lg'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        {goal}
-                      </motion.button>
-                    ))}
-                  </div>
-                  <div className="flex gap-3">
-                    <motion.button
-                      onClick={handleSkip}
-                      className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-4 rounded-full hover:bg-gray-50 transition-all"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Skip
-                    </motion.button>
-                    <motion.button
-                      onClick={handleNext}
-                      disabled={formData.goals.length === 0}
-                      className="flex-1 bg-[#ff2e2e] text-white font-bold py-4 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      whileHover={{ scale: formData.goals.length > 0 ? 1.02 : 1 }}
-                      whileTap={{ scale: formData.goals.length > 0 ? 0.98 : 1 }}
-                    >
-                      Continue
-                    </motion.button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 3: Bio */}
-              {step === 3 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 text-center">Tell others a bit about yourself</h3>
-                  <p className="text-sm text-gray-400 text-center mb-6">Ex: I love my job, but for me there is nothing better than watching football with friends.</p>
-                  <div className="relative">
-                    <textarea
-                      value={formData.bio}
-                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                      placeholder="Write here..."
-                      className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 resize-none text-gray-900 shadow-sm"
-                    />
-                    <motion.div 
-                      className="absolute right-3 bottom-3 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: formData.bio.length > 0 ? 1 : 0 }}
-                    >
-                      {formData.bio.length}/500
-                    </motion.div>
-                  </div>
-                  <div className="flex gap-3 mt-6">
-                    <motion.button
-                      onClick={handleSkip}
-                      className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-4 rounded-full hover:bg-gray-50 transition-all"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Skip
-                    </motion.button>
-                    <motion.button
-                      onClick={handleNext}
-                      className="flex-1 bg-[#ff2e2e] text-white font-bold py-4 rounded-full shadow-lg transition-all"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Continue
-                    </motion.button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 4: Profile Picture */}
-              {step === 4 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 text-center">Add a profile picture</h3>
-                  <p className="text-sm text-gray-500 text-center mb-6">Profiles with pictures get significantly more attention!</p>
-                  
-                  <div className="flex justify-center mb-6">
-                    {formData.profilePic ? (
-                      <motion.div
-                        initial={{ scale: 0.8 }}
-                        animate={{ scale: 1 }}
-                        className="w-40 h-40 rounded-full overflow-hidden border-4 border-[#5e17eb] shadow-xl relative group"
-                      >
-                        <img src={formData.profilePic} alt="Profile" className="w-full h-full object-cover" />
-                        <label
-                          htmlFor="profile-pic"
-                          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
-                        >
-                          <Camera className="w-8 h-8 text-white" />
-                        </label>
-                      </motion.div>
-                    ) : (
-                      <motion.div 
-                        className="w-40 h-40 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-lg cursor-pointer relative group"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <label htmlFor="profile-pic" className="absolute inset-0 cursor-pointer flex items-center justify-center">
-                          <div className="text-center">
-                            <Camera className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                            <p className="text-sm text-gray-500 font-medium">Upload Photo</p>
-                          </div>
-                        </label>
-                      </motion.div>
-                    )}
-                  </div>
-
-                  <input
-                    type="file"
-                    id="profile-pic"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
+          {/* LEFT SIDE: FORM - Made smaller */}
+          <div className="w-full md:w-2/5 lg:w-5/12">
+            <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden backdrop-blur-sm bg-white/95 border border-gray-200">
+              <div className="relative z-10">
+                {/* Logo - Mobile & Desktop */}
+                <div className="flex items-center justify-center p-6 pb-4">
+                  <Image
+                    src="/assets/logo2.png"
+                    alt="Taboo Talks Logo"
+                    width={140} 
+                    height={40}
+                    className="object-contain"
+                    priority
                   />
-                  
-                  <div className="flex gap-3 mt-6">
-                    <motion.button
-                      onClick={handleSkip}
-                      className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-4 rounded-full hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <span>Skip</span>
-                    </motion.button>
-                    <motion.button
-                      onClick={handleNext}
-                      className="flex-1 bg-[#ff2e2e] text-white font-bold py-4 rounded-full shadow-lg transition-all flex items-center justify-center gap-2"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <span>Continue</span>
-                    </motion.button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 5: Name */}
-              {step === 5 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 text-center">What would you like to be called?</h3>
-                  <div className="relative mb-3">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g. Alex"
-                      className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-gray-900"
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="px-6 pb-2">
+                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb]"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${((step + 1) / totalSteps) * 100}%` }}
+                      transition={{ duration: 0.3 }}
                     />
                   </div>
-                  <p className="text-xs text-gray-400 text-center mb-6">Can be changed at any time. We keep your data safe at all times!</p>
-                  <motion.button
-                    onClick={handleNext}
-                    disabled={!formData.name}
-                    className="w-full bg-[#ff2e2e] text-white font-bold py-4 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    whileHover={{ scale: formData.name ? 1.02 : 1 }}
-                    whileTap={{ scale: formData.name ? 0.98 : 1 }}
-                  >
-                    Continue
-                  </motion.button>
-                </motion.div>
-              )}
+                  <p className="text-sm text-gray-500 text-center mt-2 font-medium">
+                    {step + 1}/{totalSteps} Questions
+                  </p>
+                </div>
 
-              {/* Step 6: Email */}
-              {step === 6 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 text-center">What is your email address?</h3>
-                  <div className="relative mb-3">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="e.g. alex@example.com"
-                      className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-gray-900"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400 text-center mb-6">We keep your information safe! Your email is only used for account creation and recovery.</p>
-                  <motion.button
-                    onClick={handleNext}
-                    disabled={!formData.email}
-                    className="w-full bg-[#ff2e2e] text-white font-bold py-4 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    whileHover={{ scale: formData.email ? 1.02 : 1 }}
-                    whileTap={{ scale: formData.email ? 0.98 : 1 }}
-                  >
-                    Continue
-                  </motion.button>
-                </motion.div>
-              )}
-
-              {/* Step 7: Password */}
-              {step === 7 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 text-center">Create your password</h3>
-                  <div className="relative mb-3">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder="Enter a strong password"
-                      className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-gray-900"
-                    />
-                    <motion.button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
+                {/* Step Content - Adjusted height */}
+                <div className="h-[58vh] md:h-[480px] overflow-y-auto px-6 pb-6">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={step}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      variants={stepVariants}
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </motion.button>
-                  </div>
-                  
-                  {/* Password strength indicator */}
-                  {formData.password && (
+                      {/* Step 0: Welcome */}
+                  {step === 0 && (
                     <motion.div 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="mb-3"
+                      initial={{ opacity: 0, y: 10 }} 
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-center"
                     >
-                      <div className="flex gap-1 mb-1">
-                        <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 3 ? 'bg-red-400' : 'bg-gray-200'}`}></div>
-                        <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 6 ? 'bg-orange-400' : 'bg-gray-200'}`}></div>
-                        <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 8 ? 'bg-yellow-400' : 'bg-gray-200'}`}></div>
-                        <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 10 ? 'bg-green-400' : 'bg-gray-200'}`}></div>
+                      <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">Welcome to Taboo Talks!</h3>
+                      <p className="text-gray-600 mb-6 px-2 text-sm md:text-base">Your story begins here. Complete a quick quiz to discover connections that truly resonate with you.</p>
+                      
+                      {/* Active Users Display */}
+                      <div className="bg-gray-50 rounded-2xl p-4 md:p-5 mb-6 shadow-sm border border-gray-100">
+                        <div className="flex items-center justify-center mb-3">
+                          <div className="flex -space-x-3 md:-space-x-4">
+                            {[0, 1, 2, 3, 4].map((idx) => (
+                              <motion.div
+                                key={idx}
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 0.3 + (idx * 0.1), type: "spring", damping: 15 }}
+                                className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 md:border-3 border-white overflow-hidden shadow-md"
+                                style={{ zIndex: 5 - idx }}
+                              >
+                                <img 
+                                  src={allImages[idx]} 
+                                  alt="" 
+                                  className="w-full h-full object-cover"
+                                />
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
+                        <motion.div
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.8 }}
+                        >
+                          <p className="text-base md:text-lg font-bold text-gray-900">50,000+ Active Users</p>
+                          <p className="text-xs md:text-sm text-gray-600">Join the community today</p>
+                        </motion.div>
                       </div>
-                      <p className="text-xs text-gray-500 text-right">
-                        {formData.password.length < 6 ? 'Weak' : 
-                         formData.password.length < 8 ? 'Fair' :
-                         formData.password.length < 10 ? 'Good' : 'Strong'}
-                      </p>
+                      
+                      <motion.button
+                        onClick={handleNext}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full bg-[#ff2e2e] text-white font-bold py-3 md:py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2 text-sm md:text-base"
+                      >
+                        <span>Let&apos;s go!</span>
+                        <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                      </motion.button>
                     </motion.div>
                   )}
-                  
-                  <p className="text-xs text-gray-400 text-center mb-6">You can reset your password with your email anytime</p>
-                  <motion.button
-                    onClick={handleNext}
-                    disabled={!formData.password || formData.password.length < 6}
-                    className="w-full bg-[#ff2e2e] text-white font-bold py-4 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    whileHover={{ scale: formData.password && formData.password.length >= 6 ? 1.02 : 1 }}
-                    whileTap={{ scale: formData.password && formData.password.length >= 6 ? 0.98 : 1 }}
-                  >
-                    Continue
-                  </motion.button>
-                </motion.div>
-              )}
 
-              {/* Step 8: Final Info */}
-              {step === 8 && (
-                <motion.div 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }}
-                  className="py-6 text-center"
-                >
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", damping: 12 }}
-                    className="w-16 h-16 bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] rounded-full flex items-center justify-center mx-auto mb-4"
-                  >
-                    <Sparkles className="w-8 h-8 text-white" />
-                  </motion.div>
-                  
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">You're all set!</h3>
-                  <p className="text-gray-600 mb-6">Before you continue, please briefly read how our platform works:</p>
-                  
-                  <motion.div 
-                    className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 mb-6 text-left space-y-4 shadow-sm border border-gray-100"
-                    variants={{
-                      hidden: { opacity: 0, y: 20 },
-                      visible: { opacity: 1, y: 0 }
-                    }}
-                    initial="hidden"
-                    animate="visible"
-                    transition={{ delay: 0.3 }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-7 h-7 bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-white text-sm font-bold">1</span>
-                      </div>
-                      <p className="text-sm text-gray-700">Registration and browsing are free. Premium features like unlimited messaging require credits or a subscription.</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-7 h-7 bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-white text-sm font-bold">2</span>
-                      </div>
-                      <p className="text-sm text-gray-700">We provide a safe communication platform but cannot guarantee the outcome of your conversations.</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-7 h-7 bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-white text-sm font-bold">3</span>
-                      </div>
-                      <p className="text-sm text-gray-700">Your privacy and safety are our priority. Report any inappropriate behavior immediately.</p>
-                    </div>
-                  </motion.div>
+                      {/* Step 1: Gender Preference */}
+                      {step === 1 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-4 text-center">Who would you like to date?</h3>
+                          <div className="space-y-2">
+                            {['Men', 'Women', 'Both'].map((gender) => (
+                              <motion.button
+                                key={gender}
+                                onClick={() => setFormData({ ...formData, gender: gender.toLowerCase() })}
+                                className={`w-full border-red-300 border-2 py-3 rounded-full font-semibold transition-all flex items-center justify-center text-sm ${
+                                  formData.gender === gender.toLowerCase()
+                                    ? 'bg-[#5e17eb] border-2 border-red-400 text-white shadow-lg'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                                whileHover={{ scale: formData.gender !== gender.toLowerCase() ? 1.02 : 1 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                {gender}
+                              </motion.button>
+                            ))}
+                          </div>
+                          <motion.button
+                            onClick={handleNext}
+                            disabled={!formData.gender}
+                            className="w-full mt-4 bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            whileHover={{ scale: formData.gender ? 1.02 : 1 }}
+                            whileTap={{ scale: formData.gender ? 0.98 : 1 }}
+                          >
+                            Continue
+                          </motion.button>
+                        </motion.div>
+                      )}
 
-                  <motion.button
-                    onClick={() => {
-                      alert('Account created successfully! Welcome to TabooTalks!');
-                    }}
-                    className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-4 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Heart className="w-5 h-5" />
-                    <span>Start Meeting People</span>
-                  </motion.button>
-                </motion.div>
-              )}
+                      {/* Step 2: Goals */}
+                      {step === 2 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">What is your goal here?</h3>
+                          <p className="text-xs text-gray-500 text-center mb-3">Up to 3 answers possible</p>
+                          <div className="flex flex-wrap gap-2 justify-center mb-4">
+                            {['Chat', 'Find friends', 'Have fun', "I'm bored", 'Get attention', 'Meet people'].map((goal) => (
+                              <motion.button
+                                key={goal}
+                                onClick={() => toggleGoal(goal)}
+                                className={`px-3 py-1.5 border-2 border-red-300 rounded-full font-medium transition-all text-xs ${
+                                  formData.goals.includes(goal)
+                                    ? 'bg-[#5e17eb] text-white shadow-lg'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                {goal}
+                              </motion.button>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <motion.button
+                              onClick={handleSkip}
+                              className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-3 rounded-full hover:bg-gray-50 transition-all text-sm"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Skip
+                            </motion.button>
+                            <motion.button
+                              onClick={handleNext}
+                              disabled={formData.goals.length === 0}
+                              className="flex-1 bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                              whileHover={{ scale: formData.goals.length > 0 ? 1.02 : 1 }}
+                              whileTap={{ scale: formData.goals.length > 0 ? 0.98 : 1 }}
+                            >
+                              Continue
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Step 3: Bio */}
+                      {step === 3 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">Tell others about yourself</h3>
+                          <p className="text-xs text-gray-400 text-center mb-3">Ex: I love watching football with friends.</p>
+                          <div className="relative">
+                            <textarea
+                              value={formData.bio}
+                              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                              placeholder="Write here..."
+                              className="w-full h-24 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 resize-none text-gray-900 shadow-sm text-sm"
+                              maxLength={500}
+                            />
+                            {formData.bio.length > 0 && (
+                              <div className="absolute right-3 bottom-3 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+                                {formData.bio.length}/500
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-2 mt-4">
+                            <motion.button
+                              onClick={handleSkip}
+                              className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-3 rounded-full hover:bg-gray-50 transition-all text-sm"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Skip
+                            </motion.button>
+                            <motion.button
+                              onClick={handleNext}
+                              className="flex-1 bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all text-sm"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Continue
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Step 4: Profile Picture */}
+                      {step === 4 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">Add a profile picture</h3>
+                          <p className="text-xs text-gray-500 text-center mb-3">Pictures get more attention!</p>
+                          
+                          <div className="flex justify-center mb-4">
+                            <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-gray-100 flex items-center justify-center shadow-lg cursor-pointer relative group">
+                              <label htmlFor="profile-pic" className="absolute inset-0 cursor-pointer flex items-center justify-center">
+                                <div className="text-center">
+                                  <Camera className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                                  <p className="text-xs text-gray-500 font-medium">Upload Photo</p>
+                                </div>
+                              </label>
+                            </div>
+                          </div>
+
+                          <input
+                            type="file"
+                            id="profile-pic"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                          
+                          <div className="flex gap-2 mt-4">
+                            <motion.button
+                              onClick={handleSkip}
+                              className="flex-1 border-2 border-gray-300 text-gray-700 font-bold py-3 rounded-full hover:bg-gray-50 transition-all text-sm"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Skip
+                            </motion.button>
+                            <motion.button
+                              onClick={handleNext}
+                              className="flex-1 bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all text-sm"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Continue
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Step 5: Name */}
+                      {step === 5 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">What should we call you?</h3>
+                          <div className="relative mb-3">
+                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="text"
+                              value={formData.name}
+                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                              placeholder="e.g. Alex"
+                              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-gray-900 text-sm"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 text-center mb-4">Can be changed anytime</p>
+                          <motion.button
+                            onClick={handleNext}
+                            disabled={!formData.name}
+                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            whileHover={{ scale: formData.name ? 1.02 : 1 }}
+                            whileTap={{ scale: formData.name ? 0.98 : 1 }}
+                          >
+                            Continue
+                          </motion.button>
+                        </motion.div>
+                      )}
+
+                      {/* Step 6: Email */}
+                      {step === 6 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">Your email address?</h3>
+                          <div className="relative mb-3">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                              placeholder="alex@example.com"
+                              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-gray-900 text-sm"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 text-center mb-4">Email used for account security</p>
+                          <motion.button
+                            onClick={handleNext}
+                            disabled={!formData.email}
+                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            whileHover={{ scale: formData.email ? 1.02 : 1 }}
+                            whileTap={{ scale: formData.email ? 0.98 : 1 }}
+                          >
+                            Continue
+                          </motion.button>
+                        </motion.div>
+                      )}
+
+                      {/* Step 7: Password */}
+                      {step === 7 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 text-center">Create password</h3>
+                          <div className="relative mb-3">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type={showPassword ? 'text' : 'password'}
+                              value={formData.password}
+                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                              placeholder="Enter a strong password"
+                              className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-gray-900 text-sm"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                          
+                          {formData.password && (
+                            <div className="mb-3">
+                              <div className="flex gap-1 mb-1">
+                                <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 3 ? 'bg-red-400' : 'bg-gray-200'}`}></div>
+                                <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 6 ? 'bg-orange-400' : 'bg-gray-200'}`}></div>
+                                <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 8 ? 'bg-yellow-400' : 'bg-gray-200'}`}></div>
+                                <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 10 ? 'bg-green-400' : 'bg-gray-200'}`}></div>
+                              </div>
+                              <p className="text-xs text-gray-500 text-right">
+                                {formData.password.length < 6 ? 'Weak' : 
+                                 formData.password.length < 8 ? 'Fair' :
+                                 formData.password.length < 10 ? 'Good' : 'Strong'}
+                              </p>
+                            </div>
+                          )}
+                          
+                          <p className="text-xs text-gray-400 text-center mb-4">Reset password anytime</p>
+                          <motion.button
+                            onClick={handleNext}
+                            disabled={!formData.password || formData.password.length < 6}
+                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            whileHover={{ scale: formData.password && formData.password.length >= 6 ? 1.02 : 1 }}
+                            whileTap={{ scale: formData.password && formData.password.length >= 6 ? 0.98 : 1 }}
+                          >
+                            Continue
+                          </motion.button>
+                        </motion.div>
+                      )}
+
+                      {/* Step 8: Final */}
+                      {step === 8 && (
+                        <motion.div 
+                          initial={{ opacity: 0 }} 
+                          animate={{ opacity: 1 }}
+                          className="py-2 text-center"
+                        >
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", damping: 12 }}
+                            className="w-12 h-12 bg-[#ff2e2e] rounded-full flex items-center justify-center mx-auto mb-3"
+                          >
+                            <Sparkles className="w-6 h-6 text-white" />
+                          </motion.div>
+                          
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">You&apos;re all set!</h3>
+                          <p className="text-gray-600 mb-4 text-sm">How our platform works:</p>
+                          
+                          <div className="bg-gray-50 rounded-xl p-4 mb-4 text-left space-y-3 shadow-sm border border-gray-100">
+                            <div className="flex items-start gap-2">
+                              <div className="w-6 h-6 bg-[#ff2e2e] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-white text-xs font-bold">1</span>
+                              </div>
+                              <p className="text-xs text-gray-700">Free registration. Premium features require credits.</p>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <div className="w-6 h-6 bg-[#5e17eb] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-white text-xs font-bold">2</span>
+                              </div>
+                              <p className="text-xs text-gray-700">Safe platform. We can&apos;t guarantee conversation outcomes.</p>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <div className="w-6 h-6 bg-[#ff2e2e] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-white text-xs font-bold">3</span>
+                              </div>
+                              <p className="text-xs text-gray-700">Privacy first. Report inappropriate behavior.</p>
+                            </div>
+                          </div>
+
+                          <motion.button
+                            onClick={() => {
+                              alert('Account created successfully! Welcome to TabooTalks!');
+                            }}
+                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <Heart className="w-4 h-4" />
+                            <span>Start Meeting People</span>
+                          </motion.button>
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
             </div>
-          </motion.div>
-        </AnimatePresence>
+          </div>
+
+          {/* RIGHT SIDE: SVG ILLUSTRATION - Desktop only, larger */}
+          <div className="hidden md:flex md:w-3/5 lg:w-7/12 items-center justify-center p-6 lg:p-8 bg-white/80 rounded-3xl border-red-400 border-solid border-2 ml-4">
+            <div className="relative w-full h-full max-w-xl">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="relative w-full h-full flex flex-col items-center justify-center"
+              >
+                {/* Large SVG Illustration */}
+                <div className="relative w-64 h-64 lg:w-80 lg:h-80 mb-6">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative w-56 h-56 lg:w-72 lg:h-72">
+                      <Image
+                        src={currentIllustration.image}
+                        alt={currentIllustration.title}
+                        fill
+                        className="object-contain drop-shadow-2xl"
+                        priority
+                        sizes="(max-width: 1024px) 224px, 288px"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Animated background ring */}
+                  <motion.div
+                    animate={{ 
+                      rotate: [0, 360],
+                      scale: [1, 1.1, 1]
+                    }}
+                    transition={{ 
+                      rotate: { duration: 20, repeat: Infinity, ease: "linear" },
+                      scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                    }}
+                    className="absolute inset-0 rounded-full"
+                    style={{ 
+                      backgroundColor: `${currentIllustration.color}08`,
+                      border: `3px dashed ${currentIllustration.color}40`
+                    }}
+                  />
+                </div>
+
+                {/* Text Content */}
+                <div className="text-center max-w-md">
+                  <motion.h2
+                    key={`title-${step}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-3xl lg:text-4xl font-bold mb-3"
+                    style={{ color: currentIllustration.color }}
+                  >
+                    {currentIllustration.title}
+                  </motion.h2>
+                  <motion.p
+                    key={`desc-${step}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="text-gray-600 text-lg lg:text-xl mb-6"
+                  >
+                    {currentIllustration.description}
+                  </motion.p>
+
+                  {/* Progress indicator */}
+                  <div className="flex justify-center gap-2 mb-8">
+                    {Array.from({ length: totalSteps }).map((_, idx) => (
+                      <motion.div
+                        key={idx}
+                        animate={{ 
+                          scale: idx === step ? 1.3 : 1,
+                          backgroundColor: idx === step ? currentIllustration.color : '#e5e7eb'
+                        }}
+                        className="w-2.5 h-2.5 rounded-full transition-all"
+                      />
+                    ))}
+                  </div>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold" style={{ color: currentIllustration.color }}>50K+</div>
+                      <div className="text-sm text-gray-500">Active Users</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold" style={{ color: currentIllustration.color }}>99%</div>
+                      <div className="text-sm text-gray-500">Satisfied</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold" style={{ color: currentIllustration.color }}>24/7</div>
+                      <div className="text-sm text-gray-500">Support</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step indicator */}
+                <div className="absolute top-4 right-4">
+                  <div className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm">
+                    <span className="text-sm font-medium text-gray-700">Step {step + 1}/{totalSteps}</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
