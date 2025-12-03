@@ -483,9 +483,11 @@ const SignupWizard = () => {
                                 className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 md:border-3 border-white overflow-hidden shadow-md"
                                 style={{ zIndex: 5 - idx }}
                               >
-                                <img 
+                                <Image
                                   src={allImages[idx]} 
                                   alt="" 
+                                  width={320}
+                                  height={240}
                                   className="w-full h-full object-cover"
                                 />
                               </motion.div>
