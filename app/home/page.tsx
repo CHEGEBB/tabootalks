@@ -614,7 +614,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* Image Modal */}
+      {/* Image Modalll */}
       {selectedImage && (
         <div
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
