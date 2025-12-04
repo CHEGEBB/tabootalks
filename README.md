@@ -1,6 +1,7 @@
 # TabooTalks - Adult Dating & Chat Platform
 
-<img width="157" height="27" alt="shot" src="https://github.com/user-attachments/assets/125cd475-c6a1-438f-b6ab-4ff2b9d0cbb0" />
+<img width="1773" height="906" alt="image" src="https://github.com/user-attachments/assets/44e47b81-bff0-43de-a1fe-258f861005f7" />
+
 
 
 ## 🎯 Project Overview
