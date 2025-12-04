@@ -120,8 +120,7 @@ tabootalks/
 │   │   └── signup/
 │   │       └── page.tsx
 │   │
-│   ├── (main)/               # Main app group
-│   │   ├── layout.tsx        # Layout with responsive navigation
+│   ├── main/               # Main app group
 │   │   ├── page.tsx          # Home/Newsfeed page
 │   │   ├── swipe/
 │   │   │   └── page.tsx

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, Gift, Sparkles, MessageCircle, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import router from 'next/router';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -39,6 +40,11 @@ const LoginPage = () => {
   const handleSubmit = () => {
     setShowWelcomeModal(true);
   };
+  const handleContinueToHome = () => {
+    // Navigate to home page
+    router.push('/main');
+  };
+
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white relative overflow-hidden">
@@ -150,7 +156,7 @@ const LoginPage = () => {
               </Link>
             </div>
 
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSubmit} className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all">Sign In</motion.button>
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleContinueToHome} className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all">Sign In</motion.button>
           </div>
 
           <div className="mt-6 text-center">

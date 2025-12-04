@@ -184,7 +184,7 @@ const SignupWizard = () => {
 
   const handleContinueToHome = () => {
     // Navigate to home page
-    router.push('/home');
+    router.push('/main');
   };
 
   // Animation variants for steps
