@@ -412,7 +412,6 @@ export default function ChatsPage() {
             <div className="bg-white border-b border-gray-200 px-4 py-3">
               {/* Top Bar with Title and Credits */}
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-bold text-gray-900">TabooTalks</h1>
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-[#5e17eb]">{userCredits}</span>
                   <button 
@@ -908,7 +907,6 @@ export default function ChatsPage() {
             <div className="bg-white border-b border-gray-200 px-0">
               {/* Credits Bar */}
               <div className="flex items-center justify-between px-4 py-3">
-                <h1 className="text-xl font-bold text-gray-900">TabooTalks</h1>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-[#5e17eb]">{userCredits}</span>
                   <button 
