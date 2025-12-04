@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,9 +7,10 @@ import MobileBottomNav from '@/components/layout/MobileBottomNav';
 
 export default function LayoutController() {
   const [isMobile, setIsMobile] = useState(false);
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState('discover');
+  const [mounted, setMounted] = useState(false);
   
-  // Mock user data - replace with actual user data from your auth/context
+  // Mock user data
   const [user] = useState({
     credits: 150,
     name: 'David',
@@ -16,8 +18,15 @@ export default function LayoutController() {
   });
 
   useEffect(() => {
+    setMounted(true);
+    
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 1024);
+      // More accurate mobile detection
+      const width = window.innerWidth;
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // Consider mobile if width < 1024 OR if it's a mobile device regardless of width
+      setIsMobile(width < 1024 || isMobileDevice);
     };
 
     // Initial check
@@ -25,18 +34,35 @@ export default function LayoutController() {
 
     // Add event listener
     window.addEventListener('resize', checkScreenSize);
+    
+    // Check on orientation change (for mobile devices)
+    window.addEventListener('orientationchange', checkScreenSize);
 
     // Cleanup
-    return () => window.removeEventListener('resize', checkScreenSize);
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+      window.removeEventListener('orientationchange', checkScreenSize);
+    };
   }, []);
+
+  // Don't render anything until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <>
       {isMobile ? (
-        <MobileBottomNav 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
-        />
+        <>
+          {/* Mobile navigation */}
+          <MobileBottomNav 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+          />
+          
+          {/* Add spacing for mobile bottom nav */}
+          <div className="h-16 lg:hidden" />
+        </>
       ) : (
         <DesktopNav 
           activeTab={activeTab} 
