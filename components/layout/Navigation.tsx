@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/exhaustive-deps */
 // components/layout/Navigation.tsx
 'use client';
 
@@ -18,25 +18,62 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('home');
   const [currentLang, setCurrentLang] = useState<'en' | 'de'>('en');
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
+  // Detect client-side rendering
   useEffect(() => {
-    // Check current language from cookie
-    const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift();
-      return '';
+    setIsClient(true);
+  }, []);
+
+  // Check and update language from cookies
+  useEffect(() => {
+    if (!isClient) return;
+
+    const checkLanguage = () => {
+      const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(';').shift();
+        return '';
+      };
+
+      const googtrans = getCookie('googtrans');
+      
+      // Check if the page has been translated
+      const htmlLang = document.documentElement.lang;
+      const hasTranslateClass = document.documentElement.classList.contains('translated-ltr');
+      
+      if (googtrans) {
+        if (googtrans.includes('/de')) {
+          setCurrentLang('de');
+        } else if (googtrans.includes('/en')) {
+          setCurrentLang('en');
+        }
+      } else if (htmlLang === 'de' || hasTranslateClass) {
+        // Fallback to checking HTML attributes
+        const frameContent = document.querySelector('iframe.skiptranslate');
+        if (frameContent) {
+          setCurrentLang('de');
+        }
+      }
     };
 
-    const googtrans = getCookie('googtrans');
-    if (googtrans && googtrans.includes('/de')) {
-      setCurrentLang('de');
-    } else {
-      setCurrentLang('en');
-    }
-  }, []);
+    // Check immediately
+    checkLanguage();
+
+    // Also check after a delay to catch Google Translate initialization
+    const timer = setTimeout(checkLanguage, 500);
+    const timer2 = setTimeout(checkLanguage, 1000);
+    const timer3 = setTimeout(checkLanguage, 2000);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
+  }, [isClient]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -100,14 +137,28 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
   };
 
   const switchLanguage = (lang: 'en' | 'de') => {
-    // Set cookie for Google Translate
-    const cookieValue = `/auto/${lang}`;
-    document.cookie = `googtrans=${cookieValue}; path=/`;
-    document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
+    // Clear all existing Google Translate cookies
+    const domain = window.location.hostname;
+    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${domain}`;
+    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain}`;
     
+    // Set new language cookie
+    const cookieValue = `/auto/${lang}`;
+    const expiry = new Date();
+    expiry.setFullYear(expiry.getFullYear() + 1);
+    
+    document.cookie = `googtrans=${cookieValue}; expires=${expiry.toUTCString()}; path=/;`;
+    document.cookie = `googtrans=${cookieValue}; expires=${expiry.toUTCString()}; path=/; domain=.${domain}`;
+    document.cookie = `googtrans=${cookieValue}; expires=${expiry.toUTCString()}; path=/; domain=${domain}`;
+    
+    // Update state immediately
     setCurrentLang(lang);
+    
     // Reload page to apply translation
-    window.location.reload();
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
   };
 
   const navigationItems = [
