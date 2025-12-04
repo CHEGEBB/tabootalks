@@ -419,7 +419,7 @@ export default function DiscoverPage() {
                   placeholder="Search profiles..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none w-64"
+                  className="pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg placeholder:text-gray-500 focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none w-64"
                 />
               </div>
               <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
@@ -561,7 +561,7 @@ export default function DiscoverPage() {
                             max="80"
                             value={filters.minAge}
                             onChange={(e) => updateFilter('minAge', parseInt(e.target.value) || 18)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none"
+                            className="w-full px-3 text-gray-600 py-2 border border-gray-300 placeholder:text-gray-400 rounded-lg focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none"
                           />
                         </div>
                         <div className="flex-1">
@@ -572,7 +572,7 @@ export default function DiscoverPage() {
                             max="80"
                             value={filters.maxAge}
                             onChange={(e) => updateFilter('maxAge', parseInt(e.target.value) || 40)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none"
+                            className="w-full px-3 py-2 border text-gray-600  border-gray-300 rounded-lg focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none"
                           />
                         </div>
                       </div>
