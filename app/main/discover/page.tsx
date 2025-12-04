@@ -1,15 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
 // app/main/discover/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Users, Star, Flame, ChevronRight, MapPin, Heart, MessageCircle, Eye, UserPlus, CheckCircle, X, Sliders, Grid, List } from 'lucide-react';
+import { Search, Filter, Users, Star, Flame, ChevronRight, MapPin, Heart, MessageCircle, Eye, UserPlus, CheckCircle, X, Sliders, Grid, List, Menu, X as XIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import LayoutController from '@/components/layout/LayoutController';
+import './discover.scss';
 
-// Mock data for profiles - with more details
 const mockProfiles = [
   {
     id: 1,
@@ -237,7 +238,9 @@ export default function DiscoverPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const profilesPerPage = viewMode === 'grid' ? 12 : 6;
+  const [isMobile, setIsMobile] = useState(false);
+  
+  const profilesPerPage = viewMode === 'grid' ? (isMobile ? 6 : 12) : (isMobile ? 4 : 6);
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -251,19 +254,28 @@ export default function DiscoverPage() {
     premiumOnly: false
   });
 
+  // Check for mobile on mount
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Fixed: Proper active filter count calculation
   const activeFilterCount = (() => {
     let count = 0;
     
-    // Count array items
     if (Array.isArray(filters.location)) count += filters.location.length;
     if (Array.isArray(filters.interests)) count += filters.interests.length;
     
-    // Count boolean filters
     if (filters.verifiedOnly) count += 1;
     if (filters.premiumOnly) count += 1;
     
-    // Count number filters if they're not default
     if (filters.minAge > 18) count += 1;
     if (filters.maxAge < 40) count += 1;
     if (filters.maxDistance < 50) count += 1;
@@ -279,7 +291,6 @@ export default function DiscoverPage() {
     
     // Apply tab filter
     if (activeTab === 'following') {
-      // In real app, this would filter by following status
       result = result.slice(0, 6); // Mock following
     } else if (activeTab === 'online') {
       result = result.filter(profile => profile.isOnline);
@@ -296,10 +307,8 @@ export default function DiscoverPage() {
     
     // Apply advanced filters
     result = result.filter(profile => {
-      // Age filter
       if (profile.age < filters.minAge || profile.age > filters.maxAge) return false;
       
-      // Location filter
       if (filters.location.length > 0) {
         const hasLocation = filters.location.some(loc => 
           profile.location.toLowerCase().includes(loc.toLowerCase())
@@ -307,11 +316,9 @@ export default function DiscoverPage() {
         if (!hasLocation) return false;
       }
       
-      // Distance filter
       const distance = parseInt(profile.distance.replace(' km', ''));
       if (distance > filters.maxDistance) return false;
       
-      // Interests filter
       if (filters.interests.length > 0) {
         const hasInterest = filters.interests.some(interest =>
           profile.interests.some(profileInterest => 
@@ -321,10 +328,7 @@ export default function DiscoverPage() {
         if (!hasInterest) return false;
       }
       
-      // Verified only
       if (filters.verifiedOnly && !profile.isVerified) return false;
-      
-      // Premium only
       if (filters.premiumOnly && !profile.isPremium) return false;
       
       return true;
@@ -333,7 +337,7 @@ export default function DiscoverPage() {
     setTimeout(() => {
       setFilteredProfiles(result);
       setIsLoading(false);
-      setCurrentPage(1); // Reset to first page when filters change
+      setCurrentPage(1);
     }, 300);
   }, [activeTab, searchQuery, filters, profiles]);
 
@@ -344,17 +348,14 @@ export default function DiscoverPage() {
   const currentProfiles = filteredProfiles.slice(startIndex, endIndex);
 
   const handleFollow = (profileId: number) => {
-    // In real app, this would make an API call
     console.log('Follow profile:', profileId);
   };
 
   const handleLike = (profileId: number) => {
-    // In real app, this would make an API call
     console.log('Like profile:', profileId);
   };
 
   const handleChat = (profileId: number) => {
-    // In real app, this would navigate to chat
     console.log('Start chat with profile:', profileId);
   };
 
@@ -376,30 +377,42 @@ export default function DiscoverPage() {
     setSearchQuery('');
   };
 
+  const closeMobileSidebar = () => {
+    setShowFilters(false);
+  };
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white no-overflow discover-container">
       <LayoutController />
+
+      {/* Mobile Sidebar Overlay */}
+      {showFilters && isMobile && (
+        <div 
+          className="mobile-overlay lg:hidden"
+          onClick={closeMobileSidebar}
+        />
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Header with Tabs and Actions */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
+            <div className="responsive-text">
               <h1 className="text-3xl font-bold text-gray-900">Discover</h1>
               <p className="text-gray-600 mt-2">Find amazing people to connect with</p>
             </div>
             
-            {/* Mobile: Show simple search toggle */}
-            <div className="sm:hidden flex items-center gap-2">
+            {/* Mobile Controls */}
+            <div className="mobile-controls flex items-center gap-2 sm:hidden">
               <button
                 onClick={() => setShowSearch(!showSearch)}
-                className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="search-toggle p-2"
               >
                 <Search className="w-5 h-5 text-gray-600" />
               </button>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors relative"
+                className="filters-toggle p-2 relative"
               >
                 <Filter className="w-5 h-5 text-gray-600" />
                 {activeFilterCount > 0 && (
@@ -408,9 +421,18 @@ export default function DiscoverPage() {
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                className="p-2"
+              >
+                {viewMode === 'grid' ? 
+                  <Grid className="w-5 h-5 text-gray-600" /> : 
+                  <List className="w-5 h-5 text-gray-600" />
+                }
+              </button>
             </div>
             
-            {/* Desktop: Search bar and view toggle */}
+            {/* Desktop Controls */}
             <div className="hidden sm:flex items-center gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -439,7 +461,7 @@ export default function DiscoverPage() {
             </div>
           </div>
 
-          {/* Mobile Search Bar (Toggled) */}
+          {/* Mobile Search Bar */}
           {showSearch && (
             <div className="mt-4 sm:hidden">
               <div className="relative">
@@ -457,10 +479,19 @@ export default function DiscoverPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Sidebar - Hidden on mobile by default */}
-          <div className={`${showFilters ? 'block' : 'hidden'} lg:block lg:w-80 flex-shrink-0`}>
+          {/* Sidebar with responsive classes */}
+          <div className={`sidebar-container ${showFilters ? 'sidebar-open' : ''}`}>
+            {showFilters && isMobile && (
+              <button
+                onClick={closeMobileSidebar}
+                className="sidebar-close p-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                <XIcon className="w-5 h-5 text-gray-600" />
+              </button>
+            )}
+            
             <div className="space-y-8">
-              {/* Profile Tabs for sidebar */}
+              {/* Profile Tabs */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h3 className="font-bold text-lg text-gray-900 mb-4">Profiles</h3>
                 <div className="space-y-3">
@@ -504,7 +535,7 @@ export default function DiscoverPage() {
                 </div>
               </div>
 
-              {/* Enhanced Filters Section */}
+              {/* Enhanced Filters */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-bold text-lg text-gray-900">Filters</h3>
@@ -712,8 +743,8 @@ export default function DiscoverPage() {
             </div>
           </div>
 
-          {/* Main Content - Wider profile cards */}
-          <div className="flex-1  min-w-full">
+          {/* Main Content */}
+          <div className="main-content-area flex-1 min-w-0">
             {/* Mobile Tabs */}
             <div className="lg:hidden mb-6">
               <div className="flex bg-gray-100 rounded-lg p-1">
@@ -759,9 +790,9 @@ export default function DiscoverPage() {
               </div>
             </div>
 
-            {/* Results Info and Desktop Controls */}
-            <div className="mb-6 flex items-center justify-between">
-              <div>
+            {/* Results Info */}
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="responsive-text">
                 <h2 className="text-xl font-bold text-gray-900">
                   {activeTab === 'all' && 'All Profiles'}
                   {activeTab === 'online' && 'Online Now'}
@@ -789,9 +820,9 @@ export default function DiscoverPage() {
 
             {/* Active Filters Display */}
             {activeFilterCount > 0 && (
-              <div className="mb-6 flex flex-wrap gap-2">
+              <div className="mb-6 filter-chips">
                 {filters.minAge > 18 && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
                     Age from {filters.minAge}
                     <button onClick={() => updateFilter('minAge', 18)} className="hover:text-[#4a13c4]">
                       <X className="w-3 h-3" />
@@ -799,7 +830,7 @@ export default function DiscoverPage() {
                   </span>
                 )}
                 {filters.maxAge < 40 && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
                     Age to {filters.maxAge}
                     <button onClick={() => updateFilter('maxAge', 40)} className="hover:text-[#4a13c4]">
                       <X className="w-3 h-3" />
@@ -807,7 +838,7 @@ export default function DiscoverPage() {
                   </span>
                 )}
                 {filters.maxDistance < 50 && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
                     Within {filters.maxDistance}km
                     <button onClick={() => updateFilter('maxDistance', 50)} className="hover:text-[#4a13c4]">
                       <X className="w-3 h-3" />
@@ -815,7 +846,7 @@ export default function DiscoverPage() {
                   </span>
                 )}
                 {filters.location.map(loc => (
-                  <span key={loc} className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm">
+                  <span key={loc} className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
                     {loc}
                     <button onClick={() => updateFilter('location', filters.location.filter(l => l !== loc))} className="hover:text-[#4a13c4]">
                       <X className="w-3 h-3" />
@@ -823,7 +854,7 @@ export default function DiscoverPage() {
                   </span>
                 ))}
                 {filters.interests.map(interest => (
-                  <span key={interest} className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm">
+                  <span key={interest} className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
                     {interest}
                     <button onClick={() => updateFilter('interests', filters.interests.filter(i => i !== interest))} className="hover:text-[#4a13c4]">
                       <X className="w-3 h-3" />
@@ -831,7 +862,7 @@ export default function DiscoverPage() {
                   </span>
                 ))}
                 {filters.verifiedOnly && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
                     Verified Only
                     <button onClick={() => updateFilter('verifiedOnly', false)} className="hover:text-[#4a13c4]">
                       <X className="w-3 h-3" />
@@ -839,7 +870,7 @@ export default function DiscoverPage() {
                   </span>
                 )}
                 {filters.premiumOnly && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
                     Premium Only
                     <button onClick={() => updateFilter('premiumOnly', false)} className="hover:text-[#4a13c4]">
                       <X className="w-3 h-3" />
@@ -851,9 +882,9 @@ export default function DiscoverPage() {
 
             {/* Loading State */}
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="profiles-grid">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                  <div key={i} className="bg-gray-100 rounded-xl animate-pulse">
+                  <div key={i} className="profile-card bg-gray-100 rounded-xl animate-pulse">
                     <div className="aspect-[4/5] bg-gray-200 rounded-t-xl"></div>
                     <div className="p-4">
                       <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -865,22 +896,22 @@ export default function DiscoverPage() {
               </div>
             ) : (
               <>
-                {/* Profiles Grid - Wider Cards */}
+                {/* Profiles Grid/List */}
                 {viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="profiles-grid">
                     {currentProfiles.map(profile => (
                       <div
                         key={profile.id}
-                        className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 group"
+                        className="profile-card bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 group"
                       >
-                        {/* Profile Image with Overlay */}
-                        <div className="relative aspect-[4/5]">
+                        {/* Profile Image */}
+                        <div className="relative aspect-[4/5] card-image">
                           <Image
                             src={profile.imageUrl}
                             alt={profile.username}
                             fill
                             className="object-cover group-hover:scale-105 transition-transform duration-500"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 25vw"
                           />
                           
                           {/* Premium Badge */}
@@ -919,19 +950,19 @@ export default function DiscoverPage() {
                           {/* Gradient Overlay */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                           
-                          {/* Profile Info Overlay */}
+                          {/* Profile Info */}
                           <div className="absolute bottom-4 left-4 right-4">
                             <div className="flex items-start justify-between">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="text-white font-bold text-xl">
+                                  <h3 className="profile-name text-white font-bold text-xl">
                                     {profile.username}, {profile.age}
                                   </h3>
                                   {profile.isVerified && (
                                     <CheckCircle className="w-5 h-5 text-blue-400" />
                                   )}
                                 </div>
-                                <div className="flex items-center gap-2 text-white/90 text-sm">
+                                <div className="flex items-center gap-2 text-white/90 text-sm profile-info">
                                   <MapPin className="w-4 h-4" />
                                   <span>{profile.location}</span>
                                   <span className="text-white/70">•</span>
@@ -959,7 +990,7 @@ export default function DiscoverPage() {
 
                         {/* Action Buttons */}
                         <div className="p-4">
-                          <div className="flex gap-2 mb-3">
+                          <div className="action-buttons flex gap-2 mb-3">
                             <button
                               onClick={() => handleLike(profile.id)}
                               className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-300"
@@ -976,7 +1007,7 @@ export default function DiscoverPage() {
                             </button>
                           </div>
                           
-                          <div className="flex gap-2">
+                          <div className="action-buttons flex gap-2">
                             <Link
                               href={`/main/profile/${profile.id}`}
                               className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:border-gray-400 hover:bg-gray-50 transition-colors duration-300"
@@ -997,15 +1028,15 @@ export default function DiscoverPage() {
                   </div>
                 ) : (
                   /* List View */
-                  <div className="space-y-4">
+                  <div className="list-view space-y-4">
                     {currentProfiles.map(profile => (
                       <div
                         key={profile.id}
-                        className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-300 group"
+                        className="profile-item bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-300 group"
                       >
-                        <div className="flex gap-4">
+                        <div className="flex flex-col sm:flex-row gap-4">
                           {/* Profile Image */}
-                          <div className="relative w-24 h-24 flex-shrink-0">
+                          <div className="relative w-full sm:w-24 h-48 sm:h-24 flex-shrink-0">
                             <Image
                               src={profile.imageUrl}
                               alt={profile.username}
@@ -1022,7 +1053,7 @@ export default function DiscoverPage() {
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <h3 className="font-bold text-lg text-gray-900">
+                                  <h3 className="profile-name font-bold text-lg text-gray-900">
                                     {profile.username}, {profile.age}
                                   </h3>
                                   {profile.isVerified && (
@@ -1058,7 +1089,7 @@ export default function DiscoverPage() {
                             </div>
                             
                             {/* Action Buttons */}
-                            <div className="flex gap-2">
+                            <div className="action-buttons flex flex-wrap gap-2">
                               <button
                                 onClick={() => handleLike(profile.id)}
                                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-300"
@@ -1117,17 +1148,17 @@ export default function DiscoverPage() {
 
                 {/* Pagination */}
                 {filteredProfiles.length > 0 && totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+                  <div className="pagination-container flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="prev-button flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ChevronRight className="w-4 h-4 rotate-180" />
                       Previous
                     </button>
                     
-                    <div className="flex items-center gap-1">
+                    <div className="page-numbers flex items-center gap-1">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;
                         if (totalPages <= 5) {
@@ -1174,7 +1205,7 @@ export default function DiscoverPage() {
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="next-button flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
                       <ChevronRight className="w-4 h-4" />
