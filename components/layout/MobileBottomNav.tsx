@@ -272,8 +272,8 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
         </div>
       </nav>
 
-      {/* ONLY ONE safe area spacer - This adds padding to content */}
-      <div className="pt-16 pb-16"></div>
+      {/* REDUCED safe area spacer - Only bottom padding for bottom nav */}
+      <div className="pb-16"></div>
     </>
   );
 }
