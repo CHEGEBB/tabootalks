@@ -649,10 +649,7 @@ export default function PeoplePage() {
                   <Gift className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
                   <span className="text-gray-700 text-sm md:text-base">Send Virtual Gifts</span>
                 </div>
-                <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:border-purple-300 transition-colors">
-                  <Mail className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
-                  <span className="text-gray-700 text-sm md:text-base">Respond in Mail</span>
-                </div>
+               
               </div>
               <button 
                 onClick={() => setShowCreditsPopup(true)}
@@ -674,7 +671,6 @@ export default function PeoplePage() {
                   <div className="text-lg md:text-2xl font-bold text-purple-600">156</div>
                 </div>
                 <div className="flex items-center justify-between p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="font-medium text-gray-700 text-sm md:text-base">Mail</div>
                   <div className="text-lg md:text-2xl font-bold text-purple-600">42</div>
                 </div>
                 <div className="flex items-center justify-between p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
