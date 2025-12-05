@@ -1,8 +1,9 @@
 'use client';
 
 import { Home, MessageCircle, Search, Users, CreditCard, Compass, Bell } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { useEffect } from 'react';
 
 interface MobileBottomNavProps {
     activeTab: string;
@@ -12,6 +13,22 @@ interface MobileBottomNavProps {
 
 export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150 }: MobileBottomNavProps) {
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Sync activeTab with current pathname
+  useEffect(() => {
+    if (pathname.includes('/chats')) {
+      setActiveTab('chats');
+    } else if (pathname.includes('/discover')) {
+      setActiveTab('discover');
+    } else if (pathname.includes('/people')) {
+      setActiveTab('people');
+    } else if (pathname.includes('/credits')) {
+      setActiveTab('credits');
+    } else if (pathname === '/main') {
+      setActiveTab('home');
+    }
+  }, [pathname, setActiveTab]);
 
   const handleNavigation = (id: string) => {
     setActiveTab(id);
@@ -114,9 +131,17 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
             {/* Credits Display */}
             <button 
               onClick={() => handleTopBarAction('credits')}
-              className="flex items-center gap-1.5 bg-[#5e17eb] px-3.5 py-2 rounded-full shadow-sm active:scale-95 transition-transform"
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full shadow-sm active:scale-95 transition-transform ${
+                activeTab === 'credits' 
+                  ? 'bg-[#5e17eb]/10 border border-[#5e17eb]/20' 
+                  : 'bg-[#5e17eb]'
+              }`}
             >
-              <span className="text-white text-sm font-bold">{credits.toLocaleString()}</span>
+              <span className={`text-sm font-bold ${
+                activeTab === 'credits' ? 'text-[#5e17eb]' : 'text-white'
+              }`}>
+                {credits.toLocaleString()}
+              </span>
             </button>
           </div>
         </div>
@@ -125,28 +150,40 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-lg safe-area-bottom">
         <div className="flex justify-around items-center h-16 px-2">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => handleNavigation(item.id)}
-              className={`flex flex-col items-center justify-center relative p-2 transition ${
-                activeTab === item.id ? 'text-[#5e17eb]' : 'text-gray-600'
-              }`}
-            >
-              <div className="relative">
-                <item.icon size={26} />
-                {item.badge && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#ff2e2e] text-xs font-bold flex items-center justify-center text-white">
-                    {item.badge}
-                  </span>
+          {navItems.map(item => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavigation(item.id)}
+                className={`flex flex-col items-center justify-center relative p-2 transition-all duration-200 ${
+                  isActive ? 'text-[#5e17eb]' : 'text-gray-600'
+                }`}
+              >
+                {/* Circular Container for Mobile - Similar to Desktop */}
+                <div className={`relative rounded-full transition-all ${
+                  isActive 
+                    ? 'p-3 bg-[#5e17eb]/10 border border-[#5e17eb]/20' 
+                    : 'p-2'
+                }`}>
+                  <item.icon size={22} className={isActive ? 'text-[#5e17eb]' : ''} />
+                  {item.badge && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#ff2e2e] text-xs font-bold flex items-center justify-center text-white">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-xs mt-1 font-medium ${
+                  isActive ? 'text-[#5e17eb] font-semibold' : ''
+                }`}>
+                  {item.label}
+                </span>
+                {isActive && (
+                  <div className="absolute -top-1 h-1 w-12 bg-[#5e17eb]/70 rounded-full"></div>
                 )}
-              </div>
-              <span className="text-xs mt-1 font-medium">{item.label}</span>
-              {activeTab === item.id && (
-                <div className="absolute top-0 h-1 w-full bg-[#5e17eb] rounded-full"></div>
-              )}
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       </nav>
 
