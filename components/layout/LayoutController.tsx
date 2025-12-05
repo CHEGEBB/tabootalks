@@ -21,31 +21,21 @@ export default function LayoutController() {
     setMounted(true);
     
     const checkScreenSize = () => {
-      // More accurate mobile detection
       const width = window.innerWidth;
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      // Consider mobile if width < 1024 OR if it's a mobile device regardless of width
       setIsMobile(width < 1024 || isMobileDevice);
     };
 
-    // Initial check
     checkScreenSize();
-
-    // Add event listener
     window.addEventListener('resize', checkScreenSize);
-    
-    // Check on orientation change (for mobile devices)
     window.addEventListener('orientationchange', checkScreenSize);
 
-    // Cleanup
     return () => {
       window.removeEventListener('resize', checkScreenSize);
       window.removeEventListener('orientationchange', checkScreenSize);
     };
   }, []);
 
-  // Don't render anything until mounted to avoid hydration mismatch
   if (!mounted) {
     return null;
   }
@@ -53,15 +43,10 @@ export default function LayoutController() {
   return (
     <>
       {isMobile ? (
-        <>
-          {/* Mobile navigation */}
-          <MobileBottomNav 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-          />
-          
-          {/* REMOVE this extra spacing div - MobileBottomNav already handles its own spacing */}
-        </>
+        <MobileBottomNav 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+        />
       ) : (
         <DesktopNav 
           activeTab={activeTab} 

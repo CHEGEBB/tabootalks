@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/main/people/page.tsx
 'use client';
 
@@ -114,7 +115,7 @@ const mockUsers = [
       'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=1200&fit=crop',
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=1200&fit=crop',
       'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&h=1200&fit=crop',
+      'https://images.unsplash.com/photos/1438761681033-6461ffad8d80?w=800&h=1200&fit=crop',
     ],
     interests: ['Fashion', 'Art', 'Beach', 'Dancing'],
     lookingFor: ['Fun times', 'Beach dates', 'Creative partner'],
@@ -275,6 +276,201 @@ const Shirt = ({ className }: { className?: string }) => (
   </svg>
 );
 
+// Swipe-to-reject component interface
+interface SwipeRejectProps {
+  onReject: () => void;
+  onHold: (isHolding: boolean) => void;
+  children: React.ReactNode;
+}
+
+const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children }) => {
+  const [isHolding, setIsHolding] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setStartPos({ x: touch.clientX, y: touch.clientY });
+    setIsDragging(true);
+    
+    // Start hold detection
+    holdTimeoutRef.current = setTimeout(() => {
+      setIsHolding(true);
+      onHold(true);
+    }, 500);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - startPos.x;
+    const deltaY = touch.clientY - startPos.y;
+    
+    // Update position with resistance
+    setPosition({ 
+      x: deltaX * 0.8, 
+      y: deltaY * 0.3 
+    });
+
+    // If swiping left significantly, clear hold timeout
+    if (deltaX < -50) {
+      if (holdTimeoutRef.current) {
+        clearTimeout(holdTimeoutRef.current);
+      }
+      setIsHolding(false);
+      onHold(false);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (holdTimeoutRef.current) {
+      clearTimeout(holdTimeoutRef.current);
+    }
+    setIsDragging(false);
+    setIsHolding(false);
+    onHold(false);
+
+    // If swiped left enough, trigger reject
+    if (position.x < -100) {
+      setPosition({ x: -window.innerWidth, y: 0 });
+      setTimeout(() => {
+        onReject();
+        setPosition({ x: 0, y: 0 });
+      }, 300);
+    } else {
+      // Return to original position
+      setPosition({ x: 0, y: 0 });
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setStartPos({ x: e.clientX, y: e.clientY });
+    setIsDragging(true);
+    
+    holdTimeoutRef.current = setTimeout(() => {
+      setIsHolding(true);
+      onHold(true);
+    }, 500);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    
+    const deltaX = e.clientX - startPos.x;
+    const deltaY = e.clientY - startPos.y;
+    
+    setPosition({ 
+      x: deltaX * 0.8, 
+      y: deltaY * 0.3 
+    });
+
+    if (deltaX < -50) {
+     if (holdTimeoutRef.current) {
+        clearTimeout(holdTimeoutRef.current);
+      }
+      setIsHolding(false);
+      onHold(false);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (holdTimeoutRef.current) {
+        clearTimeout(holdTimeoutRef.current);
+      }
+    setIsDragging(false);
+    setIsHolding(false);
+    onHold(false);
+
+    if (position.x < -100) {
+      setPosition({ x: -window.innerWidth, y: 0 });
+      setTimeout(() => {
+        onReject();
+        setPosition({ x: 0, y: 0 });
+      }, 300);
+    } else {
+      setPosition({ x: 0, y: 0 });
+    }
+  };
+
+  // Add global mouse/touch event listeners for better UX
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (isDragging) {
+        handleMouseUp();
+      }
+    };
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        handleMouseMove(e as any);
+      }
+    };
+
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+
+    return () => {
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      if (holdTimeoutRef.current) {
+        clearTimeout(holdTimeoutRef.current);
+      }
+    };
+  }, [isDragging, position.x]);
+
+  const transform = `translate3d(${position.x}px, ${position.y}px, 0) rotate(${position.x * 0.1}deg)`;
+  const opacity = 1 - Math.min(Math.abs(position.x) / 500, 0.5);
+
+  return (
+    <div 
+      ref={containerRef}
+      className="relative w-full h-full cursor-grab active:cursor-grabbing"
+      style={{ 
+        transform,
+        opacity,
+        transition: isDragging ? 'none' : 'transform 0.3s ease-out, opacity 0.3s ease-out'
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      {children}
+      
+      {/* NOPE Watermark that appears when holding */}
+      {isHolding && (
+        <div className="absolute top-4 right-4 z-50">
+          <div className="bg-red-500 text-white px-6 py-3 rounded-full font-bold text-xl md:text-2xl shadow-lg animate-pulse border-2 border-white">
+            NOPE
+          </div>
+        </div>
+      )}
+
+      {/* Visual feedback for dragging left */}
+      {isDragging && position.x < -30 && (
+        <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-40">
+          <div className="text-red-500 font-bold text-xl md:text-2xl opacity-70">
+            ← Swipe to reject
+          </div>
+        </div>
+      )}
+
+      {/* Hold overlay */}
+      {isHolding && (
+        <div className="absolute inset-0 bg-black/20 z-30 rounded-lg md:rounded-xl" />
+      )}
+    </div>
+  );
+};
+
 export default function PeoplePage() {
   const [currentUserIndex, setCurrentUserIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -282,21 +478,36 @@ export default function PeoplePage() {
   const [showCreditsPopup, setShowCreditsPopup] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
+  const [isHoldingImage, setIsHoldingImage] = useState(false);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+  const [nextUserIndex, setNextUserIndex] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   
   const currentUser = mockUsers[currentUserIndex];
+  const nextUser = mockUsers[nextUserIndex];
   
   const nextProfile = () => {
+    setIsAnimatingOut(true);
     setCurrentPhotoIndex(0);
-    setCurrentUserIndex((prev) => (prev + 1) % mockUsers.length);
-    if (containerRef.current) {
-      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    setIsHoldingImage(false);
+    
+    setTimeout(() => {
+      setCurrentUserIndex((prev) => (prev + 1) % mockUsers.length);
+      setNextUserIndex((prev) => (prev + 1) % mockUsers.length);
+      setIsAnimatingOut(false);
+      
+      if (containerRef.current) {
+        containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 300);
   };
   
   const prevProfile = () => {
     setCurrentPhotoIndex(0);
+    setIsHoldingImage(false);
     setCurrentUserIndex((prev) => (prev - 1 + mockUsers.length) % mockUsers.length);
+    setNextUserIndex((prev) => (prev + 1) % mockUsers.length);
+    
     if (containerRef.current) {
       containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -309,6 +520,10 @@ export default function PeoplePage() {
     nextProfile();
   };
   
+  const handleReject = () => {
+    nextProfile();
+  };
+  
   const handleSkip = () => {
     nextProfile();
   };
@@ -317,11 +532,14 @@ export default function PeoplePage() {
     alert(`Starting chat with ${currentUser.name}`);
   };
 
+  const handleHold = (isHolding: boolean) => {
+    setIsHoldingImage(isHolding);
+  };
+
   // Handle scroll to hide/show action buttons on mobile
   useEffect(() => {
     const handleScroll = () => {
       if (window.innerWidth < 768) {
-        // On mobile, hide buttons when scrolling down, show when scrolling up
         setShowActionButtons(false);
         setTimeout(() => setShowActionButtons(true), 1000);
       }
@@ -331,12 +549,21 @@ export default function PeoplePage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Preload next user image
+  useEffect(() => {
+    if (nextUser?.photos?.[0]) {
+      // Use HTMLImageElement constructor or createElement
+      const img = new window.Image(); // or const img = document.createElement('img');
+      img.src = nextUser.photos[0];
+    }
+  }, [nextUserIndex]);
+
   return (
     <div className="min-h-screen bg-white">
       <LayoutController />
       
-      {/* Clean Top Navigation - Less obtrusive */}
-      <div className="fixed top-18 lg:top-24 left-0 border-indigo-600 border-bottom-2  right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-2 shadow-sm">
+      {/* Clean Top Navigation */}
+      <div className="fixed top-18 lg:top-24 left-0 border-indigo-600 border-bottom-2 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-2 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -368,38 +595,57 @@ export default function PeoplePage() {
         </div>
       </div>
 
-      {/* Main Content Container with ref for scrolling */}
+      {/* Main Content Container */}
       <div 
         ref={containerRef}
         className="max-w-7xl mx-auto px-3 md:px-4 pt-14 md:pt-20 pb-24 md:pb-8 overflow-y-auto"
       >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           
-          {/* LEFT COLUMN: Image Container - TALL AND SEPARATE */}
-          <div className="lg:col-span-2 space-y-4 md:space-y-6">
-            {/* MAIN IMAGE CONTAINER - VERY TALL */}
-            <div className="bg-gray-100 rounded-lg md:rounded-xl overflow-hidden shadow">
+          {/* LEFT COLUMN: Image Container */}
+          <div className="lg:col-span-2 space-y-4 md:space-y-6 relative">
+            {/* NEXT USER PREVIEW (behind current) */}
+            {!isAnimatingOut && nextUser && (
+              <div className="absolute inset-0 z-0 opacity-30 transform scale-95">
+                <div className="bg-gray-100 rounded-lg md:rounded-xl overflow-hidden shadow h-[500px] md:h-[650px]">
+                  <div className="relative h-full">
+                    <Image
+                      src={nextUser.photos[0]}
+                      alt={`${nextUser.name}'s photo`}
+                      fill
+                      className="object-cover blur-sm"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MAIN IMAGE CONTAINER WITH SWIPE FUNCTIONALITY */}
+            <div className={`relative z-10 bg-gray-100 rounded-lg md:rounded-xl overflow-hidden shadow transition-all duration-300 ${isAnimatingOut ? 'opacity-0 translate-x-full' : 'opacity-100'}`}>
               <div className="relative h-[500px] md:h-[650px]">
-                <Image
-                  src={currentUser.photos[currentPhotoIndex]}
-                  alt={`${currentUser.name}'s photo`}
-                  fill
-                  className="object-cover"
-                  priority
-                />
+                <SwipeReject onReject={handleReject} onHold={handleHold}>
+                  <Image
+                    src={currentUser.photos[currentPhotoIndex]}
+                    alt={`${currentUser.name}'s photo`}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                </SwipeReject>
                 
                 {/* Photo Navigation */}
                 {currentUser.photos.length > 1 && (
                   <>
                     <button 
                       onClick={() => setCurrentPhotoIndex(prev => (prev - 1 + currentUser.photos.length) % currentUser.photos.length)}
-                      className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-black"
+                      className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-black z-20"
                     >
                       <ChevronLeft className="w-4 h-4 md:w-6 md:h-6" />
                     </button>
                     <button 
                       onClick={() => setCurrentPhotoIndex(prev => (prev + 1) % currentUser.photos.length)}
-                      className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-black"
+                      className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-black z-20"
                     >
                       <ChevronRight className="w-4 h-4 md:w-6 md:h-6" />
                     </button>
@@ -407,12 +653,12 @@ export default function PeoplePage() {
                 )}
                 
                 {/* Photo Counter */}
-                <div className="absolute top-2 md:top-4 right-2 md:right-4 bg-black/80 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium">
+                <div className="absolute top-2 md:top-4 right-2 md:right-4 bg-black/80 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium z-20">
                   {currentPhotoIndex + 1} / {currentUser.photos.length}
                 </div>
                 
                 {/* Quick Action Buttons */}
-                <div className="absolute top-2 md:top-4 left-2 md:left-4 flex gap-1 md:gap-2">
+                <div className="absolute top-2 md:top-4 left-2 md:left-4 flex gap-1 md:gap-2 z-20">
                   <button 
                     onClick={handleSkip}
                     className="bg-black/80 hover:bg-black text-white w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300"
@@ -430,7 +676,7 @@ export default function PeoplePage() {
                 </div>
                 
                 {/* User Info Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-4 md:p-6">
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/90 to-transparent p-4 md:p-6 z-20">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
@@ -454,10 +700,12 @@ export default function PeoplePage() {
                     </div>
                   </div>
                 </div>
+
+               
               </div>
             </div>
 
-            {/* PROFILE DETAILS CONTAINER - SEPARATE AND SLEEK */}
+            {/* PROFILE DETAILS CONTAINER */}
             <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
               {/* Basic Info Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
@@ -551,7 +799,7 @@ export default function PeoplePage() {
               </div>
             </div>
 
-            {/* PHOTOS CONTAINER - SEPARATE AND LARGE WITH MANY PHOTOS */}
+            {/* PHOTOS CONTAINER */}
             <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
               <div className="flex items-center justify-between mb-4 md:mb-6">
                 <h2 className="text-lg md:text-2xl font-bold text-gray-900">Public Photos ({currentUser.photosCount})</h2>
@@ -649,7 +897,6 @@ export default function PeoplePage() {
                   <Gift className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
                   <span className="text-gray-700 text-sm md:text-base">Send Virtual Gifts</span>
                 </div>
-               
               </div>
               <button 
                 onClick={() => setShowCreditsPopup(true)}
@@ -723,7 +970,7 @@ export default function PeoplePage() {
         </div>
       </div>
 
-      {/* Floating Action Buttons for Mobile - Clean and non-obstructive */}
+      {/* Floating Action Buttons for Mobile */}
       {showActionButtons && (
         <div className="fixed bottom-20 right-4 z-30 md:hidden">
           <div className="flex flex-col gap-3">
@@ -754,7 +1001,7 @@ export default function PeoplePage() {
         </div>
       )}
 
-      {/* Desktop Floating Action Buttons - Clean and non-obstructive */}
+      {/* Desktop Floating Action Buttons */}
       <div className="fixed bottom-8 right-8 z-30 hidden md:block">
         <div className="flex gap-4">
           <button 
