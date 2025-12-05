@@ -1,9 +1,9 @@
 'use client';
 
-import { Home, MessageCircle, Search, Users, CreditCard, Bell, Compass, PlusCircle } from 'lucide-react';
+import { Home, MessageCircle, Search, Users, CreditCard, Bell, Compass, PlusCircle, User, Settings, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface DesktopNavProps {
   activeTab: string;
@@ -14,6 +14,8 @@ interface DesktopNavProps {
 export default function DesktopNav({ activeTab, setActiveTab, credits }: DesktopNavProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync activeTab with current pathname
   useEffect(() => {
@@ -29,6 +31,20 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
       setActiveTab('home');
     }
   }, [pathname, setActiveTab]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleNavigation = (id: string) => {
     setActiveTab(id);
@@ -67,7 +83,27 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
         router.push('/main/create');
         break;
       case 'profile':
-        router.push('/main/profile');
+        setIsDropdownOpen(!isDropdownOpen);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleProfileDropdown = (option: string) => {
+    setIsDropdownOpen(false);
+    
+    switch (option) {
+      case 'my-account':
+        router.push('/main/userprofile');
+        break;
+      case 'settings':
+        router.push('/main/settings');
+        break;
+      case 'logout':
+        // Add your logout logic here
+        console.log('Logging out...');
+        router.push('/login');
         break;
       default:
         break;
@@ -185,26 +221,68 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
               </span>
             </button>
             
-            <div className="flex items-center gap-4 pl-6 border-l border-gray-200">
+            <div className="flex items-center gap-4 pl-6 border-l border-gray-200 relative" ref={dropdownRef}>
               <div className="text-right">
                 <p className="font-bold text-gray-900 text-lg">David</p>
                 <p className="text-sm text-gray-500">Premium Member</p>
               </div>
-              {/* Larger Profile Image */}
-              <button 
-                onClick={() => handleRightSideAction('profile')}
-                className="relative w-14 h-14 rounded-full overflow-hidden border-3 border-[#5e17eb] hover:border-[#4a13c2] transition"
-              >
-                <div className="h-full w-full bg-gradient-to-br from-[#5e17eb] to-[#ff2e2e] flex items-center justify-center">
-                  <Image
-                    src="https://images.unsplash.com/photo-1739590441594-8e4e35a8a813?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                    alt="Profile Image"
-                    width={56}
-                    height={56}
-                    className="object-cover"
-                  />
-                </div>
-              </button>
+              {/* Larger Profile Image with Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => handleRightSideAction('profile')}
+                  className="relative w-14 h-14 rounded-full overflow-hidden border-3 border-[#5e17eb] hover:border-[#4a13c2] transition"
+                >
+                  <div className="h-full w-full bg-gradient-to-br from-[#5e17eb] to-[#ff2e2e] flex items-center justify-center">
+                    <Image
+                      src="https://images.unsplash.com/photo-1739590441594-8e4e35a8a813?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                      alt="Profile Image"
+                      width={56}
+                      height={56}
+                      className="object-cover"
+                    />
+                  </div>
+                </button>
+
+                {/* Dropdown Menu */}
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                    <div className="py-2">
+                      {/* User Info Section */}
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="font-semibold text-gray-900">David</p>
+                        <p className="text-sm text-gray-500">david@example.com</p>
+                      </div>
+                      
+                      {/* Menu Items */}
+                      <button 
+                        onClick={() => handleProfileDropdown('my-account')}
+                        className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        <User size={18} className="mr-3 text-gray-500" />
+                        <span>My Account</span>
+                      </button>
+                      
+                      <button 
+                        onClick={() => handleProfileDropdown('settings')}
+                        className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        <Settings size={18} className="mr-3 text-gray-500" />
+                        <span>Settings</span>
+                      </button>
+                      
+                      <div className="border-t border-gray-100 my-1"></div>
+                      
+                      <button 
+                        onClick={() => handleProfileDropdown('logout')}
+                        className="flex items-center w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 transition"
+                      >
+                        <LogOut size={18} className="mr-3" />
+                        <span>Log Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
