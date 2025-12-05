@@ -60,8 +60,7 @@ export default function LayoutController() {
             setActiveTab={setActiveTab} 
           />
           
-          {/* Add spacing for mobile bottom nav */}
-          <div className="h-16 lg:hidden" />
+          {/* REMOVE this extra spacing div - MobileBottomNav already handles its own spacing */}
         </>
       ) : (
         <DesktopNav 
