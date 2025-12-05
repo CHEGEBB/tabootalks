@@ -147,8 +147,8 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-lg safe-area-bottom">
+      {/* Bottom Navigation - FIXED: Same container size for all tabs */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-lg">
         <div className="flex justify-around items-center h-16 px-2">
           {navItems.map(item => {
             const isActive = activeTab === item.id;
@@ -160,11 +160,11 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
                   isActive ? 'text-[#5e17eb]' : 'text-gray-600'
                 }`}
               >
-                {/* Circular Container for Mobile - Similar to Desktop */}
-                <div className={`relative rounded-full transition-all ${
+                {/* Circular Container - SAME SIZE for all tabs */}
+                <div className={`relative rounded-full p-2 transition-all ${
                   isActive 
-                    ? 'p-3 bg-[#5e17eb]/10 border border-[#5e17eb]/20' 
-                    : 'p-2'
+                    ? 'bg-[#5e17eb]/10 border border-[#5e17eb]/20' 
+                    : ''
                 }`}>
                   <item.icon size={22} className={isActive ? 'text-[#5e17eb]' : ''} />
                   {item.badge && (
@@ -173,13 +173,17 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
                     </span>
                   )}
                 </div>
+                
+                {/* Label - Fixed positioning */}
                 <span className={`text-xs mt-1 font-medium ${
                   isActive ? 'text-[#5e17eb] font-semibold' : ''
                 }`}>
                   {item.label}
                 </span>
+                
+                {/* Active indicator line - ABOVE the tab, not affecting layout */}
                 {isActive && (
-                  <div className="absolute -top-1 h-1 w-12 bg-[#5e17eb]/70 rounded-full"></div>
+                  <div className="absolute -top-0.5 left-1/2 transform -translate-x-1/2 h-1 w-8 bg-[#5e17eb]/70 rounded-full"></div>
                 )}
               </button>
             );
