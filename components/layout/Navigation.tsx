@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Check } from 'lucide-react';
+import { Menu, X, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import Button from '../ui/Button';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -19,6 +19,7 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
   const [activeSection, setActiveSection] = useState<string>('home');
   const [currentLang, setCurrentLang] = useState<'en' | 'de'>('en');
   const [isClient, setIsClient] = useState(false);
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -137,6 +138,10 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
   };
 
   const switchLanguage = (lang: 'en' | 'de') => {
+    // Close dropdown if open
+    setShowLangDropdown(false);
+    setMobileMenuOpen(false);
+    
     // Clear all existing Google Translate cookies
     const domain = window.location.hostname;
     document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
@@ -167,6 +172,21 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
     { id: 'mission', label: 'Mission' },
     { id: 'journey', label: 'Journey' },
   ];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showLangDropdown) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.language-switcher-container')) {
+          setShowLangDropdown(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showLangDropdown]);
 
   return (
     <>
@@ -271,43 +291,168 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
                 Get Started
               </Button>
 
-              {/* SLEEK LANGUAGE SWITCHER (DESKTOP) */}
-              <div className="flex items-center space-x-1 ml-4 bg-gray-100 rounded-lg p-1">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => switchLanguage('en')}
-                  className={`px-4 py-2 rounded-md font-medium transition-all duration-300 ${
-                    currentLang === 'en'
-                      ? 'bg-white text-[#ff2e2e] shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  EN
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => switchLanguage('de')}
-                  className={`px-4 py-2 rounded-md font-medium transition-all duration-300 ${
-                    currentLang === 'de'
-                      ? 'bg-white text-[#ff2e2e] shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  DE
-                </motion.button>
+              {/* DESKTOP LANGUAGE SWITCHER - Clean Toggle */}
+              <div className="language-switcher-container flex items-center space-x-1 ml-4">
+                <div className="bg-gray-100 rounded-lg p-1 flex">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => switchLanguage('en')}
+                    className={`px-4 py-2 rounded-md font-medium transition-all duration-300 ${
+                      currentLang === 'en'
+                        ? 'bg-white text-[#ff2e2e] shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    EN
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => switchLanguage('de')}
+                    className={`px-4 py-2 rounded-md font-medium transition-all duration-300 ${
+                      currentLang === 'de'
+                        ? 'bg-white text-[#ff2e2e] shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    DE
+                  </motion.button>
+                </div>
               </div>
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
+            {/* MOBILE NAVIGATION - Language FIRST, then hamburger */}
+            <div className="md:hidden flex items-center space-x-2">
+              {/* PROMINENT LANGUAGE SWITCHER - Clear and Visible */}
+              <div className="language-switcher-container relative">
+                {/* Main Language Button - Clear and Prominent */}
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowLangDropdown(!showLangDropdown)}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all duration-300 ${
+                    showLangDropdown
+                      ? 'bg-gradient-to-r from-[#ff2e2e] to-[#ff5e2e] text-white shadow-lg shadow-red-300/50'
+                      : 'bg-gradient-to-r from-gray-100 to-gray-50 text-gray-800 hover:bg-gray-200 border border-gray-300/50'
+                  }`}
+                >
+                  <span className="font-semibold">
+                    {currentLang === 'en' ? 'English' : 'Deutsch'}
+                  </span>
+                  {showLangDropdown ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </motion.button>
+
+                {/* Language Dropdown */}
+                <AnimatePresence>
+                  {showLangDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50 overflow-hidden"
+                    >
+                      {/* Dropdown Header */}
+                      <div className="px-4 py-2 mb-1 bg-gray-50">
+                        <p className="text-sm font-medium text-gray-600">Select Language</p>
+                      </div>
+                      
+                      {/* English Option */}
+                      <button
+                        onClick={() => switchLanguage('en')}
+                        className={`flex items-center justify-between w-full px-4 py-4 text-left transition-all duration-200 border-b border-gray-100 last:border-b-0 ${
+                          currentLang === 'en'
+                            ? 'bg-red-50 text-[#ff2e2e] font-semibold'
+                            : 'text-gray-800 hover:bg-gray-50 active:bg-gray-100'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            currentLang === 'en' 
+                              ? 'bg-[#ff2e2e] text-white' 
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            EN
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">English</span>
+                            <span className="text-xs text-gray-500">Switch to English</span>
+                          </div>
+                        </div>
+                        {currentLang === 'en' && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="flex items-center"
+                          >
+                            <Check className="w-5 h-5" />
+                          </motion.div>
+                        )}
+                      </button>
+                      
+                      {/* German Option */}
+                      <button
+                        onClick={() => switchLanguage('de')}
+                        className={`flex items-center justify-between w-full px-4 py-4 text-left transition-all duration-200 ${
+                          currentLang === 'de'
+                            ? 'bg-red-50 text-[#ff2e2e] font-semibold'
+                            : 'text-gray-800 hover:bg-gray-50 active:bg-gray-100'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            currentLang === 'de' 
+                              ? 'bg-[#ff2e2e] text-white' 
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            DE
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">Deutsch</span>
+                            <span className="text-xs text-gray-500">Zu Deutsch wechseln</span>
+                          </div>
+                        </div>
+                        {currentLang === 'de' && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="flex items-center"
+                          >
+                            <Check className="w-5 h-5" />
+                          </motion.div>
+                        )}
+                      </button>
+                      
+                      {/* Help Text */}
+                      <div className="px-4 pt-2 mt-2 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 text-center">
+                          Page will reload after selection
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Hamburger Menu Button */}
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 focus:outline-none"
+                className={`p-3 rounded-xl transition-all duration-300 focus:outline-none ${
+                  mobileMenuOpen 
+                    ? 'bg-gradient-to-r from-[#ff2e2e] to-[#ff5e2e] text-white shadow-lg' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
               >
-                {mobileMenuOpen ? <X /> : <Menu />}
+                {mobileMenuOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
               </motion.button>
             </div>
           </div>
@@ -324,6 +469,28 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
               className="md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-lg"
             >
               <div className="px-4 pt-2 pb-6 space-y-1">
+                {/* Current Language Display in Menu */}
+                <div className="py-3 px-4 mb-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 font-medium">Current Language</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        {currentLang === 'en' ? 'English' : 'Deutsch'}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className={`px-3 py-1 rounded-full ${
+                        currentLang === 'en' 
+                          ? 'bg-[#ff2e2e] text-white' 
+                          : 'bg-gray-200 text-gray-700'
+                      }`}>
+                        {currentLang === 'en' ? 'EN' : 'DE'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Navigation Items */}
                 {navigationItems.map((item) => (
                   <button 
                     key={item.id}
@@ -367,31 +534,33 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
                   </Button>
                 </div>
 
-                {/* SLEEK LANGUAGE SWITCHER (MOBILE) */}
+                {/* Quick Language Change in Menu */}
                 <div className="pt-4 mt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-500 mb-2 px-4 uppercase tracking-wide">Language</p>
-                  <div className="flex gap-2">
+                  <p className="text-sm font-medium text-gray-700 mb-3 px-1">Quick Language Change</p>
+                  <div className="grid grid-cols-2 gap-2">
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => switchLanguage('en')}
-                      className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-300 ${
+                      className={`py-3 px-4 rounded-xl font-medium transition-all duration-300 flex flex-col items-center justify-center ${
                         currentLang === 'en'
-                          ? 'bg-gradient-to-r from-[#ff2e2e] to-[#ff5e2e] text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gradient-to-r from-[#ff2e2e] to-[#ff5e2e] text-white shadow-md border-2 border-[#ff2e2e]'
+                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border-2 border-transparent'
                       }`}
                     >
-                      English
+                      <span className="font-bold">EN</span>
+                      <span className="text-xs mt-1 opacity-90">English</span>
                     </motion.button>
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => switchLanguage('de')}
-                      className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-300 ${
+                      className={`py-3 px-4 rounded-xl font-medium transition-all duration-300 flex flex-col items-center justify-center ${
                         currentLang === 'de'
-                          ? 'bg-gradient-to-r from-[#ff2e2e] to-[#ff5e2e] text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gradient-to-r from-[#ff2e2e] to-[#ff5e2e] text-white shadow-md border-2 border-[#ff2e2e]'
+                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border-2 border-transparent'
                       }`}
                     >
-                      Deutsch
+                      <span className="font-bold">DE</span>
+                      <span className="text-xs mt-1 opacity-90">Deutsch</span>
                     </motion.button>
                   </div>
                 </div>
