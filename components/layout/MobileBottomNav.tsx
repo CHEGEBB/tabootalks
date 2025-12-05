@@ -1,9 +1,9 @@
 'use client';
 
-import { Home, MessageCircle, Search, Users, CreditCard, Compass, Bell } from 'lucide-react';
+import { Home, MessageCircle, Search, Users, CreditCard, Compass, Bell, User, Settings, LogOut } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface MobileBottomNavProps {
     activeTab: string;
@@ -14,6 +14,8 @@ interface MobileBottomNavProps {
 export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150 }: MobileBottomNavProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync activeTab with current pathname
   useEffect(() => {
@@ -29,6 +31,20 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
       setActiveTab('home');
     }
   }, [pathname, setActiveTab]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleNavigation = (id: string) => {
     setActiveTab(id);
@@ -55,15 +71,6 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
     }
   };
 
-  // Correct order: Home, Chats, Discover, People, Credits
-  const navItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'chats', label: 'Chats', icon: MessageCircle, badge: 3 },
-    { id: 'discover', label: 'Discover', icon: Search },
-    { id: 'people', label: 'People', icon: Users },
-    { id: 'credits', label: 'Credits', icon: CreditCard },
-  ];
-
   const handleTopBarAction = (action: string) => {
     switch (action) {
       case 'logo':
@@ -80,10 +87,42 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
         setActiveTab('credits');
         router.push('/main/credits');
         break;
+      case 'profile':
+        setIsDropdownOpen(!isDropdownOpen);
+        break;
       default:
         break;
     }
   };
+
+  const handleProfileDropdown = (option: string) => {
+    setIsDropdownOpen(false);
+    
+    switch (option) {
+      case 'my-account':
+        router.push('/main/userprofile');
+        break;
+      case 'settings':
+        router.push('/main/settings');
+        break;
+      case 'logout':
+        // Add your logout logic here
+        console.log('Logging out...');
+        router.push('/login');
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Correct order: Home, Chats, Discover, People, Credits
+  const navItems = [
+    { id: 'home', label: 'Home', icon: Home },
+    { id: 'chats', label: 'Chats', icon: MessageCircle, badge: 3 },
+    { id: 'discover', label: 'Discover', icon: Search },
+    { id: 'people', label: 'People', icon: Users },
+    { id: 'credits', label: 'Credits', icon: CreditCard },
+  ];
 
   return (
     <>
@@ -128,21 +167,63 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
               <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-[#ff2e2e] border-2 border-white"></span>
             </button>
             
-            {/* Credits Display */}
-            <button 
-              onClick={() => handleTopBarAction('credits')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full shadow-sm active:scale-95 transition-transform ${
-                activeTab === 'credits' 
-                  ? 'bg-[#5e17eb]/10 border border-[#5e17eb]/20' 
-                  : 'bg-[#5e17eb]'
-              }`}
-            >
-              <span className={`text-sm font-bold ${
-                activeTab === 'credits' ? 'text-[#5e17eb]' : 'text-white'
-              }`}>
-                {credits.toLocaleString()}
-              </span>
-            </button>
+            {/* Profile Image with Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button 
+                onClick={() => handleTopBarAction('profile')}
+                className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-[#5e17eb] hover:border-[#4a13c2] transition"
+              >
+                <div className="h-full w-full bg-gradient-to-br from-[#5e17eb] to-[#ff2e2e] flex items-center justify-center">
+                  <Image
+                    src="https://images.unsplash.com/photo-1739590441594-8e4e35a8a813?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                    alt="Profile Image"
+                    width={40}
+                    height={40}
+                    className="object-cover"
+                  />
+                </div>
+              </button>
+
+              {/* Dropdown Menu */}
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                  <div className="py-2">
+                    {/* User Info Section */}
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="font-semibold text-gray-900 text-sm">David</p>
+                      <p className="text-xs text-gray-500">Premium Member</p>
+                    </div>
+                    
+                    {/* Menu Items */}
+                    <button 
+                      onClick={() => handleProfileDropdown('my-account')}
+                      className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition text-sm"
+                    >
+                      <User size={16} className="mr-3 text-gray-500" />
+                      <span>My Account</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => handleProfileDropdown('settings')}
+                      className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition text-sm"
+                    >
+                      <Settings size={16} className="mr-3 text-gray-500" />
+                      <span>Settings</span>
+                    </button>
+                    
+                    <div className="border-t border-gray-100 my-1"></div>
+                    
+                    <button 
+                      onClick={() => handleProfileDropdown('logout')}
+                      className="flex items-center w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 transition text-sm"
+                    >
+                      <LogOut size={16} className="mr-3" />
+                      <span>Log Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

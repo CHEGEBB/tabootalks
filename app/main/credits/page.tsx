@@ -134,7 +134,6 @@ const FAQ_ITEMS = [
 // User activity data
 const ACTIVITY_ITEMS = [
   { name: 'Chats', count: 156, icon: <MessageSquare className="w-4 h-4 text-purple-600" /> },
-  { name: 'Mail', count: 42, icon: <Mail className="w-4 h-4 text-purple-600" /> },
   { name: 'Following', count: 89, icon: <Users className="w-4 h-4 text-purple-600" /> },
   { name: 'Likes', count: 234, icon: <Star className="w-4 h-4 text-purple-600" /> }
 ];
@@ -482,7 +481,6 @@ export default function CreditsPage() {
                 {[
                   'Chat with anyone you like',
                   'Send Virtual Gifts',
-                  'Respond in Mail',
                   'View hidden content',
                   'Priority messaging'
                 ].map((benefit, index) => (
@@ -630,7 +628,7 @@ export default function CreditsPage() {
                   <input
                     type="text"
                     placeholder="1234 5678 9012 3456"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors"
+                    className="w-full pl-10 pr-4 py-3 text-gray-500 placeholder:text-gray-400 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors"
                     value={cardDetails.number}
                     onChange={(e) => setCardDetails({...cardDetails, number: e.target.value})}
                     disabled={processing}
@@ -650,7 +648,7 @@ export default function CreditsPage() {
                     <input
                       type="text"
                       placeholder="MM/YY"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors"
+                      className="w-full pl-10 pr-4 py-3 border text-gray-500 placeholder:text-gray-400 border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors"
                       value={cardDetails.expiry}
                       onChange={(e) => setCardDetails({...cardDetails, expiry: e.target.value})}
                       disabled={processing}
@@ -669,7 +667,7 @@ export default function CreditsPage() {
                     <input
                       type="text"
                       placeholder="123"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors"
+                      className="w-full text-gray-500 placeholder:text-gray-400 pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors"
                       value={cardDetails.cvc}
                       onChange={(e) => setCardDetails({...cardDetails, cvc: e.target.value})}
                       disabled={processing}
@@ -689,7 +687,7 @@ export default function CreditsPage() {
                   <input
                     type="text"
                     placeholder="John Doe"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors"
+                    className="w-full text-gray-500 placeholder:text-gray-400 pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors"
                     value={cardDetails.name}
                     onChange={(e) => setCardDetails({...cardDetails, name: e.target.value})}
                     disabled={processing}
