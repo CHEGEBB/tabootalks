@@ -3,6 +3,7 @@
 import { Home, MessageCircle, Search, Users, CreditCard, Bell, Compass, PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 interface DesktopNavProps {
   activeTab: string;
@@ -13,6 +14,21 @@ interface DesktopNavProps {
 export default function DesktopNav({ activeTab, setActiveTab, credits }: DesktopNavProps) {
   const router = useRouter();
   const pathname = usePathname();
+
+  // Sync activeTab with current pathname
+  useEffect(() => {
+    if (pathname.includes('/chats')) {
+      setActiveTab('chats');
+    } else if (pathname.includes('/discover')) {
+      setActiveTab('discover');
+    } else if (pathname.includes('/people')) {
+      setActiveTab('people');
+    } else if (pathname.includes('/credits')) {
+      setActiveTab('credits');
+    } else if (pathname === '/main') {
+      setActiveTab('home');
+    }
+  }, [pathname, setActiveTab]);
 
   const handleNavigation = (id: string) => {
     setActiveTab(id);
@@ -94,36 +110,39 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
 
           {/* Navigation Items - Circular icons with labels below */}
           <div className="flex items-center gap-10">
-            {navItems.map(item => (
-              <div key={item.id} className="flex flex-col items-center">
-                <button
-                  onClick={() => handleNavigation(item.id)}
-                  className={`flex flex-col items-center gap-1 transition-all ${
-                    activeTab === item.id ? 'text-[#5e17eb]' : 'text-gray-500 hover:text-[#5e17eb]'
-                  }`}
-                >
-                  {/* Circular Icon Container */}
-                  <div className={`relative p-4 rounded-full transition-all ${
-                    activeTab === item.id 
-                      ? 'bg-[#5e17eb]/80 text-white' 
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}>
-                    <item.icon size={24} />
-                    {item.badge && (
-                      <span className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-[#ff2e2e] text-xs font-bold flex items-center justify-center text-white">
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                  {/* Label Below */}
-                  <span className={`text-sm font-medium mt-2 ${
-                    activeTab === item.id ? 'text-[#5e17eb]' : 'text-gray-600'
-                  }`}>
-                    {item.label}
-                  </span>
-                </button>
-              </div>
-            ))}
+            {navItems.map(item => {
+              const isActive = activeTab === item.id;
+              return (
+                <div key={item.id} className="flex flex-col items-center">
+                  <button
+                    onClick={() => handleNavigation(item.id)}
+                    className={`flex flex-col items-center gap-1 transition-all ${
+                      isActive ? 'text-[#5e17eb]' : 'text-gray-500 hover:text-[#5e17eb]'
+                    }`}
+                  >
+                    {/* Circular Icon Container with opacity for active state */}
+                    <div className={`relative p-4 rounded-full transition-all ${
+                      isActive 
+                        ? 'bg-[#5e17eb]/10 border border-[#5e17eb]/20' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}>
+                      <item.icon size={24} className={isActive ? 'text-[#5e17eb]' : ''} />
+                      {item.badge && (
+                        <span className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-[#ff2e2e] text-xs font-bold flex items-center justify-center text-white">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                    {/* Label Below */}
+                    <span className={`text-sm font-medium mt-2 ${
+                      isActive ? 'text-[#5e17eb] font-semibold' : 'text-gray-600'
+                    }`}>
+                      {item.label}
+                    </span>
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           {/* Right Side Actions */}
@@ -153,9 +172,17 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
             {/* Credits Display */}
             <button 
               onClick={() => handleNavigation('credits')}
-              className="rounded-full bg-[#5e17eb] px-4 py-2 hover:bg-[#4a13c2] transition"
+              className={`rounded-full px-4 py-2 transition ${
+                activeTab === 'credits' 
+                  ? 'bg-[#5e17eb]/10 border border-[#5e17eb]/20' 
+                  : 'bg-[#5e17eb] hover:bg-[#4a13c2]'
+              }`}
             >
-              <span className="font-bold text-sm text-white">{credits}</span>
+              <span className={`font-bold text-sm ${
+                activeTab === 'credits' ? 'text-[#5e17eb]' : 'text-white'
+              }`}>
+                {credits}
+              </span>
             </button>
             
             <div className="flex items-center gap-4 pl-6 border-l border-gray-200">
