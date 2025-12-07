@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { Heart, MessageCircle, MoreVertical, MapPin, Eye, Gift, Star, Sparkles, Filter, Flame, Zap, Camera, UserCheck, UserPlus, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import LayoutController from '@/components/layout/LayoutController';
+import Offer from '@/components/features/credits/CreditOffer';
+import ProfileNotification from '@/components/ui/ProfileNotification';
+
 
 // Mock data for posts
 const mockPosts = [
@@ -180,6 +183,7 @@ export default function HomePage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [likingPost, setLikingPost] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'following'>('all');
+  const [showOffer, setShowOffer] = useState(true);
   const [currentUser] = useState({
     name: 'David',
     credits: 150,
@@ -614,7 +618,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* Image Modalll */}
+      {/* Image Modal */}
       {selectedImage && (
         <div
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
@@ -637,6 +641,16 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* Credit Offer Modal */}
+      <Offer isOpen={showOffer} onClose={() => setShowOffer(false)} />
+      <ProfileNotification 
+  autoShow={true}
+  minInterval={100000}
+  maxInterval={200000}
+  notificationDuration={10000}
+  position="top-right"
+/>
     </div>
   );
 }

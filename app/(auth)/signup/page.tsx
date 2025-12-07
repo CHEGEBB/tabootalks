@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/purity */
 'use client';
 
@@ -6,6 +7,7 @@ import { Mail, Lock, Eye, EyeOff, User, Sparkles, Camera, Heart, ChevronRight } 
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import authService from '@/lib/services/authService';
 
 interface FormData {
   gender: string;
@@ -37,6 +39,8 @@ const SignupWizard = () => {
   const [windowWidth, setWindowWidth] = useState<number>(0);
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
+const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+const [errorMessage, setErrorMessage] = useState<string>('');
   const router = useRouter();
   
   const [formData, setFormData] = useState<FormData>({
@@ -146,12 +150,39 @@ const SignupWizard = () => {
   const currentIllustration = illustrationData[step] || illustrationData[0];
   const totalSteps = 8;
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // If not on final step, just go to next step
     if (step < totalSteps - 1) {
       setStep(step + 1);
-    } else {
-      // Final step - show success message
+      return;
+    }
+  
+    // Final step (Step 7) - Submit signup
+    setIsSubmitting(true);
+    setErrorMessage('');
+  
+    try {
+      // Call authService to create account
+      const result = await authService.signup({
+        gender: formData.gender,
+        goals: formData.goals,
+        bio: formData.bio,
+        profilePic: formData.profilePic,
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+  
+      console.log('✅ Signup successful!', result);
+      
+      // Show success modal
       setShowSuccess(true);
+    } catch (error: any) {
+      console.error('❌ Signup error:', error);
+      setErrorMessage(error.message || 'Failed to create account. Please try again.');
+      alert(error.message || 'Signup failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -183,8 +214,8 @@ const SignupWizard = () => {
   };
 
   const handleContinueToHome = () => {
-    // Navigate to home page
-    router.push('/main');
+    // Use window.location for navigation
+    window.location.href = '/main';
   };
 
   // Animation variants for steps
@@ -758,16 +789,39 @@ const SignupWizard = () => {
                           <p className="text-xs text-gray-500 text-center mb-3">Pictures get more attention!</p>
                           
                           <div className="flex justify-center mb-4">
-                            <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-gray-100 flex items-center justify-center shadow-lg cursor-pointer relative group">
-                              <label htmlFor="profile-pic" className="absolute inset-0 cursor-pointer flex items-center justify-center">
-                                <div className="text-center">
-                                  <Camera className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-                                  <p className="text-xs text-gray-500 font-medium">Upload Photo</p>
-                                </div>
-                              </label>
+                            <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-gray-100 flex items-center justify-center shadow-lg cursor-pointer relative group overflow-hidden">
+                              {/* Show preview if image is uploaded */}
+                              {formData.profilePic ? (
+                                <>
+                                  <Image
+                                    src={formData.profilePic}
+                                    alt="Profile preview"
+                                    fill
+                                    className="object-cover"
+                                  />
+                                  {/* Overlay on hover to change photo */}
+                                  <label 
+                                    htmlFor="profile-pic" 
+                                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
+                                  >
+                                    <div className="text-center">
+                                      <Camera className="w-6 h-6 text-white mx-auto mb-1" />
+                                      <p className="text-xs text-white font-medium">Change Photo</p>
+                                    </div>
+                                  </label>
+                                </>
+                              ) : (
+                                // Show upload prompt if no image
+                                <label htmlFor="profile-pic" className="absolute inset-0 cursor-pointer flex items-center justify-center">
+                                  <div className="text-center">
+                                    <Camera className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                                    <p className="text-xs text-gray-500 font-medium">Upload Photo</p>
+                                  </div>
+                                </label>
+                              )}
                             </div>
                           </div>
-
+                      
                           <input
                             type="file"
                             id="profile-pic"
@@ -775,6 +829,13 @@ const SignupWizard = () => {
                             onChange={handleFileUpload}
                             className="hidden"
                           />
+                          
+                          {/* Show selected filename */}
+                          {formData.profilePic && (
+                            <p className="text-xs text-green-600 text-center mb-3">
+                              ✓ Photo selected
+                            </p>
+                          )}
                           
                           <div className="flex gap-2 mt-4">
                             <motion.button
@@ -891,14 +952,14 @@ const SignupWizard = () => {
                           
                           <p className="text-xs text-gray-400 text-center mb-4">Reset password anytime</p>
                           <motion.button
-                            onClick={handleNext}
-                            disabled={!formData.password || formData.password.length < 6}
-                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                            whileHover={{ scale: formData.password && formData.password.length >= 6 ? 1.02 : 1 }}
-                            whileTap={{ scale: formData.password && formData.password.length >= 6 ? 0.98 : 1 }}
-                          >
-                            Complete Signup
-                          </motion.button>
+  onClick={handleNext}
+  disabled={!formData.password || formData.password.length < 6 || isSubmitting}
+  className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+  whileHover={{ scale: formData.password && formData.password.length >= 6 && !isSubmitting ? 1.02 : 1 }}
+  whileTap={{ scale: formData.password && formData.password.length >= 6 && !isSubmitting ? 0.98 : 1 }}
+>
+  {isSubmitting ? 'Creating Account...' : 'Complete Signup'}
+</motion.button>
                         </motion.div>
                       )}
                     </motion.div>
