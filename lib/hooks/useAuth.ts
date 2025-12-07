@@ -5,18 +5,33 @@
 import { useState, useEffect } from 'react';
 import authService from '@/lib/services/authService';
 
+// Use the SAME interface from authService.ts
 interface UserProfile {
   userId: string;
   username: string;
   email: string;
+  age?: number;
   gender?: string;
-  goals?: string;
+  goals?: string;  // JSON string
   bio?: string;
   profilePic?: string | null;
   credits: number;
+  location?: string;
   createdAt: string;
   lastActive: string;
   preferences: string;
+  birthday?: string;
+  martialStatus?: string;  // ✅ Changed to optional
+  fieldOfWork?: string;
+  englishLevel?: string;
+  languages?: string[];
+  interests?: string[];
+  personalityTraits?: string[];
+  totalChats?: number;
+  totalMatches?: number;
+  followingCount?: number;
+  isVerified?: boolean;
+  isPremium?: boolean;
 }
 
 export const useAuth = () => {

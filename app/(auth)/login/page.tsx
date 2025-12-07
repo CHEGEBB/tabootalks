@@ -1,11 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Mail, Lock, Eye, EyeOff, Gift, Sparkles, MessageCircle, Users } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Gift, Sparkles, MessageCircle, Users, CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import { account } from '@/lib/appwrite/config';
+import { useRouter } from 'next/navigation';
+import { OAuthProvider } from 'appwrite';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,11 +17,32 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const router = useRouter();
 
+  // Check if user already has a session
   useEffect(() => {
-    setEmail('demo@taboowalks.com');
-    setPassword('Password123!');
-  }, []);
+    const checkSession = async () => {
+      try {
+        // Try to get current user
+        const user = await account.get();
+        
+        // If we get here, user has a valid session
+        // Redirect directly to home page
+        router.push('/main');
+        
+      } catch (err) {
+        // No valid session, stay on login page
+        console.log('No active session');
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+
+    checkSession();
+  }, [router]);
 
   const allImages = [
     'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&h=500&fit=crop',
@@ -40,38 +65,73 @@ const LoginPage = () => {
 
   const floatingWords = ['Welcome Back', 'Chat', 'Connect', 'Flirt', 'Explore'];
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    setError(null);
+    try {
+      // Appwrite OAuth
+      account.createOAuth2Session(
+        'google' as OAuthProvider,
+        `${window.location.origin}/main`,
+        `${window.location.origin}/login`
+      );
+    } catch (err: any) {
+      setError(err.message || 'Google sign in failed');
       setIsLoading(false);
-      setShowWelcomeModal(true);
-    }, 1000);
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!email || !password) {
-      alert('Please fill in all fields');
+      setError('Please fill in all fields');
       return;
     }
+
     setIsLoading(true);
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      // Real Appwrite login
+      await account.createEmailPasswordSession(email, password);
+      
+      // Get user data to verify login was successful
+      const user = await account.get();
+      
+      setLoginSuccess(true);
       setIsLoading(false);
       setShowWelcomeModal(true);
-    }, 1000);
+      
+    } catch (err: any) {
+      console.error('Login error:', err);
+      
+      // Handle specific Appwrite errors
+      if (err.code === 401) {
+        setError('Invalid email or password');
+      } else if (err.code === 400) {
+        setError('Invalid credentials format');
+      } else if (err.code === 429) {
+        setError('Too many attempts. Please try again later.');
+      } else {
+        setError(err.message || 'Login failed. Please try again.');
+      }
+      
+      setIsLoading(false);
+      setLoginSuccess(false);
+    }
   };
 
   const handleContinueToHome = () => {
-    window.location.href = '/main';
+    router.push('/main');
   };
 
   const handleForgotPassword = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
-    window.location.href = '/forgot-password';
+    router.push('/forgot-password');
   };
 
   const handleSignUp = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
-    window.location.href = '/signup';
+    router.push('/signup');
   };
 
   const handleKeyPress = (e: { key: string; }) => {
@@ -79,6 +139,18 @@ const LoginPage = () => {
       handleSubmit();
     }
   };
+
+  // Show loading while checking session
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#ff2e2e]"></div>
+          <p className="mt-4 text-gray-600">Checking session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white relative overflow-hidden">
@@ -168,6 +240,17 @@ const LoginPage = () => {
             <span className="absolute bg-white px-4 text-gray-500 text-sm font-medium">OR</span>
           </div>
 
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3"
+            >
+              <XCircle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
+              <p className="text-red-700 text-sm font-medium">{error}</p>
+            </motion.div>
+          )}
+
           <div className="space-y-4 lg:space-y-5">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
@@ -176,7 +259,10 @@ const LoginPage = () => {
                 <input 
                   type="email" 
                   value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError(null);
+                  }} 
                   onKeyPress={handleKeyPress}
                   placeholder="Enter your email" 
                   className="w-full pl-12 pr-4 py-3 lg:py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all text-gray-900" 
@@ -191,7 +277,10 @@ const LoginPage = () => {
                 <input 
                   type={showPassword ? 'text' : 'password'} 
                   value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                  }} 
                   onKeyPress={handleKeyPress}
                   placeholder="Enter your password" 
                   className="w-full pl-12 pr-12 py-3 lg:py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all text-gray-900" 
@@ -218,7 +307,6 @@ const LoginPage = () => {
               >
                 Forgot password?
               </Link>
-             
             </div>
 
             <motion.button 
@@ -226,9 +314,17 @@ const LoginPage = () => {
               whileHover={{ scale: 1.02 }} 
               whileTap={{ scale: 0.98 }} 
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed relative"
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Signing In...
+                </span>
+              ) : 'Sign In'}
             </motion.button>
           </div>
 
@@ -240,7 +336,6 @@ const LoginPage = () => {
                 onClick={handleSignUp}
                 className="text-[#5e17eb] font-semibold hover:underline cursor-pointer"
               > Sign up here</Link>
-               
             </p>
           </div>
         </motion.div>
@@ -443,32 +538,74 @@ const LoginPage = () => {
                 <motion.div 
                   animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }} 
                   transition={{ duration: 0.6 }} 
-                  className="inline-flex items-center justify-center  mb-6"
+                  className="inline-flex items-center justify-center mb-6"
                 >
-                 <Image
-                    src="/assets/logo2.png"
-                    alt="Welcome Icon"
-                    width={140}
-                    height={80}
-                  />
-                </motion.div>
-                <h3 className="text-3xl font-bold text-gray-900 mb-3">Welcome Back!</h3>
-                <p className="text-gray-600 mb-6">Successfully signed in to TabooTalks</p>
-                <div className="bg-gradient-to-br from-[#5e17eb]/10 to-[#ff2e2e]/10 rounded-2xl p-6 mb-6 border-2 border-[#5e17eb]/20">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <Users className="text-[#ff2e2e]" size={24} />
-                    <span className="text-4xl font-bold bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] bg-clip-text text-transparent">250+</span>
+                  <div className="rounded-2xl flex items-center justify-center p-4">
+                    <Image 
+                      src="/assets/logo2.png" 
+                      alt="TabooTalks Logo" 
+                      width={200} 
+                      height={80} 
+                      className="object-contain"
+                    />
                   </div>
-                  <p className="text-lg font-semibold text-gray-900 mb-1">Profiles Online</p>
-                  <p className="text-sm text-gray-600">Start new conversations now</p>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="mb-4"
+                >
+                  <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-full mb-4">
+                    <CheckCircle size={18} />
+                    <span className="font-semibold text-sm">Successfully signed in!</span>
+                  </div>
+                  
+                  <h3 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h3>
+                  <p className="text-gray-600 mb-6">Ready to continue amazing conversations</p>
+                </motion.div>
+                
+                <div className="mb-6">
+                  <div className="flex justify-center -space-x-3 mb-4">
+                    {allImages.slice(0, 5).map((img, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.3 + (index * 0.1) }}
+                        className="w-14 h-14 rounded-full border-3 border-white overflow-hidden shadow-lg"
+                      >
+                        <img 
+                          src={img} 
+                          alt={`User ${index + 1}`} 
+                          className="w-full h-full object-cover"
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                  
+                  <div className="bg-gradient-to-r from-[#ff2e2e]/5 to-[#5e17eb]/5 rounded-xl p-5 border border-gray-100">
+                    <p className="text-xl font-bold text-gray-900 mb-2">
+                      Join <span className="text-[#ff2e2e]">250+</span> other active users
+                    </p>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Start amazing conversations now
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                      <Users size={14} />
+                      <span>Live users online now</span>
+                    </div>
+                  </div>
                 </div>
+                
                 <motion.button 
                   whileHover={{ scale: 1.05 }} 
                   whileTap={{ scale: 0.95 }} 
                   onClick={handleContinueToHome} 
-                  className="w-full bg-[#ff2e2e] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all"
+                  className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all shadow-md text-lg"
                 >
-                  Continue Exploring
+                  Continue to Home
                 </motion.button>
               </div>
             </motion.div>
