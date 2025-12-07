@@ -4,28 +4,42 @@ import { account, databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/con
 import { ID, OAuthProvider } from 'appwrite';
 import storageService from '@/lib/appwrite/storage';
 
+// Updated UserProfile interface to match Appwrite schema
+interface UserProfile {
+    userId: string;
+    username: string;
+    email: string;
+    age?: number;
+    gender?: string;
+    goals?: string;  // JSON string (NOT array in TypeScript)
+    bio?: string;
+    profilePic?: string | null;
+    credits: number;
+    location?: string;
+    createdAt: string;
+    lastActive: string;
+    preferences: string;  // JSON string
+    birthday?: string;
+    martialStatus?: string;
+    fieldOfWork?: string;
+    englishLevel?: string;
+    languages?: string[];  // ✅ NOW ARRAY (matches Appwrite schema)
+    interests?: string[];  // ✅ NOW ARRAY (matches Appwrite schema)
+    personalityTraits?: string[];  // ✅ NOW ARRAY (matches Appwrite schema)
+    totalChats?: number;
+    totalMatches?: number;
+    followingCount?: number;
+    isVerified?: boolean;
+    isPremium?: boolean;
+}
 
-// Types for signup wizard steps
 interface SignupData {
-  // Step 1: Gender preference
-  gender: string; // 'men' | 'women' | 'both'
-  
-  // Step 2: Goals (up to 3)
-  goals: string[]; // ['Chat', 'Find friends', 'Have fun', etc.]
-  
-  // Step 3: Bio
+  gender: string;
+  goals: string[];
   bio: string;
-  
-  // Step 4: Profile picture
-  profilePic: string | null; // Base64 or file URL
-  
-  // Step 5: Name
+  profilePic: string | null;
   name: string;
-  
-  // Step 6: Email
   email: string;
-  
-  // Step 7: Password
   password: string;
 }
 
@@ -34,41 +48,24 @@ interface LoginData {
   password: string;
 }
 
-interface UserProfile {
-    userId: string;
-    username: string;
-    email: string;
-    age?: number;
-    gender?: string;
-    goals?: string;  // ✅ NOW STRING (JSON string)
-    bio?: string;
-    profilePic?: string | null;
-    credits: number;
-    location?: string;  // ✅ NOW STRING (JSON string)
-    createdAt: string;
-    lastActive: string;
-    preferences: string;  // ✅ NOW STRING (JSON string)
-  }
-
 export const authService = {
   /**
    * SIGNUP - Multi-step wizard
-   * Creates Appwrite auth account + user profile document
    */
   async signup(signupData: SignupData): Promise<{ user: any; profile: UserProfile }> {
     try {
-      // 1. Upload profile picture if provided (base64)
+      // 1. Upload profile picture if provided
       let profilePicUrl: string | null = null;
       
       if (signupData.profilePic) {
         console.log('📤 Uploading profile picture...');
         profilePicUrl = await storageService.uploadProfilePictureFromBase64(
           signupData.profilePic,
-          `${signupData.name}-profile.jpg`
+          `${signupData.name}-profile-${Date.now()}.jpg`
         );
         console.log('✅ Profile picture uploaded:', profilePicUrl);
       }
-  
+
       // 2. Create Appwrite Auth account
       const authUser = await account.create(
         ID.unique(),
@@ -76,41 +73,53 @@ export const authService = {
         signupData.password,
         signupData.name
       );
-  
+
       console.log('✅ Auth account created:', authUser.$id);
-  
-      // 3. Create user profile document in 'users' collection
-      const userProfile: UserProfile = {
+
+      // 3. Create user profile document - CORRECTED to match Appwrite schema
+      const userProfile = {
         userId: authUser.$id,
         username: signupData.name,
         email: signupData.email,
-        gender: signupData.gender,
-        goals: JSON.stringify(signupData.goals),
-        bio: signupData.bio,
-        profilePic: profilePicUrl, // Store the URL, not base64
-        credits: 10, // 🎁 Free welcome credits
+        gender: signupData.gender || null,
+        goals: signupData.goals ? JSON.stringify(signupData.goals) : null,
+        bio: signupData.bio || null,
+        profilePic: profilePicUrl,
+        credits: 10,
+        location: null,
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString(),
         preferences: JSON.stringify({
             language: 'en',
             notifications: true,
-          }),
+        }),
+        age: null,
+        birthday: null,
+        martialStatus: null,
+        fieldOfWork: null,
+        englishLevel: null,
+        languages: [],  // ✅ Empty array, not JSON string
+        interests: [],  // ✅ Empty array, not JSON string
+        personalityTraits: [],  // ✅ Empty array, not JSON string
+        totalChats: 0,
+        totalMatches: 0,
+        followingCount: 0,
+        isVerified: false,
+        isPremium: false
       };
-  
+
       const profileDoc = await databases.createDocument(
         DATABASE_ID,
         COLLECTIONS.USERS,
-        authUser.$id, // Use auth ID as document ID
+        authUser.$id,
         userProfile
       );
-  
+
       console.log('✅ User profile created:', profileDoc.$id);
-  
+
       // 4. Auto-login after signup
       await account.createEmailPasswordSession(signupData.email, signupData.password);
-  
-      console.log('✅ User auto-logged in');
-  
+
       // 5. Create welcome credit transaction
       await databases.createDocument(
         DATABASE_ID,
@@ -127,17 +136,14 @@ export const authService = {
           timestamp: new Date().toISOString(),
         }
       );
-  
-      console.log('✅ Welcome transaction created');
-  
+
       return {
         user: authUser,
-        profile: userProfile,
+        profile: userProfile as unknown as UserProfile,
       };
     } catch (error: any) {
       console.error('❌ Signup error:', error);
       
-      // Handle specific errors
       if (error.code === 409) {
         throw new Error('An account with this email already exists');
       }
@@ -147,106 +153,136 @@ export const authService = {
   },
 
   /**
-   * LOGIN
-   * Authenticates user and retrieves profile
+   * UPDATE PROFILE - FIXED VERSION
    */
-  async login(loginData: LoginData): Promise<{ user: any; profile: UserProfile }> {
+  async updateProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
     try {
-      // 1. Create email/password session
-      const session = await account.createEmailPasswordSession(
-        loginData.email,
-        loginData.password
-      );
+      console.log('🔄 Updating profile for user:', userId);
+      console.log('📝 Updates to apply:', updates);
 
-      console.log('✅ Session created:', session.$id);
-
-      // 2. Get current user from auth
-      const authUser = await account.get();
-
-      console.log('✅ Auth user retrieved:', authUser.$id);
-
-      // 3. Get user profile from database
-      const profileDoc = await databases.getDocument(
-        DATABASE_ID,
-        COLLECTIONS.USERS,
-        authUser.$id
-      );
-
-      console.log('✅ User profile retrieved');
-
-      // 4. Update last active timestamp
-      await databases.updateDocument(
-        DATABASE_ID,
-        COLLECTIONS.USERS,
-        authUser.$id,
-        {
-          lastActive: new Date().toISOString(),
-        }
-      );
-
-      return {
-        user: authUser,
-        profile: profileDoc as unknown as UserProfile,
+      // Prepare updates object with proper data types
+      const updateData: Record<string, any> = {
+        lastActive: new Date().toISOString(),
       };
+
+      // Handle specific fields conversion
+      Object.entries(updates).forEach(([key, value]) => {
+        if (key === 'languages' || key === 'interests' || key === 'personalityTraits') {
+          // Ensure these are arrays for Appwrite
+          if (typeof value === 'string') {
+            try {
+              // Try to parse if it's a JSON string
+              const parsed = JSON.parse(value);
+              updateData[key] = Array.isArray(parsed) ? parsed : [];
+            } catch {
+              // If not JSON, split by comma
+              updateData[key] = value 
+                ? value.split(',').map((item: string) => item.trim()).filter(Boolean)
+                : [];
+            }
+          } else if (Array.isArray(value)) {
+            updateData[key] = value;
+          } else {
+            updateData[key] = [];
+          }
+        } else if (key === 'goals') {
+          // Store goals as JSON string
+          if (Array.isArray(value)) {
+            updateData[key] = JSON.stringify(value);
+          } else if (typeof value === 'string') {
+            updateData[key] = value;
+          } else {
+            updateData[key] = null;
+          }
+        } else if (key === 'age' && value !== undefined) {
+          // Convert age to number
+          updateData[key] = parseInt(value as string) || null;
+        } else {
+          // Store other fields as-is
+          updateData[key] = value !== undefined && value !== '' ? value : null;
+        }
+      });
+
+      console.log('📦 Prepared update data:', updateData);
+
+      const updatedProfile = await databases.updateDocument(
+        DATABASE_ID,
+        COLLECTIONS.USERS,
+        userId,
+        updateData
+      );
+
+      console.log('✅ Profile updated successfully');
+      return updatedProfile as unknown as UserProfile;
     } catch (error: any) {
-      console.error('❌ Login error:', error);
+      console.error('❌ Update profile error:', error);
+      console.error('Error details:', error.response || error.message);
       
-      // Handle specific errors
-      if (error.code === 401) {
-        throw new Error('Invalid email or password');
+      if (error.code === 400) {
+        throw new Error('Invalid data format. Please check your input.');
       }
       
-      throw new Error(error.message || 'Failed to login');
+      throw new Error(error.message || 'Failed to update profile');
     }
   },
 
   /**
-   * LOGIN WITH GOOGLE (OAuth)
-   * Redirects to Google OAuth
-   */
-  async loginWithGoogle(): Promise<void> {
-    try {
-      // Appwrite OAuth2 - redirects to Google
-      account.createOAuth2Session(
-            'google' as OAuthProvider,
-            `${window.location.origin}/auth/callback`, // Success redirect
-            `${window.location.origin}/login`
-        );
-    } catch (error: any) {
-      console.error('❌ Google login error:', error);
-      throw new Error(error.message || 'Failed to login with Google');
-    }
-  },
-
-  /**
-   * GET CURRENT USER
-   * Retrieves authenticated user + profile
+   * GET CURRENT USER - Enhanced with proper type conversion
    */
   async getCurrentUser(): Promise<{ user: any; profile: UserProfile } | null> {
     try {
-      // 1. Check if user is authenticated
       const authUser = await account.get();
 
       if (!authUser) {
         return null;
       }
 
-      // 2. Get user profile from database
       const profileDoc = await databases.getDocument(
         DATABASE_ID,
         COLLECTIONS.USERS,
         authUser.$id
       );
 
+      // Convert Appwrite document to UserProfile type
+      const profile: UserProfile = {
+        userId: profileDoc.userId,
+        username: profileDoc.username,
+        email: profileDoc.email,
+        age: profileDoc.age || undefined,
+        gender: profileDoc.gender || undefined,
+        goals: profileDoc.goals || undefined,
+        bio: profileDoc.bio || undefined,
+        profilePic: profileDoc.profilePic || null,
+        credits: profileDoc.credits || 0,
+        location: profileDoc.location || undefined,
+        createdAt: profileDoc.createdAt,
+        lastActive: profileDoc.lastActive,
+        preferences: profileDoc.preferences || JSON.stringify({}),
+        birthday: profileDoc.birthday || undefined,
+        martialStatus: profileDoc.martialStatus || undefined,
+        fieldOfWork: profileDoc.fieldOfWork || undefined,
+        englishLevel: profileDoc.englishLevel || undefined,
+        languages: profileDoc.languages || [],  // Already array in Appwrite
+        interests: profileDoc.interests || [],
+        personalityTraits: profileDoc.personalityTraits || [],
+        totalChats: profileDoc.totalChats || 0,
+        totalMatches: profileDoc.totalMatches || 0,
+        followingCount: profileDoc.followingCount || 0,
+        isVerified: profileDoc.isVerified || false,
+        isPremium: profileDoc.isPremium || false
+      };
+
       return {
         user: authUser,
-        profile: profileDoc as unknown as UserProfile,
+        profile
       };
     } catch (error) {
       console.error('❌ Get current user error:', error);
       return null;
     }
   },
+
+
 
   /**
    * LOGOUT
@@ -262,29 +298,7 @@ export const authService = {
     }
   },
 
-  /**
-   * UPDATE PROFILE
-   * Updates user profile data
-   */
-  async updateProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
-    try {
-      const updatedProfile = await databases.updateDocument(
-        DATABASE_ID,
-        COLLECTIONS.USERS,
-        userId,
-        {
-          ...updates,
-          lastActive: new Date().toISOString(),
-        }
-      );
-
-      console.log('✅ Profile updated');
-      return updatedProfile as unknown as UserProfile;
-    } catch (error: any) {
-      console.error('❌ Update profile error:', error);
-      throw new Error(error.message || 'Failed to update profile');
-    }
-  },
+ 
 
   /**
    * FORGOT PASSWORD

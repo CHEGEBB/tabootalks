@@ -1,9 +1,12 @@
-// app/main/profile/page.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import LayoutController from '@/components/layout/LayoutController';
-import Image from 'next/image';
+import useAuth from '@/lib/hooks/useAuth';
+import authService from '@/lib/services/authService';
+import storageService from '@/lib/appwrite/storage';
+import { ID } from 'appwrite';
 import {
   Edit,
   Camera,
@@ -33,9 +36,6 @@ import {
   Utensils,
   BookOpen,
   Plane,
-  Music as MusicIcon,
-  Film as FilmIcon,
-  Gamepad2 as GameIcon,
   Settings,
   Shield,
   Bell,
@@ -52,186 +52,503 @@ import {
   Target,
   Search,
   Filter,
-  Save
+  Save,
+  Loader2,
+  Sparkles,
+  Target as TargetIcon,
+  Heart as HeartIcon2,
+  Users as UsersIcon,
+  Tag,
+  Smile,
+  Award,
+  TrendingUp,
+  Activity,
+  GitBranch,
+  Eye as EyeIcon,
+  Key,
+  Phone,
+  Home,
+  Building,
+  Map,
+  Briefcase as BriefcaseIcon,
+  Book,
+  Music as MusicIcon,
+  Film as FilmIcon,
+  Gamepad2 as GameIcon,
+  Coffee as CoffeeIcon,
+  Dumbbell as DumbbellIcon,
+  Palette as PaletteIcon,
+  Utensils as UtensilsIcon,
+  BookOpen as BookOpenIcon,
+  Plane as PlaneIcon
 } from 'lucide-react';
 
-// Unsplash Image URLs - Use these for profile images
-const UNS_PHOTO_URLS = {
-  profile: 'https://images.unsplash.com/photo-1739590441594-8e4e35a8a813?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  photo1: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop',
-  photo2: 'https://images.unsplash.com/photo-1494790108755-2616b786d4d9?w=400&h=400&fit=crop',
-  photo3: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=400&fit=crop',
-  photo4: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop',
-  photo5: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=400&fit=crop',
-  berlin: 'https://images.unsplash.com/photo-1599946347371-68eb71b16afc?w=400&h=300&fit=crop',
-  travel: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=300&fit=crop',
-  coding: 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=400&h=300&fit=crop'
-};
+interface UserProfile {
+  userId: string;
+  username: string;
+  email: string;
+  gender?: string;
+  goals?: string;
+  bio?: string;
+  profilePic?: string | null;
+  credits: number;
+  location?: string;
+  createdAt: string;
+  lastActive: string;
+  preferences: string;
+  age?: number;
+  birthday?: string;
+  martialStatus?: string;
+  fieldOfWork?: string;
+  englishLevel?: string;
+  languages?: string[];
+  interests?: string[];
+  personalityTraits?: string[];
+  totalChats?: number;
+  totalMatches?: number;
+  followingCount?: number;
+  isVerified?: boolean;
+  isPremium?: boolean;
+}
 
-// Mock user data
-const MOCK_USER = {
-  id: 'user_001',
-  name: 'David',
-  fullName: 'David Müller',
-  age: 28,
-  country: 'Germany',
-  city: 'Berlin',
-  bio: 'Digital nomad and adventure seeker. Passionate about technology, travel, and meeting new people from around the world. Always up for a good conversation and new experiences!',
-  birthday: '1996-03-15',
-  martialStatus: 'Single',
-  fieldOfWork: 'Software Developer',
-  englishLevel: 'Fluent',
-  languages: ['German', 'English', 'Spanish'],
-  credits: 120,
-  isVerified: true,
-  isPremium: true,
-  joinDate: '2024-01-15',
-  lastActive: 'Just now'
-};
+interface UserPhoto {
+  id: string;
+  url: string;
+  isPrivate: boolean;
+  isProfile: boolean;
+}
 
-// Mock photos with Unsplash URLs
-const MOCK_PHOTOS = [
-  { id: 1, url: UNS_PHOTO_URLS.profile, isPrivate: false, isProfile: true },
-  { id: 2, url: UNS_PHOTO_URLS.photo1, isPrivate: false, isProfile: false },
-  { id: 3, url: UNS_PHOTO_URLS.photo2, isPrivate: true, isProfile: false },
-  { id: 4, url: UNS_PHOTO_URLS.photo3, isPrivate: false, isProfile: false },
-  { id: 5, url: UNS_PHOTO_URLS.photo4, isPrivate: true, isProfile: false },
-  { id: 6, url: UNS_PHOTO_URLS.photo5, isPrivate: false, isProfile: false },
+// Goals options
+const GOALS_OPTIONS = [
+  'Find friends', 'Have fun', 'Meet people', 'Chat', 'Find relationship',
+  'Learn languages', 'Practice English', 'Cultural exchange', 'Business networking',
+  'Travel buddies'
 ];
 
-// Mock traits/interests
-const TRAITS = [
-  'Adventurous', 'Creative', 'Tech-Savvy', 'Open-minded', 'Friendly', 'Ambitious'
+// English level options
+const ENGLISH_LEVELS = ['Basic', 'Intermediate', 'Fluent', 'Native'];
+
+// Martial status options
+const MARTIAL_STATUS = ['Single', 'In a relationship', 'Married', 'Divorced', 'Separated', 'Widowed'];
+
+// Gender options
+const GENDER_OPTIONS = ['men', 'women', 'other', 'prefer-not-to-say'];
+
+// Interests options
+const INTERESTS_OPTIONS = [
+  'Music', 'Movies', 'Gaming', 'Sports', 'Travel', 'Food', 'Art', 'Reading',
+  'Technology', 'Fitness', 'Photography', 'Dancing', 'Cooking', 'Writing',
+  'Hiking', 'Yoga', 'Meditation', 'Fashion', 'Cars', 'Animals'
 ];
 
-const INTERESTS = [
-  { name: 'Traveling', icon: <Plane className="w-4 h-4" />, color: 'text-blue-700  ' },
-  { name: 'Coding', icon: <Globe className="w-4 h-4" />, color: 'text-purple-700' },
-  { name: 'Photography', icon: <Camera className="w-4 h-4" />, color: ' text-emerald-500' },
-  { name: 'Music', icon: <MusicIcon className="w-4 h-4" />, color: ' text-green-700' },
-  { name: 'Movies', icon: <FilmIcon className="w-4 h-4" />, color: ' text-yellow-700' },
-  { name: 'Gaming', icon: <GameIcon className="w-4 h-4" />, color: 'text-indigo-700' },
-  { name: 'Fitness', icon: <Dumbbell className="w-4 h-4" />, color: ' text-pink-700' },
-  { name: 'Cooking', icon: <Utensils className="w-4 h-4" />, color: 'text-orange-700' },
-  { name: 'Reading', icon: <BookOpen className="w-4 h-4" />, color: ' text-black' },
-  { name: 'Art', icon: <Palette className="w-4 h-4" />, color: 'text-cyan-700' },
-];
-
-const MOVIES = ['Inception', 'Interstellar', 'The Dark Knight', 'Pulp Fiction'];
-const MUSIC = ['Rock', 'Electronic', 'Jazz', 'Indie Pop'];
-
-// Looking for preferences
-const LOOKING_FOR = {
-  goal: 'Meaningful connections and fun conversations',
-  ageRange: { min: 22, max: 35 },
-  personality: ['Honest', 'Funny', 'Intelligent', 'Adventurous']
-};
-
-// Activity stats
-const ACTIVITY_STATS = [
-  { label: 'Total Chats', value: 156, icon: <MessageSquare className="w-4 h-4" />, color: 'bg-purple-100 text-purple-700' },
-  { label: 'Following', value: 89, icon: <Users className="w-4 h-4" />, color: 'bg-blue-100 text-blue-700' },
-  { label: 'Matches', value: 47, icon: <Heart className="w-4 h-4" />, color: 'bg-red-100 text-red-700' },
-  { label: 'Messages Sent', value: 1243, icon: <Mail className="w-4 h-4" />, color: 'bg-green-100 text-green-700' },
+// Personality traits options
+const TRAITS_OPTIONS = [
+  'Adventurous', 'Creative', 'Friendly', 'Introvert', 'Extrovert', 'Optimistic',
+  'Realistic', 'Ambitious', 'Calm', 'Energetic', 'Funny', 'Serious', 'Patient',
+  'Impulsive', 'Organized', 'Spontaneous', 'Thoughtful', 'Confident', 'Humble'
 ];
 
 export default function ProfilePage() {
-  const [user, setUser] = useState(MOCK_USER);
-  const [photos, setPhotos] = useState(MOCK_PHOTOS);
+  const { user, profile, loading, error, logout, isAuthenticated } = useAuth();
+  const [photos, setPhotos] = useState<UserPhoto[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<'public' | 'private'>('public');
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState<typeof MOCK_PHOTOS[0] | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<UserPhoto | null>(null);
+  const [profileCompletion, setProfileCompletion] = useState(0);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // FULL edit form state - ALL fields from Appwrite
   const [editForm, setEditForm] = useState({
-    fullName: user.fullName,
-    bio: user.bio,
-    city: user.city,
-    fieldOfWork: user.fieldOfWork,
-    englishLevel: user.englishLevel,
-    martialStatus: user.martialStatus,
-    languages: user.languages.join(', '),
+    username: '',
+    email: '',
+    bio: '',
+    gender: '',
+    location: '',
+    fieldOfWork: '',
+    englishLevel: '',
+    martialStatus: '',
+    age: '',
+    birthday: '',
+    languages: '',
+    interests: [] as string[],
+    personalityTraits: [] as string[],
+    goals: [] as string[],
   });
 
-  // Filter photos based on active tab
-  const filteredPhotos = photos.filter(photo => 
-    activeTab === 'public' ? !photo.isPrivate : photo.isPrivate
-  );
+  // Load ALL user data
+  useEffect(() => {
+    if (profile && !loading) {
+      console.log('📊 Full profile data from Appwrite:', profile);
+      
+      // Parse goals from JSON string
+      let goalsArray: string[] = [];
+      try {
+        goalsArray = profile.goals ? JSON.parse(profile.goals) : [];
+      } catch {
+        goalsArray = [];
+      }
+
+      // Parse preferences if needed
+      let languagePref = 'en';
+      try {
+        const prefs = profile.preferences ? JSON.parse(profile.preferences) : {};
+        languagePref = prefs.language || 'en';
+      } catch {
+        // Ignore parse error
+      }
+
+      // Initialize FULL edit form with ALL Appwrite fields
+      setEditForm({
+        username: profile.username || '',
+        email: profile.email || '',
+        bio: profile.bio || '',
+        gender: profile.gender || '',
+        location: profile.location || '',
+        fieldOfWork: profile.fieldOfWork || '',
+        englishLevel: profile.englishLevel || '',
+        martialStatus: profile.martialStatus || '',
+        age: profile.age?.toString() || '',
+        birthday: profile.birthday || '',
+        languages: profile.languages ? profile.languages.join(', ') : '',
+        interests: profile.interests || [],
+        personalityTraits: profile.personalityTraits || [],
+        goals: goalsArray,
+      });
+
+      loadUserPhotos(profile);
+      calculateProfileCompletion(profile);
+    }
+  }, [profile, loading]);
+
+  // Load user's photos
+  const loadUserPhotos = async (profileData: UserProfile) => {
+    try {
+      const photoList: UserPhoto[] = [];
+      
+      if (profileData.profilePic) {
+        photoList.push({
+          id: 'profile',
+          url: profileData.profilePic,
+          isPrivate: false,
+          isProfile: true
+        });
+      }
+      
+      setPhotos(photoList);
+    } catch (error) {
+      console.error('Failed to load photos:', error);
+    }
+  };
+
+  // Calculate profile completion
+  const calculateProfileCompletion = (profileData: UserProfile) => {
+    const fields = [
+      'username',
+      'bio',
+      'gender',
+      'goals',
+      'profilePic',
+      'location',
+      'age',
+      'martialStatus',
+      'fieldOfWork',
+      'englishLevel',
+      'languages',
+      'interests',
+    ];
+
+    let completed = 0;
+    
+    fields.forEach(field => {
+      const value = profileData[field as keyof UserProfile];
+      if (field === 'goals') {
+        try {
+          const goals = value ? JSON.parse(value as string) : [];
+          if (Array.isArray(goals) && goals.length > 0) completed++;
+        } catch {
+          if (value && (value as string).length > 0) completed++;
+        }
+      } else if (field === 'languages' || field === 'interests') {
+        const arr = value as string[];
+        if (arr && arr.length > 0) completed++;
+      } else if (field === 'age') {
+        if (value !== undefined && value !== null && Number(value) > 0) completed++;
+      } else if (value && value.toString().trim().length > 0) {
+        completed++;
+      }
+    });
+
+    const percentage = Math.round((completed / fields.length) * 100);
+    setProfileCompletion(percentage);
+
+    if (percentage < 80 && !showCompletionModal) {
+      setTimeout(() => {
+        setShowCompletionModal(true);
+      }, 1000);
+    }
+  };
+
+  // Handle profile update
+  const handleSaveChanges = async () => {
+    if (!user || !profile) return;
+
+    setIsUpdating(true);
+    try {
+      // Convert languages string to array
+      const languagesArray = editForm.languages
+        .split(',')
+        .map(lang => lang.trim())
+        .filter(lang => lang.length > 0);
+
+      const updates: Partial<UserProfile> = {
+        username: editForm.username,
+        bio: editForm.bio,
+        gender: editForm.gender,
+        location: editForm.location,
+        fieldOfWork: editForm.fieldOfWork,
+        englishLevel: editForm.englishLevel,
+        martialStatus: editForm.martialStatus,
+        languages: languagesArray,
+        interests: editForm.interests,
+        personalityTraits: editForm.personalityTraits,
+        goals: JSON.stringify(editForm.goals),
+        age: editForm.age ? parseInt(editForm.age) : undefined,
+        birthday: editForm.birthday || undefined,
+      };
+
+      console.log('🔄 Updating profile with:', updates);
+      
+      await authService.updateProfile(user.$id, updates);
+      
+      // Refresh user data without full page reload
+      const result = await authService.getCurrentUser();
+      if (result) {
+        window.location.reload(); // Temporary until we implement proper state update
+      }
+      
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error('Failed to update profile:', error);
+      alert(`Failed to update profile: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Handle multi-select changes
+  const handleArrayFieldChange = (field: 'interests' | 'personalityTraits' | 'goals', value: string) => {
+    setEditForm(prev => {
+      const currentArray = prev[field];
+      const newArray = currentArray.includes(value)
+        ? currentArray.filter(item => item !== value)
+        : [...currentArray, value];
+      return { ...prev, [field]: newArray };
+    });
+  };
 
   // Handle photo upload
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user) return;
 
     setUploading(true);
-    // Simulate upload
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // For demo, use a random Unsplash URL
-    const unsplashUrls = [
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1494790108755-2616b786d4d9?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop'
-    ];
-    
-    const randomUrl = unsplashUrls[Math.floor(Math.random() * unsplashUrls.length)];
-    
-    const newPhoto = {
-      id: photos.length + 1,
-      url: randomUrl,
-      isPrivate: activeTab === 'private',
-      isProfile: false
-    };
-    
-    setPhotos([...photos, newPhoto]);
-    setUploading(false);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        
+        const fileUrl = await storageService.uploadProfilePictureFromBase64(
+          base64,
+          `${user.$id}-gallery-${Date.now()}.jpg`
+        );
+
+        const newPhoto: UserPhoto = {
+          id: ID.unique(),
+          url: fileUrl,
+          isPrivate: activeTab === 'private',
+          isProfile: false
+        };
+        
+        setPhotos([...photos, newPhoto]);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+      alert('Failed to upload photo. Please try again.');
+    } finally {
+      setUploading(false);
+    }
   };
 
-  // Handle profile photo change
-  const handleSetProfilePhoto = (photoId: number) => {
-    setPhotos(photos.map(photo => ({
-      ...photo,
-      isProfile: photo.id === photoId
-    })));
+  // Handle SET as profile photo
+  const handleSetProfilePhoto = async (photoUrl: string) => {
+    if (!user) return;
+
+    try {
+      await authService.updateProfile(user.$id, { profilePic: photoUrl });
+      
+      setPhotos(photos.map(photo => ({
+        ...photo,
+        isProfile: photo.url === photoUrl
+      })));
+      
+      alert('Profile photo updated successfully!');
+    } catch (error) {
+      console.error('Failed to update profile photo:', error);
+      alert('Failed to update profile photo.');
+    }
   };
 
   // Handle photo delete
-  const handleDeletePhoto = (photoId: number) => {
-    setPhotos(photos.filter(photo => photo.id !== photoId));
-  };
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!user) return;
 
-  // Handle save changes
-  const handleSaveChanges = () => {
-    setUser({
-      ...user,
-      fullName: editForm.fullName,
-      bio: editForm.bio,
-      city: editForm.city,
-      fieldOfWork: editForm.fieldOfWork,
-      englishLevel: editForm.englishLevel,
-      martialStatus: editForm.martialStatus,
-      languages: editForm.languages.split(',').map(lang => lang.trim()),
-    });
-    setIsEditing(false);
-  };
+    const photoToDelete = photos.find(p => p.id === photoId);
+    if (!photoToDelete) return;
 
-  // Calculate age from birthday
-  const calculateAge = (birthday: string) => {
-    const birthDate = new Date(birthday);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
+    try {
+      if (photoToDelete.isProfile) {
+        alert('Cannot delete profile photo. Set another photo as profile first.');
+        return;
+      }
+
+      setPhotos(photos.filter(photo => photo.id !== photoId));
+      alert('Photo deleted successfully!');
+    } catch (error) {
+      console.error('Failed to delete photo:', error);
+      alert('Failed to delete photo.');
     }
-    return age;
   };
+
+  // Get online status
+  const getOnlineStatus = () => {
+    if (!profile?.lastActive) return 'Offline';
+    
+    const lastActive = new Date(profile.lastActive);
+    const now = new Date();
+    const diffMinutes = (now.getTime() - lastActive.getTime()) / (1000 * 60);
+    
+    if (diffMinutes < 5) return 'Active now';
+    if (diffMinutes < 60) return `${Math.floor(diffMinutes)} minutes ago`;
+    if (diffMinutes < 1440) return 'Today';
+    return 'Offline';
+  };
+
+  // Get parsed profile data
+  const getProfileData = () => {
+    if (!profile) return null;
+
+    let goalsArray: string[] = [];
+    try {
+      goalsArray = profile.goals ? JSON.parse(profile.goals) : [];
+    } catch {
+      goalsArray = [];
+    }
+
+    const languagesArray = profile.languages || [];
+    const interestsArray = profile.interests || [];
+    const traitsArray = profile.personalityTraits || [];
+    
+    return {
+      ...profile,
+      goalsArray,
+      languagesArray,
+      interestsArray,
+      traitsArray,
+      isVerified: profile.isVerified || false,
+      isPremium: profile.isPremium || false,
+      totalChats: profile.totalChats || 0,
+      totalMatches: profile.totalMatches || 0,
+      followingCount: profile.followingCount || 0,
+    };
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
+        <LayoutController />
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated state
+  if (!isAuthenticated || !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+        <LayoutController />
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h1>
+            <p className="text-gray-600 mb-6">You need to be signed in to view your profile.</p>
+            <a
+              href="/login"
+              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-colors inline-block"
+            >
+              Go to Login
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const profileData = getProfileData();
+  if (!profileData) return null;
+
+  const onlineStatus = getOnlineStatus();
+  const isOnline = onlineStatus === 'Active now';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <LayoutController />
+      
+      {/* Profile Completion Modal */}
+      {showCompletionModal && profileCompletion < 80 && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Complete Your Profile</h3>
+              <button
+                onClick={() => setShowCompletionModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-600">Profile Completion</span>
+                <span className="font-bold text-purple-600">{profileCompletion}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${profileCompletion}%` }}
+                ></div>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => {
+                setShowCompletionModal(false);
+                setIsEditing(true);
+              }}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-colors"
+            >
+              Complete Profile Now
+            </button>
+          </div>
+        </div>
+      )}
       
       <div className="max-w-6xl mx-auto px-4 py-8">
         
@@ -240,17 +557,20 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
               
-              {/* Profile Image - ROUNDED */}
+              {/* Profile Image */}
               <div className="relative">
                 <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-xl">
-                  <div className="w-full h-full relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-blue-500 opacity-20"></div>
+                  {profileData.profilePic ? (
                     <img 
-                      src={UNS_PHOTO_URLS.profile} 
-                      alt="David Müller"
+                      src={profileData.profilePic} 
+                      alt={profileData.username}
                       className="w-full h-full object-cover"
                     />
-                  </div>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white text-4xl font-bold">
+                      {profileData.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                 </div>
                 
                 {/* Edit Profile Photo Button */}
@@ -260,14 +580,6 @@ export default function ProfilePage() {
                 >
                   <CameraIcon className="w-4 h-4" />
                 </button>
-                
-                {/* Premium Badge */}
-                {user.isPremium && (
-                  <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                    <Crown className="w-3 h-3" />
-                    PREMIUM
-                  </div>
-                )}
               </div>
               
               {/* User Info */}
@@ -275,8 +587,11 @@ export default function ProfilePage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <h1 className="text-3xl font-bold text-gray-900">{user.name}, {calculateAge(user.birthday)}</h1>
-                      {user.isVerified && (
+                      <h1 className="text-3xl font-bold text-gray-900">
+                        {profileData.username}
+                        {profileData.age && `, ${profileData.age}`}
+                      </h1>
+                      {profileData.isVerified && (
                         <div className="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                           <Shield className="w-3 h-3" />
                           Verified
@@ -284,30 +599,59 @@ export default function ProfilePage() {
                       )}
                     </div>
                     
+                    {/* Location */}
                     <div className="flex items-center gap-2 text-gray-600 mb-4">
-                      <MapPin className="w-4 h-4" />
-                      <span>{user.city}, {user.country}</span>
-                      <span className="mx-2">•</span>
-                      <span className="text-green-600 font-medium flex items-center gap-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        {user.lastActive}
+                      {profileData.location ? (
+                        <>
+                          <MapPin className="w-4 h-4" />
+                          <span>{profileData.location}</span>
+                          <span className="mx-2">•</span>
+                        </>
+                      ) : (
+                        <span className="text-gray-400">No location set</span>
+                      )}
+                      
+                      {/* Online status */}
+                      <span className={`font-medium flex items-center gap-1 ${
+                        isOnline ? 'text-green-600' : 'text-gray-500'
+                      }`}>
+                        <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+                        {onlineStatus}
                       </span>
                     </div>
                     
+                    {/* User details chips */}
                     <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-                        {user.fieldOfWork}
-                      </span>
-                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
-                        English: {user.englishLevel}
-                      </span>
-                      <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                        {user.martialStatus}
-                      </span>
+                      {profileData.gender && (
+                        <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {profileData.gender === 'men' ? 'Male' : 
+                           profileData.gender === 'women' ? 'Female' : 
+                           profileData.gender}
+                        </span>
+                      )}
+                      {profileData.fieldOfWork && (
+                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                          <BriefcaseIcon className="w-3 h-3" />
+                          {profileData.fieldOfWork}
+                        </span>
+                      )}
+                      {profileData.englishLevel && (
+                        <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                          <Globe className="w-3 h-3" />
+                          English: {profileData.englishLevel}
+                        </span>
+                      )}
+                      {profileData.martialStatus && (
+                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                          <HeartIcon className="w-3 h-3" />
+                          {profileData.martialStatus}
+                        </span>
+                      )}
                     </div>
                   </div>
                   
-                  {/* Action Buttons - REMOVED SETTINGS BUTTON */}
+                  {/* Action Buttons */}
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={() => setIsEditing(true)}
@@ -320,24 +664,23 @@ export default function ProfilePage() {
                       className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-6 rounded-xl transition-colors flex items-center gap-2"
                     >
                       <CreditCard className="w-4 h-4" />
-                      {user.credits} Credits
+                      {profileData.credits} Credits
                     </button>
                   </div>
                 </div>
                 
-                {/* Activity Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                  {ACTIVITY_STATS.map((stat, index) => (
-                    <div key={index} className="bg-white border border-gray-200 p-4 rounded-xl hover:shadow-md transition-shadow">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.color}`}>
-                          {stat.icon}
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                      </div>
-                      <div className="text-sm text-gray-600">{stat.label}</div>
-                    </div>
-                  ))}
+                {/* Profile Completion Bar */}
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-600">Profile Strength</span>
+                    <span className="text-sm font-bold text-purple-600">{profileCompletion}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${profileCompletion}%` }}
+                    ></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -394,7 +737,7 @@ export default function ProfilePage() {
                     disabled={uploading}
                   />
                   {uploading ? (
-                    <div className="w-10 h-10 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                    <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
                   ) : (
                     <>
                       <Upload className="w-8 h-8 text-gray-400 mb-2" />
@@ -404,7 +747,7 @@ export default function ProfilePage() {
                 </label>
                 
                 {/* Display Photos */}
-                {filteredPhotos.map((photo) => (
+                {photos.map((photo) => (
                   <div
                     key={photo.id}
                     className="aspect-square rounded-xl overflow-hidden relative group cursor-pointer bg-gray-100"
@@ -422,18 +765,11 @@ export default function ProfilePage() {
                     {/* Photo Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
-                        <div className="flex gap-2">
-                          {photo.isPrivate && (
-                            <div className="bg-black/50 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                              <Lock className="w-3 h-3" />
-                            </div>
-                          )}
-                          {photo.isProfile && (
-                            <div className="bg-purple-600 text-white px-2 py-1 rounded-full text-xs">
-                              Profile
-                            </div>
-                          )}
-                        </div>
+                        {photo.isProfile && (
+                          <div className="bg-purple-600 text-white px-2 py-1 rounded-full text-xs">
+                            Profile
+                          </div>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -451,7 +787,7 @@ export default function ProfilePage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleSetProfilePhoto(photo.id);
+                          handleSetProfilePhoto(photo.url);
                         }}
                         className="absolute top-2 right-2 bg-white/90 text-gray-800 p-1.5 rounded-full hover:bg-white transition-colors opacity-0 group-hover:opacity-100"
                         title="Set as profile photo"
@@ -462,17 +798,9 @@ export default function ProfilePage() {
                   </div>
                 ))}
               </div>
-              
-              {/* Photo Count */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>{photos.length} photos total</span>
-                  <span>{photos.filter(p => p.isPrivate).length} private</span>
-                </div>
-              </div>
             </div>
             
-            {/* About Section */}
+            {/* About Section - SHOWING ALL FIELDS */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">About Me</h2>
@@ -486,354 +814,607 @@ export default function ProfilePage() {
                     </button>
                     <button
                       onClick={handleSaveChanges}
-                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                      disabled={isUpdating}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Save className="w-4 h-4" />
-                      Save Changes
+                      {isUpdating ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                      {isUpdating ? 'Saving...' : 'Save Changes'}
                     </button>
                   </div>
                 )}
               </div>
               
-              {/* BIO Section */}
-              <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">Bio</h3>
-                  {isEditing && (
-                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
-                      Editing
-                    </span>
-                  )}
-                </div>
-                
-                {isEditing ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Full Name
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.fullName}
-                          onChange={(e) => setEditForm({...editForm, fullName: e.target.value})}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors"
-                          placeholder="Enter your full name"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          City
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.city}
-                          onChange={(e) => setEditForm({...editForm, city: e.target.value})}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors"
-                          placeholder="Enter your city"
-                        />
-                      </div>
-                    </div>
-                    
+              {/* EDIT MODE - Show ALL fields for editing */}
+              {isEditing ? (
+                <div className="space-y-6">
+                  {/* Basic Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        About Me
+                        Username *
                       </label>
-                      <textarea
-                        value={editForm.bio}
-                        onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
-                        rows={3}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors"
-                        placeholder="Tell us about yourself..."
+                      <input
+                        type="text"
+                        value={editForm.username}
+                        onChange={(e) => setEditForm({...editForm, username: e.target.value})}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        placeholder="Enter your username"
                       />
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Profession
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.fieldOfWork}
-                          onChange={(e) => setEditForm({...editForm, fieldOfWork: e.target.value})}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors"
-                          placeholder="Your profession"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          English Level
-                        </label>
-                        <select
-                          value={editForm.englishLevel}
-                          onChange={(e) => setEditForm({...editForm, englishLevel: e.target.value})}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors"
-                        >
-                          <option>Basic</option>
-                          <option>Intermediate</option>
-                          <option>Fluent</option>
-                          <option>Native</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Relationship Status
-                        </label>
-                        <select
-                          value={editForm.martialStatus}
-                          onChange={(e) => setEditForm({...editForm, martialStatus: e.target.value})}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors"
-                        >
-                          <option>Single</option>
-                          <option>In a relationship</option>
-                          <option>Married</option>
-                          <option>Divorced</option>
-                          <option>Separated</option>
-                          <option>Prefer not to say</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Languages (comma separated)
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.languages}
-                          onChange={(e) => setEditForm({...editForm, languages: e.target.value})}
-                          placeholder="English, German, Spanish"
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={editForm.email}
+                        readOnly
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 placeholder:text-gray-500 text-gray-500"
+                        placeholder="Your email (cannot change)"
+                      />
                     </div>
                   </div>
-                ) : (
-                  <div className="space-y-6">
-                    {/* Bio Text */}
-                    <p className="text-gray-700 leading-relaxed">{user.bio}</p>
-                    
-                    {/* Info Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-100">
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Age
+                      </label>
+                      <input
+                        type="number"
+                        value={editForm.age}
+                        onChange={(e) => setEditForm({...editForm, age: e.target.value})}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        placeholder="Enter your age"
+                        min="18"
+                        max="100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Birthday
+                      </label>
+                      <input
+                        type="date"
+                        value={editForm.birthday}
+                        onChange={(e) => setEditForm({...editForm, birthday: e.target.value})}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Gender
+                      </label>
+                      <select
+                        value={editForm.gender}
+                        onChange={(e) => setEditForm({...editForm, gender: e.target.value})}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                      >
+                        <option value="" className="placeholder:text-gray-500 text-gray-500">Select gender</option>
+                        {GENDER_OPTIONS.map(option => (
+                          <option key={option} value={option}>
+                            {option === 'men' ? 'Male' : 
+                             option === 'women' ? 'Female' : 
+                             option.charAt(0).toUpperCase() + option.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Relationship Status
+                      </label>
+                      <select
+                        value={editForm.martialStatus}
+                        onChange={(e) => setEditForm({...editForm, martialStatus: e.target.value})}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                      >
+                        <option value="" className="placeholder:text-gray-500 text-gray-500">Select status</option>
+                        {MARTIAL_STATUS.map(status => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.location}
+                        onChange={(e) => setEditForm({...editForm, location: e.target.value})}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        placeholder="City, Country"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Profession / Field of Work
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.fieldOfWork}
+                        onChange={(e) => setEditForm({...editForm, fieldOfWork: e.target.value})}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        placeholder="Your profession"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bio *
+                    </label>
+                    <textarea
+                      value={editForm.bio}
+                      onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+                      rows={4}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                      placeholder="Tell us about yourself..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        English Level
+                      </label>
+                      <select
+                        value={editForm.englishLevel}
+                        onChange={(e) => setEditForm({...editForm, englishLevel: e.target.value})}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                      >
+                        <option value="" className="placeholder:text-gray-500 text-gray-500">Select level</option>
+                        {ENGLISH_LEVELS.map(level => (
+                          <option key={level} value={level}>{level}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Languages (comma separated)
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.languages}
+                        onChange={(e) => setEditForm({...editForm, languages: e.target.value})}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        placeholder="English, German, Spanish"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Goals Section */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Your Goals (Select up to 3)
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {GOALS_OPTIONS.map(goal => (
+                        <button
+                          key={goal}
+                          type="button"
+                          onClick={() => handleArrayFieldChange('goals', goal)}
+                          className={`px-4 py-2.5 rounded-lg border transition-colors flex items-center justify-center gap-2 ${
+                            editForm.goals.includes(goal)
+                              ? 'bg-purple-600 text-white border-purple-600'
+                              : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100'
+                          }`}
+                        >
+                          <TargetIcon className="w-4 h-4" />
+                          {goal}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-2 text-sm text-gray-500">
+                      Selected: {editForm.goals.join(', ')}
+                    </div>
+                  </div>
+
+                  {/* Interests Section */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Your Interests
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {INTERESTS_OPTIONS.map(interest => (
+                        <button
+                          key={interest}
+                          type="button"
+                          onClick={() => handleArrayFieldChange('interests', interest)}
+                          className={`px-3 py-2 rounded-lg border transition-colors flex items-center justify-center gap-2 text-sm ${
+                            editForm.interests.includes(interest)
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100'
+                          }`}
+                        >
+                          {interest === 'Music' && <MusicIcon className="w-4 h-4" />}
+                          {interest === 'Movies' && <FilmIcon className="w-4 h-4" />}
+                          {interest === 'Gaming' && <GameIcon className="w-4 h-4" />}
+                          {interest === 'Sports' && <Activity className="w-4 h-4" />}
+                          {interest === 'Travel' && <PlaneIcon className="w-4 h-4" />}
+                          {interest === 'Food' && <UtensilsIcon className="w-4 h-4" />}
+                          {interest === 'Art' && <PaletteIcon className="w-4 h-4" />}
+                          {interest === 'Reading' && <BookOpenIcon className="w-4 h-4" />}
+                          {interest === 'Fitness' && <DumbbellIcon className="w-4 h-4" />}
+                          {!['Music','Movies','Gaming','Sports','Travel','Food','Art','Reading','Fitness'].includes(interest) && 
+                           <Sparkles className="w-4 h-4" />}
+                          {interest}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Personality Traits */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Personality Traits
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {TRAITS_OPTIONS.map(trait => (
+                        <button
+                          key={trait}
+                          type="button"
+                          onClick={() => handleArrayFieldChange('personalityTraits', trait)}
+                          className={`px-3 py-2 rounded-lg border transition-colors flex items-center justify-center gap-2 text-sm ${
+                            editForm.personalityTraits.includes(trait)
+                              ? 'bg-green-600 text-white border-green-600'
+                              : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100'
+                          }`}
+                        >
+                          <Smile className="w-4 h-4" />
+                          {trait}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* VIEW MODE - Show ALL fields from Appwrite */
+                <div className="space-y-8">
+                  
+                  {/* Bio */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <User className="w-5 h-5 text-purple-600" />
+                      About Me
+                    </h3>
+                    <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      {profileData.bio || (
+                        <span className="text-gray-400 italic">No bio added yet. Add a bio to tell others about yourself.</span>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Basic Info Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Username */}
+                    <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-100">
+                      <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
                           <User className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <div className="text-sm text-gray-600">Full Name</div>
-                          <div className="font-bold text-gray-900">{user.fullName}</div>
+                          <div className="text-sm text-gray-600">Username</div>
+                          <div className="font-bold text-gray-900">{profileData.username || 'Not set'}</div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
+                    </div>
+
+                    {/* Email */}
+                    <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
+                      <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                          <MapPin className="w-5 h-5 text-white" />
+                          <Mail className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <div className="text-sm text-gray-600">Location</div>
-                          <div className="font-bold text-gray-900">{user.city}, {user.country}</div>
+                          <div className="text-sm text-gray-600">Email</div>
+                          <div className="font-bold text-gray-900 truncate">{profileData.email}</div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                    </div>
+
+                    {/* Age */}
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                      <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                          <Calendar className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-600">Age</div>
+                          <div className="font-bold text-gray-900">{profileData.age || 'Not set'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Birthday */}
+                    <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-lg flex items-center justify-center">
                           <Calendar className="w-5 h-5 text-white" />
                         </div>
                         <div>
                           <div className="text-sm text-gray-600">Birthday</div>
                           <div className="font-bold text-gray-900">
-                            {new Date(user.birthday).toLocaleDateString('en-US', { 
-                              month: 'long', 
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
+                            {profileData.birthday ? new Date(profileData.birthday).toLocaleDateString() : 'Not set'}
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-xl border border-red-100">
-                        <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
-                          <Briefcase className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-sm text-gray-600">Profession</div>
-                          <div className="font-bold text-gray-900">{user.fieldOfWork}</div>
-                        </div>
-                      </div>
                     </div>
-                    
-                    {/* Languages */}
-                    <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
-                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Languages className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm text-gray-600 mb-2">Languages I speak</div>
-                        <div className="flex flex-wrap gap-2">
-                          {user.languages.map((lang, index) => (
-                            <span key={index} className="bg-white px-3 py-1.5 rounded-full text-sm font-medium border border-indigo-200 text-indigo-700">
-                              {lang}
-                            </span>
-                          ))}
+
+                    {/* Gender */}
+                    {profileData.gender && (
+                      <div className="p-4 bg-gradient-to-r from-pink-50 to-rose-50 rounded-xl border border-pink-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center">
+                            <User className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-600">Gender</div>
+                            <div className="font-bold text-gray-900">
+                              {profileData.gender === 'men' ? 'Male' : 
+                               profileData.gender === 'women' ? 'Female' : 
+                               profileData.gender}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Personality Traits */}
-              <div className="mb-8">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Personality Traits</h3>
-                <div className="flex flex-wrap gap-2">
-                  {TRAITS.map((trait, index) => (
-                    <span 
-                      key={index}
-                      className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 text-purple-700 px-4 py-2.5 rounded-full font-medium hover:shadow-md transition-shadow"
-                    >
-                      {trait}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Interests */}
-              <div className="mb-8 ">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">My Interests</h3>
-                <div className=" grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {INTERESTS.map((interest, index) => (
-                    <div
-                      key={index}
-                      className="flex flex-col items-center p-3 bg-white border border-gray-200 hover:border-purple-300 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-md group cursor-pointer"
-                    >
-                      <div className={`w-12 h-12 border-2 border-gray-300 ${interest.color.split(' ')[0]} rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
-                        {interest.icon}
-                      </div>
-                      <span className="text-sm font-medium text-gray-900 text-center">{interest.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Movies & Music */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Film className="w-5 h-5 text-purple-600" />
-                    Favorite Movies
-                  </h3>
-                  <div className="space-y-2">
-                    {MOVIES.map((movie, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-purple-50 rounded-lg transition-colors group">
-                        <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center group-hover:from-purple-200 group-hover:to-purple-300">
-                          <Film className="w-4 h-4 text-purple-600" />
+                    )}
+
+                    {/* Martial Status */}
+                    {profileData.martialStatus && (
+                      <div className="p-4 bg-gradient-to-r from-red-50 to-orange-50 rounded-xl border border-red-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
+                            <HeartIcon className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-600">Relationship Status</div>
+                            <div className="font-bold text-gray-900">{profileData.martialStatus}</div>
+                          </div>
                         </div>
-                        <span className="font-medium text-gray-900">{movie}</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Music className="w-5 h-5 text-blue-600" />
-                    Music Preferences
-                  </h3>
-                  <div className="space-y-2">
-                    {MUSIC.map((genre, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-blue-50 rounded-lg transition-colors group">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center group-hover:from-blue-200 group-hover:to-blue-300">
-                          <Music className="w-4 h-4 text-blue-600" />
+                    )}
+
+                    {/* Location */}
+                    {profileData.location && (
+                      <div className="p-4 bg-gradient-to-r from-cyan-50 to-teal-50 rounded-xl border border-cyan-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-lg flex items-center justify-center">
+                            <MapPin className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-600">Location</div>
+                            <div className="font-bold text-gray-900">{profileData.location}</div>
+                          </div>
                         </div>
-                        <span className="font-medium text-gray-900">{genre}</span>
                       </div>
-                    ))}
+                    )}
+
+                    {/* Field of Work */}
+                    {profileData.fieldOfWork && (
+                      <div className="p-4 bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl border border-indigo-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-lg flex items-center justify-center">
+                            <BriefcaseIcon className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-600">Profession</div>
+                            <div className="font-bold text-gray-900">{profileData.fieldOfWork}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* English Level */}
+                    {profileData.englishLevel && (
+                      <div className="p-4 bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl border border-violet-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-500 rounded-lg flex items-center justify-center">
+                            <Globe className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-600">English Level</div>
+                            <div className="font-bold text-gray-900">{profileData.englishLevel}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Languages */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Languages className="w-5 h-5 text-purple-600" />
+                      Languages
+                    </h3>
+                    {profileData.languagesArray.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {profileData.languagesArray.map((lang: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined, index: React.Key | null | undefined) => (
+                          <span 
+                            key={index}
+                            className="bg-gradient-to-r from-indigo-100 to-purple-100 border border-indigo-300 text-indigo-800 px-4 py-2 rounded-full font-medium hover:shadow-md transition-shadow flex items-center gap-2"
+                          >
+                            <Globe className="w-4 h-4" />
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        No languages added. Add languages you speak.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Goals */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <TargetIcon className="w-5 h-5 text-purple-600" />
+                      My Goals
+                    </h3>
+                    {profileData.goalsArray.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {profileData.goalsArray.map((goal, index) => (
+                          <span 
+                            key={index}
+                            className="bg-gradient-to-r from-purple-100 to-pink-100 border border-purple-300 text-purple-800 px-4 py-2 rounded-full font-medium hover:shadow-md transition-shadow flex items-center gap-2"
+                          >
+                            <TargetIcon className="w-4 h-4" />
+                            {goal}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        No goals set. What are you looking for on this platform?
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Interests */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-purple-600" />
+                      My Interests
+                    </h3>
+                    {profileData.interestsArray.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {profileData.interestsArray.map((interest, index) => (
+                          <div
+                            key={index}
+                            className="flex flex-col items-center p-3 bg-white border border-gray-200 hover:border-purple-300 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-md group"
+                          >
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-blue-100 border-2 border-gray-300 rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                              {interest === 'Music' && <MusicIcon className="w-5 h-5 text-purple-600" />}
+                              {interest === 'Movies' && <FilmIcon className="w-5 h-5 text-purple-600" />}
+                              {interest === 'Gaming' && <GameIcon className="w-5 h-5 text-purple-600" />}
+                              {interest === 'Sports' && <Activity className="w-5 h-5 text-purple-600" />}
+                              {interest === 'Travel' && <PlaneIcon className="w-5 h-5 text-purple-600" />}
+                              {interest === 'Food' && <UtensilsIcon className="w-5 h-5 text-purple-600" />}
+                              {interest === 'Art' && <PaletteIcon className="w-5 h-5 text-purple-600" />}
+                              {interest === 'Reading' && <BookOpenIcon className="w-5 h-5 text-purple-600" />}
+                              {interest === 'Fitness' && <DumbbellIcon className="w-5 h-5 text-purple-600" />}
+                              {!['Music','Movies','Gaming','Sports','Travel','Food','Art','Reading','Fitness'].includes(interest) && 
+                               <Sparkles className="w-5 h-5 text-purple-600" />}
+                            </div>
+                            <span className="text-sm font-medium text-gray-900 text-center">{interest}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        No interests added. Add your hobbies and interests.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Personality Traits */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Smile className="w-5 h-5 text-purple-600" />
+                      Personality Traits
+                    </h3>
+                    {profileData.traitsArray.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {profileData.traitsArray.map((trait, index) => (
+                          <span 
+                            key={index}
+                            className="bg-gradient-to-r from-green-100 to-emerald-100 border border-green-300 text-green-800 px-4 py-2 rounded-full font-medium hover:shadow-md transition-shadow flex items-center gap-2"
+                          >
+                            <Smile className="w-4 h-4" />
+                            {trait}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        No personality traits added. Describe your personality.
+                      </p>
+                    )}
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
           
-          {/* Right Column - Looking For & Quick Actions */}
+          {/* Right Column - Stats & Quick Actions */}
           <div className="space-y-8">
             
-            {/* Looking For Card */}
-            <div className="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-2xl shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <Target className="w-5 h-5 text-purple-600" />
-                Looking For
-              </h2>
+            {/* Stats Card */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Your Stats</h2>
               
-              <div className="space-y-6">
-                <div>
-                  <div className="text-sm text-gray-600 mb-2">My Goal</div>
-                  <div className="font-medium text-gray-900 p-3 bg-white/50 backdrop-blur-sm rounded-lg border border-purple-100">
-                    {LOOKING_FOR.goal}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">Credits</div>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {profileData.credits}
                   </div>
                 </div>
                 
-                <div>
-                  <div className="text-sm text-gray-600 mb-2">Age Range I&apos;m Interested In</div>
-                  <div className="flex items-center gap-3 p-3 bg-white/50 backdrop-blur-sm rounded-lg border border-purple-100">
-                    <div className="text-2xl font-bold text-purple-600">{LOOKING_FOR.ageRange.min}</div>
-                    <div className="flex-1 h-2 bg-gradient-to-r from-purple-400 via-purple-300 to-blue-400 rounded-full"></div>
-                    <div className="text-2xl font-bold text-blue-600">{LOOKING_FOR.ageRange.max}</div>
+                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                      <Heart className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">Total Matches</div>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {profileData.totalMatches}
                   </div>
                 </div>
                 
-                <div>
-                  <div className="text-sm text-gray-600 mb-2">Preferred Personality Traits</div>
-                  <div className="flex flex-wrap gap-2">
-                    {LOOKING_FOR.personality.map((trait, index) => (
-                      <span
-                        key={index}
-                        className="bg-white/80 backdrop-blur-sm border border-blue-200 text-blue-700 px-3 py-1.5 rounded-full font-medium hover:shadow-sm transition-shadow"
-                      >
-                        {trait}
-                      </span>
-                    ))}
+                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                      <MessageSquare className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">Total Chats</div>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {profileData.totalChats}
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-lg flex items-center justify-center">
+                      <UsersIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">Following</div>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {profileData.followingCount}
                   </div>
                 </div>
               </div>
             </div>
             
-            {/* Credits Card */}
-            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl shadow-lg p-6 text-white">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <div className="text-sm text-purple-200 mb-1">Credit Balance</div>
-                  <div className="text-3xl font-bold">{user.credits}</div>
-                  <div className="text-purple-200">credits available</div>
-                </div>
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-white" />
-                </div>
-              </div>
-              
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center justify-between">
-                  <span className="text-purple-200">Chatting</span>
-                  <span className="font-medium">1 credit/message</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-purple-200">Send Photos</span>
-                  <span className="font-medium">15 credits</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-purple-200">Request Photos</span>
-                  <span className="font-medium">25 credits</span>
-                </div>
-              </div>
-              
-              <button className="w-full bg-white text-purple-600 hover:bg-gray-100 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
-                <Zap className="w-4 h-4" />
-                Buy More Credits
-              </button>
-            </div>
-            
-            {/* Account Quick Info */}
+            {/* Account Info */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Account Info</h2>
               
@@ -841,7 +1422,7 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
                   <span className="text-gray-600">Member Since</span>
                   <span className="font-medium text-gray-900">
-                    {new Date(user.joinDate).toLocaleDateString('en-US', { 
+                    {new Date(profileData.createdAt).toLocaleDateString('en-US', { 
                       month: 'short', 
                       year: 'numeric'
                     })}
@@ -849,23 +1430,20 @@ export default function ProfilePage() {
                 </div>
                 
                 <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                  <span className="text-gray-600">Profile ID</span>
-                  <span className="font-mono font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded">
-                    {user.id}
+                  <span className="text-gray-600">Last Active</span>
+                  <span className="font-medium text-gray-900">
+                    {new Date(profileData.lastActive).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric'
+                    })}
                   </span>
                 </div>
                 
                 <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                  <span className="text-gray-600">Account Status</span>
-                  <span className="font-medium text-green-600 flex items-center gap-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    Active
+                  <span className="text-gray-600">User ID</span>
+                  <span className="font-mono text-xs text-gray-500 truncate">
+                    {profileData.userId.substring(0, 8)}...
                   </span>
-                </div>
-                
-                <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                  <span className="text-gray-600">Email Verified</span>
-                  <Check className="w-5 h-5 text-green-500" />
                 </div>
               </div>
             </div>
@@ -885,27 +1463,10 @@ export default function ProfilePage() {
                   </div>
                 </button>
                 
-                <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-blue-50 rounded-xl transition-colors group">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:from-blue-600 group-hover:to-blue-700 transition-colors">
-                    <Filter className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-medium text-gray-900">Preferences</div>
-                    <div className="text-sm text-gray-600">Edit match filters</div>
-                  </div>
-                </button>
-                
-                <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-green-50 rounded-xl transition-colors group">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center group-hover:from-green-600 group-hover:to-green-700 transition-colors">
-                    <Shield className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-medium text-gray-900">Privacy Center</div>
-                    <div className="text-sm text-gray-600">Manage privacy settings</div>
-                  </div>
-                </button>
-                
-                <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-red-50 rounded-xl transition-colors group">
+                <button 
+                  onClick={logout}
+                  className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-red-50 rounded-xl transition-colors group"
+                >
                   <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center group-hover:from-red-600 group-hover:to-red-700 transition-colors">
                     <LogOut className="w-5 h-5 text-white" />
                   </div>
@@ -946,6 +1507,12 @@ export default function ProfilePage() {
                     alt="Selected"
                     className="w-full h-full object-cover"
                   />
+                ) : photos.length > 0 ? (
+                  <img 
+                    src={photos[0].url} 
+                    alt="Gallery"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <Camera className="w-24 h-24 text-gray-300" />
@@ -955,27 +1522,35 @@ export default function ProfilePage() {
             </div>
             
             {/* Thumbnail Strip */}
-            <div className="grid grid-cols-6 gap-2">
-              {photos.map((photo) => (
-                <div
-                  key={photo.id}
-                  className={`aspect-square rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${
-                    selectedPhoto?.id === photo.id 
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105' 
-                      : 'opacity-80 hover:opacity-100 hover:scale-105'
-                  }`}
-                  onClick={() => setSelectedPhoto(photo)}
-                >
-                  <img 
-                    src={photo.url} 
-                    alt="Thumbnail"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
+            {photos.length > 0 ? (
+              <div className="grid grid-cols-6 gap-2">
+                {photos.map((photo) => (
+                  <div
+                    key={photo.id}
+                    className={`aspect-square rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${
+                      selectedPhoto?.id === photo.id 
+                        ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105' 
+                        : 'opacity-80 hover:opacity-100 hover:scale-105'
+                    }`}
+                    onClick={() => setSelectedPhoto(photo)}
+                  >
+                    <img 
+                      src={photo.url} 
+                      alt="Thumbnail"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-white">
+                <Camera className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-300">No photos yet</p>
+                <p className="text-gray-400 text-sm">Upload some photos to get started</p>
+              </div>
+            )}
             
-            {/* Photo Info & Actions */}
+            {/* Photo Actions */}
             {selectedPhoto && (
               <div className="mt-6 p-4 bg-white/10 backdrop-blur-sm rounded-xl">
                 <div className="flex items-center justify-between">
@@ -989,23 +1564,25 @@ export default function ProfilePage() {
                   <div className="flex gap-2">
                     {!selectedPhoto.isProfile && (
                       <button
-                        onClick={() => handleSetProfilePhoto(selectedPhoto.id)}
+                        onClick={() => handleSetProfilePhoto(selectedPhoto.url)}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2"
                       >
                         <User className="w-4 h-4" />
                         Set as Profile
                       </button>
                     )}
-                    <button
-                      onClick={() => {
-                        handleDeletePhoto(selectedPhoto.id);
-                        setSelectedPhoto(null);
-                      }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
-                    </button>
+                    {!selectedPhoto.isProfile && (
+                      <button
+                        onClick={() => {
+                          handleDeletePhoto(selectedPhoto.id);
+                          setSelectedPhoto(null);
+                        }}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

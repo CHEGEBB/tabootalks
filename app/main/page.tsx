@@ -6,7 +6,8 @@ import Image from 'next/image';
 import LayoutController from '@/components/layout/LayoutController';
 import Offer from '@/components/features/credits/CreditOffer';
 import ProfileNotification from '@/components/ui/ProfileNotification';
-
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useOffer } from '@/lib/hooks/useOffer';
 
 // Mock data for posts
 const mockPosts = [
@@ -179,11 +180,13 @@ const suggestedPeople = [
 ];
 
 export default function HomePage() {
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { showOffer, handleCloseOffer, isChecking } = useOffer();
+  
   const [posts, setPosts] = useState(mockPosts);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [likingPost, setLikingPost] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'following'>('all');
-  const [showOffer, setShowOffer] = useState(true);
   const [currentUser] = useState({
     name: 'David',
     credits: 150,
@@ -246,6 +249,26 @@ export default function HomePage() {
     }
     return num.toString();
   };
+
+  // Calculate if we should show offer
+  const shouldShowOffer = showOffer && isAuthenticated && !authLoading && !isChecking;
+
+  // Show loading while checking auth
+  if (authLoading || isChecking) {
+    return (
+      <div className="min-h-screen bg-white text-gray-900">
+        <LayoutController />
+        <main className="max-w-6xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-center h-[60vh]">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-[#5e17eb] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -642,15 +665,15 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Credit Offer Modal */}
-      <Offer isOpen={showOffer} onClose={() => setShowOffer(false)} />
+      {/* Credit Offer Modal - Only shows when user has logged in and not shown recently */}
+      <Offer isOpen={shouldShowOffer} onClose={handleCloseOffer} />
       <ProfileNotification 
-  autoShow={true}
-  minInterval={100000}
-  maxInterval={200000}
-  notificationDuration={10000}
-  position="top-right"
-/>
+        autoShow={true}
+        minInterval={100000}
+        maxInterval={200000}
+        notificationDuration={10000}
+        position="top-right"
+      />
     </div>
   );
 }
