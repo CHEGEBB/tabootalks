@@ -4,6 +4,8 @@ import { Home, MessageCircle, Search, Users, CreditCard, Bell, Compass, PlusCirc
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
+import useAuth from '@/lib/hooks/useAuth';
+
 
 interface DesktopNavProps {
   activeTab: string;
@@ -11,11 +13,14 @@ interface DesktopNavProps {
   credits: number;
 }
 
-export default function DesktopNav({ activeTab, setActiveTab, credits }: DesktopNavProps) {
+export default function DesktopNav({ activeTab, setActiveTab }: Omit<DesktopNavProps, 'credits'>) {
   const router = useRouter();
   const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Fetch current user data
+  const { profile, loading, logout } = useAuth();
 
   // Sync activeTab with current pathname
   useEffect(() => {
@@ -49,7 +54,6 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
   const handleNavigation = (id: string) => {
     setActiveTab(id);
     
-    // Define navigation paths based on tab id
     switch (id) {
       case 'home':
         router.push('/main');
@@ -90,7 +94,7 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
     }
   };
 
-  const handleProfileDropdown = (option: string) => {
+  const handleProfileDropdown = async (option: string) => {
     setIsDropdownOpen(false);
     
     switch (option) {
@@ -101,9 +105,7 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
         router.push('/main/settings');
         break;
       case 'logout':
-        // Add your logout logic here
-        console.log('Logging out...');
-        router.push('/login');
+        await logout();
         break;
       default:
         break;
@@ -118,11 +120,30 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
     { id: 'credits', label: 'Credits', icon: CreditCard },
   ];
 
+  // Show loading skeleton while fetching user
+  if (loading) {
+    return (
+      <nav className="sticky top-0 z-40 bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-24">
+            <div className="animate-pulse bg-gray-200 h-12 w-48 rounded"></div>
+            <div className="flex gap-10">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="animate-pulse bg-gray-200 h-12 w-12 rounded-full"></div>
+              ))}
+            </div>
+            <div className="animate-pulse bg-gray-200 h-12 w-32 rounded-full"></div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <nav className="sticky top-0 z-40 bg-white border-b border-gray-200">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-24">
-          {/* Logo - Larger size */}
+          {/* Logo */}
           <div className="flex items-center">
             <button 
               onClick={() => {
@@ -144,7 +165,7 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
             </button>
           </div>
 
-          {/* Navigation Items - Circular icons with labels below */}
+          {/* Navigation Items */}
           <div className="flex items-center gap-10">
             {navItems.map(item => {
               const isActive = activeTab === item.id;
@@ -156,7 +177,6 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
                       isActive ? 'text-[#5e17eb]' : 'text-gray-500 hover:text-[#5e17eb]'
                     }`}
                   >
-                    {/* Circular Icon Container with opacity for active state */}
                     <div className={`relative p-4 rounded-full transition-all ${
                       isActive 
                         ? 'bg-[#5e17eb]/10 border border-[#5e17eb]/20' 
@@ -169,7 +189,6 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
                         </span>
                       )}
                     </div>
-                    {/* Label Below */}
                     <span className={`text-sm font-medium mt-2 ${
                       isActive ? 'text-[#5e17eb] font-semibold' : 'text-gray-600'
                     }`}>
@@ -205,7 +224,7 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
               <PlusCircle size={24} />
             </button>
 
-            {/* Credits Display */}
+            {/* Credits Display - from profile */}
             <button 
               onClick={() => handleNavigation('credits')}
               className={`rounded-full px-4 py-2 transition ${
@@ -217,43 +236,46 @@ export default function DesktopNav({ activeTab, setActiveTab, credits }: Desktop
               <span className={`font-bold text-sm ${
                 activeTab === 'credits' ? 'text-[#5e17eb]' : 'text-white'
               }`}>
-                {credits}
+                {profile?.credits || 0}
               </span>
             </button>
             
             <div className="flex items-center gap-4 pl-6 border-l border-gray-200 relative" ref={dropdownRef}>
               <div className="text-right">
-                <p className="font-bold text-gray-900 text-lg">David</p>
+                <p className="font-bold text-gray-900 text-lg">{profile?.username || 'User'}</p>
                 <p className="text-sm text-gray-500">Premium Member</p>
               </div>
-              {/* Larger Profile Image with Dropdown */}
+              
+              {/* Profile Image */}
               <div className="relative">
                 <button 
                   onClick={() => handleRightSideAction('profile')}
                   className="relative w-14 h-14 rounded-full overflow-hidden border-3 border-[#5e17eb] hover:border-[#4a13c2] transition"
                 >
-                  <div className="h-full w-full bg-gradient-to-br from-[#5e17eb] to-[#ff2e2e] flex items-center justify-center">
+                  {profile?.profilePic ? (
                     <Image
-                      src="https://images.unsplash.com/photo-1739590441594-8e4e35a8a813?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                      alt="Profile Image"
+                      src={profile.profilePic}
+                      alt="Profile"
                       width={56}
                       height={56}
                       className="object-cover"
                     />
-                  </div>
+                  ) : (
+                    <div className="h-full w-full bg-gradient-to-br from-[#5e17eb] to-[#ff2e2e] flex items-center justify-center text-white font-bold text-xl">
+                      {profile?.username?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
                 </button>
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
                     <div className="py-2">
-                      {/* User Info Section */}
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="font-semibold text-gray-900">David</p>
-                        <p className="text-sm text-gray-500">david@example.com</p>
+                        <p className="font-semibold text-gray-900">{profile?.username || 'User'}</p>
+                        <p className="text-sm text-gray-500">{profile?.email || ''}</p>
                       </div>
                       
-                      {/* Menu Items */}
                       <button 
                         onClick={() => handleProfileDropdown('my-account')}
                         className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"

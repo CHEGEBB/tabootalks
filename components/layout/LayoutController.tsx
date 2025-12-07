@@ -51,7 +51,6 @@ export default function LayoutController() {
         <DesktopNav 
           activeTab={activeTab} 
           setActiveTab={setActiveTab} 
-          credits={user.credits}
         />
       )}
     </>
