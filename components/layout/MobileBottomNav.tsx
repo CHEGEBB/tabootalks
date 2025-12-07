@@ -4,18 +4,22 @@ import { Home, MessageCircle, Search, Users, CreditCard, Compass, Bell, User, Se
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useEffect, useState, useRef } from 'react';
+import useAuth from '@/lib/hooks/useAuth';
+
 
 interface MobileBottomNavProps {
     activeTab: string;
     setActiveTab: React.Dispatch<React.SetStateAction<string>>;
-    credits?: number;
 }
 
-export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150 }: MobileBottomNavProps) {
+export default function MobileBottomNav({ activeTab, setActiveTab }: MobileBottomNavProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Fetch current user data
+  const { profile, loading, logout } = useAuth();
 
   // Sync activeTab with current pathname
   useEffect(() => {
@@ -95,7 +99,7 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
     }
   };
 
-  const handleProfileDropdown = (option: string) => {
+  const handleProfileDropdown = async (option: string) => {
     setIsDropdownOpen(false);
     
     switch (option) {
@@ -106,9 +110,7 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
         router.push('/main/settings');
         break;
       case 'logout':
-        // Add your logout logic here
-        console.log('Logging out...');
-        router.push('/login');
+        await logout();
         break;
       default:
         break;
@@ -123,6 +125,34 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
     { id: 'people', label: 'People', icon: Users },
     { id: 'credits', label: 'Credits', icon: CreditCard },
   ];
+
+  // Show loading skeleton while fetching user
+  if (loading) {
+    return (
+      <>
+        {/* Top Bar Loading Skeleton */}
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 shadow-sm h-16">
+          <div className="flex items-center justify-between h-full">
+            <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
+            <div className="flex items-center gap-3">
+              <div className="animate-pulse bg-gray-200 h-10 w-10 rounded-full"></div>
+              <div className="animate-pulse bg-gray-200 h-10 w-10 rounded-full"></div>
+              <div className="animate-pulse bg-gray-200 h-10 w-10 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Bottom Nav Loading Skeleton */}
+        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-lg h-16">
+          <div className="flex justify-around items-center h-full px-2">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="animate-pulse bg-gray-200 h-10 w-10 rounded-full"></div>
+            ))}
+          </div>
+        </nav>
+      </>
+    );
+  }
 
   return (
     <>
@@ -173,15 +203,19 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
                 onClick={() => handleTopBarAction('profile')}
                 className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-[#5e17eb] hover:border-[#4a13c2] transition"
               >
-                <div className="h-full w-full bg-gradient-to-br from-[#5e17eb] to-[#ff2e2e] flex items-center justify-center">
+                {profile?.profilePic ? (
                   <Image
-                    src="https://images.unsplash.com/photo-1739590441594-8e4e35a8a813?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                    alt="Profile Image"
+                    src={profile.profilePic}
+                    alt="Profile"
                     width={40}
                     height={40}
                     className="object-cover"
                   />
-                </div>
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-[#5e17eb] to-[#ff2e2e] flex items-center justify-center text-white font-bold text-sm">
+                    {profile?.username?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
               </button>
 
               {/* Dropdown Menu */}
@@ -190,8 +224,8 @@ export default function MobileBottomNav({ activeTab, setActiveTab, credits = 150
                   <div className="py-2">
                     {/* User Info Section */}
                     <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="font-semibold text-gray-900 text-sm">David</p>
-                      <p className="text-xs text-gray-500">Premium Member</p>
+                      <p className="font-semibold text-gray-900 text-sm">{profile?.username || 'User'}</p>
+                      <p className="text-xs text-gray-500">{profile?.email || 'Premium Member'}</p>
                     </div>
                     
                     {/* Menu Items */}
