@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Heart, MessageCircle, MoreVertical, MapPin, Eye, Gift, Star, Sparkles, Filter, Flame, Zap, Camera, UserCheck, UserPlus, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import LayoutController from '@/components/layout/LayoutController';
@@ -8,184 +8,151 @@ import Offer from '@/components/features/credits/CreditOffer';
 import ProfileNotification from '@/components/ui/ProfileNotification';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useOffer } from '@/lib/hooks/useOffer';
+import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 
-// Mock data for posts
-const mockPosts = [
-  {
-    id: 1,
-    username: 'Sophie',
-    age: 28,
-    location: 'Berlin, Germany',
-    imageUrl: 'https://images.unsplash.com/photo-1456885284447-7dd4bb8720bf?q=80&w=687&fit=crop',
-    likes: 324,
-    comments: 42,
-    isLiked: false,
-    timeAgo: '2h ago',
-    caption: 'Looking for someone to explore Berlin with! 💕 Who wants to join me tonight?',
-    isOnline: true,
-    isVerified: true,
-    interests: ['Travel', 'Music', 'Dancing'],
-    distance: '3 km',
-    isFollowing: false
-  },
-  {
-    id: 2,
-    username: 'Emma',
-    age: 32,
-    location: 'Munich, Germany',
-    imageUrl: 'https://images.unsplash.com/photo-1522765312985-2a1e2bce9ad7?q=80&w=687&fit=crop',
-    likes: 289,
-    comments: 31,
-    isLiked: true,
-    timeAgo: '4h ago',
-    caption: 'Ready for meaningful connections and deep conversations. Let\'s chat! 💬',
-    isOnline: true,
-    isVerified: true,
-    interests: ['Yoga', 'Meditation', 'Books'],
-    distance: '12 km',
-    isFollowing: true
-  },
-  {
-    id: 3,
-    username: 'Lily',
-    age: 26,
-    location: 'Hamburg, Germany',
-    imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=800&fit=crop',
-    likes: 412,
-    comments: 58,
-    isLiked: false,
-    timeAgo: '6h ago',
-    caption: 'Beach vibes and good conversations 🌊 Looking for someone fun and adventurous!',
-    isOnline: false,
-    isVerified: false,
-    interests: ['Beach', 'Surfing', 'Parties'],
-    distance: '8 km',
-    isFollowing: false
-  },
-  {
-    id: 4,
-    username: 'Chloe',
-    age: 30,
-    location: 'Frankfurt, Germany',
-    imageUrl: 'https://images.unsplash.com/photo-1680783147882-1f48af96e349?q=80&w=837&fit=crop',
-    likes: 256,
-    comments: 38,
-    isLiked: false,
-    timeAgo: '8h ago',
-    caption: 'Coffee lover seeking coffee dates and meaningful connections ☕️ Let\'s meet!',
-    isOnline: true,
-    isVerified: true,
-    interests: ['Coffee', 'Art', 'Photography'],
-    distance: '5 km',
-    isFollowing: true
-  },
-  {
-    id: 5,
-    username: 'Grace',
-    age: 29,
-    location: 'Cologne, Germany',
-    imageUrl: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=800&fit=crop',
-    likes: 378,
-    comments: 46,
-    isLiked: true,
-    timeAgo: '1d ago',
-    caption: 'Exploring the city and looking for someone special to share moments with!',
-    isOnline: true,
-    isVerified: true,
-    interests: ['Travel', 'Food', 'History'],
-    distance: '15 km',
-    isFollowing: false
-  },
-  {
-    id: 6,
-    username: 'Mia',
-    age: 27,
-    location: 'Stuttgart, Germany',
-    imageUrl: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=800&h=800&fit=crop',
-    likes: 298,
-    comments: 39,
-    isLiked: false,
-    timeAgo: '1d ago',
-    caption: 'Looking for that special connection for romantic evenings. Message me! 💕',
-    isOnline: false,
-    isVerified: true,
-    interests: ['Romance', 'Wine', 'Fashion'],
-    distance: '20 km',
-    isFollowing: false
-  },
-];
+// Types for our posts
+interface Post {
+  id: string;
+  username: string;
+  age: number;
+  location: string;
+  imageUrl: string;
+  likes: number;
+  comments: number;
+  isLiked: boolean;
+  timeAgo: string;
+  caption: string;
+  isOnline: boolean;
+  isVerified: boolean;
+  interests: string[];
+  distance: string;
+  isFollowing: boolean;
+  bio: string;
+  additionalPhotos: string[];
+  gender: string;
+  personalityTraits: string[];
+  followingCount: number;
+  lastActive: string;
+}
 
-// Suggested people
-const suggestedPeople = [
-  {
-    id: 1,
-    username: 'Anna',
-    age: 27,
-    location: 'Berlin',
-    imageUrl: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=300&h=300&fit=crop',
-    isOnline: true,
-    isVerified: true,
-    compatibility: 92
-  },
-  {
-    id: 2,
-    username: 'Laura',
-    age: 29,
-    location: 'Munich',
-    imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&h=300&fit=crop',
-    isOnline: false,
-    isVerified: true,
-    compatibility: 87
-  },
-  {
-    id: 3,
-    username: 'Sarah',
-    age: 33,
-    location: 'Hamburg',
-    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop',
-    isOnline: true,
-    isVerified: false,
-    compatibility: 95
-  },
-  {
-    id: 4,
-    username: 'Julia',
-    age: 25,
-    location: 'Frankfurt',
-    imageUrl: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=300&h=300&fit=crop',
-    isOnline: true,
-    isVerified: true,
-    compatibility: 89
-  },
-  {
-    id: 5,
-    username: 'Natalie',
-    age: 30,
-    location: 'Cologne',
-    imageUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300&h=300&fit=crop',
-    isOnline: false,
-    isVerified: true,
-    compatibility: 84
-  },
-  {
-    id: 6,
-    username: 'Michelle',
-    age: 28,
-    location: 'Stuttgart',
-    imageUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&h=300&fit=crop',
-    isOnline: true,
-    isVerified: true,
-    compatibility: 91
-  },
-];
+// Skeleton loader component
+const PostSkeleton = () => (
+  <div className="border border-gray-200 rounded-xl overflow-hidden bg-white animate-pulse">
+    {/* Header Skeleton */}
+    <div className="p-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 rounded-full bg-gray-300"></div>
+          <div className="space-y-2">
+            <div className="h-4 w-24 bg-gray-300 rounded"></div>
+            <div className="h-3 w-32 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+        <div className="h-10 w-24 bg-gray-300 rounded-lg"></div>
+      </div>
+    </div>
+    
+    {/* Image Skeleton */}
+    <div className="h-[500px] bg-gray-300"></div>
+    
+    {/* Content Skeleton */}
+    <div className="p-5 space-y-4">
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+        <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+        <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+      </div>
+      <div className="h-4 w-32 bg-gray-300 rounded"></div>
+      <div className="h-3 w-full bg-gray-200 rounded"></div>
+      <div className="flex gap-2">
+        <div className="h-6 w-16 bg-gray-300 rounded-full"></div>
+        <div className="h-6 w-20 bg-gray-300 rounded-full"></div>
+        <div className="h-6 w-24 bg-gray-300 rounded-full"></div>
+      </div>
+      <div className="h-12 w-full bg-gray-200 rounded-lg"></div>
+    </div>
+  </div>
+);
+
+const ProfileCardSkeleton = () => (
+  <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200 animate-pulse">
+    <div className="flex items-center gap-3">
+      <div className="relative">
+        <div className="w-12 h-12 rounded-full bg-gray-300"></div>
+      </div>
+      <div className="space-y-2">
+        <div className="h-3 w-20 bg-gray-300 rounded"></div>
+        <div className="h-2 w-16 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+    <div className="w-16 h-8 bg-gray-300 rounded-lg"></div>
+  </div>
+);
+
+// Helper function to calculate time ago
+const getTimeAgo = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return `${Math.floor(diffDays / 7)}w ago`;
+};
+
+// Helper function to get random distance (for demo)
+const getRandomDistance = () => {
+  const distances = ['2 km', '3 km', '5 km', '8 km', '12 km', '15 km'];
+  return distances[Math.floor(Math.random() * distances.length)];
+};
+
+// Helper function to convert persona to post format
+const convertPersonaToPost = (persona: ParsedPersonaProfile, index: number): Post => {
+  const randomOnline = Math.random() > 0.3; // 70% chance of being online
+  const randomFollowing = Math.random() > 0.7; // 30% chance of following
+  
+  return {
+    id: `${persona.$id}-${index}-${Date.now()}`,
+    username: persona.username,
+    age: persona.age,
+    location: persona.location,
+    imageUrl: persona.profilePic || 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=800&h=800&fit=crop',
+    likes: Math.floor(Math.random() * 500) + 100,
+    comments: Math.floor(Math.random() * 50) + 10,
+    isLiked: false,
+    timeAgo: getTimeAgo(persona.lastActive || persona.$createdAt),
+    caption: persona.bio || `Looking for meaningful connections in ${persona.location}`,
+    isOnline: randomOnline,
+    isVerified: persona.isVerified,
+    interests: persona.interests?.slice(0, 3) || ['Travel', 'Music', 'Art'],
+    distance: getRandomDistance(),
+    isFollowing: randomFollowing,
+    bio: persona.bio,
+    additionalPhotos: persona.additionalPhotos || [],
+    gender: persona.gender,
+    personalityTraits: persona.personalityTraits || [],
+    followingCount: persona.followingCount || 0,
+    lastActive: persona.lastActive || persona.$createdAt
+  };
+};
 
 export default function HomePage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { showOffer, handleCloseOffer, isChecking } = useOffer();
   
-  const [posts, setPosts] = useState(mockPosts);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [suggestedPeople, setSuggestedPeople] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [likingPost, setLikingPost] = useState<number | null>(null);
+  const [likingPost, setLikingPost] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'following'>('all');
   const [currentUser] = useState({
     name: 'David',
@@ -193,13 +160,138 @@ export default function HomePage() {
     location: 'Berlin, Germany'
   });
 
+  const postsRef = useRef<Post[]>([]);
+  const loadedIdsRef = useRef<Set<string>>(new Set());
+  const isLoadingRef = useRef(false);
+
+  const ITEMS_PER_PAGE = 6;
+
+  // Load initial data
+  useEffect(() => {
+    if (!authLoading && !isChecking && !isLoadingRef.current) {
+      loadInitialData();
+    }
+  }, [authLoading, isChecking]);
+
+  const loadInitialData = async () => {
+    if (isLoadingRef.current) return;
+    
+    isLoadingRef.current = true;
+    setIsLoading(true);
+    loadedIdsRef.current.clear();
+    
+    try {
+      // Fetch random personas for main feed
+      const randomPersonas = await personaService.getRandomPersonas(ITEMS_PER_PAGE);
+      
+      // Convert to posts with unique IDs
+      const postsData = randomPersonas.map((persona, index) => {
+        const post = convertPersonaToPost(persona, index);
+        loadedIdsRef.current.add(persona.$id);
+        return post;
+      });
+      
+      setPosts(postsData);
+      postsRef.current = postsData;
+      
+      // Fetch more random personas for suggestions
+      const suggestedPersonas = await personaService.getRandomPersonas(6, randomPersonas.map(p => p.$id));
+      const suggestedData = suggestedPersonas.map((persona, index) => 
+        convertPersonaToPost(persona, index + ITEMS_PER_PAGE)
+      );
+      setSuggestedPeople(suggestedData);
+      
+      setPage(1);
+      setHasMore(true);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+    } finally {
+      setIsLoading(false);
+      isLoadingRef.current = false;
+    }
+  };
+
+  const loadMorePosts = async () => {
+    if (isLoadingMore || !hasMore || isLoadingRef.current) return;
+    
+    isLoadingRef.current = true;
+    setIsLoadingMore(true);
+    
+    try {
+      const offset = page * ITEMS_PER_PAGE;
+      const newPersonas = await personaService.getAllPersonas({
+        limit: ITEMS_PER_PAGE,
+        offset: offset,
+        gender: 'female' // Only show female profiles as per original mock data
+      });
+      
+      if (newPersonas.length === 0) {
+        setHasMore(false);
+        return;
+      }
+      
+      // Filter out personas that are already loaded
+      const uniquePersonas = newPersonas.filter(persona => !loadedIdsRef.current.has(persona.$id));
+      
+      if (uniquePersonas.length === 0) {
+        // If all are duplicates, skip to next page
+        setPage(prev => prev + 1);
+        return;
+      }
+      
+      // Add new IDs to the set
+      uniquePersonas.forEach(persona => loadedIdsRef.current.add(persona.$id));
+      
+      // Convert to posts with unique IDs
+      const newPosts = uniquePersonas.map((persona, index) => 
+        convertPersonaToPost(persona, postsRef.current.length + index)
+      );
+      
+      // Update both ref and state
+      const updatedPosts = [...postsRef.current, ...newPosts];
+      postsRef.current = updatedPosts;
+      setPosts(updatedPosts);
+      
+      setPage(prev => prev + 1);
+      
+      // Check if we should continue loading (we have total of 52 girls)
+      if (updatedPosts.length >= 52) {
+        setHasMore(false);
+      }
+      
+    } catch (error) {
+      console.error('Error loading more posts:', error);
+    } finally {
+      setIsLoadingMore(false);
+      isLoadingRef.current = false;
+    }
+  };
+
+  // Infinite scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >= 
+        document.documentElement.offsetHeight - 500 && 
+        !isLoadingMore && 
+        hasMore
+      ) {
+        loadMorePosts();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isLoadingMore, hasMore, page]);
+
   const filteredPosts = activeTab === 'all' 
     ? posts 
     : posts.filter(post => post.isFollowing);
 
-  const handleLike = (postId: number) => {
+  const handleLike = async (postId: string) => {
     setLikingPost(postId);
-    setTimeout(() => {
+    try {
+      // Update local state immediately for better UX
       setPosts(prev =>
         prev.map(post =>
           post.id === postId
@@ -211,27 +303,103 @@ export default function HomePage() {
             : post
         )
       );
+      
+      // Update ref as well
+      postsRef.current = postsRef.current.map(post =>
+        post.id === postId
+          ? {
+              ...post,
+              isLiked: !post.isLiked,
+              likes: post.isLiked ? post.likes - 1 : post.likes + 1,
+            }
+          : post
+      );
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+    } catch (error) {
+      console.error('Error liking post:', error);
+      // Revert on error
+      setPosts(prev =>
+        prev.map(post =>
+          post.id === postId
+            ? {
+                ...post,
+                isLiked: !post.isLiked,
+                likes: post.isLiked ? post.likes + 1 : post.likes - 1,
+              }
+            : post
+        )
+      );
+    } finally {
       setLikingPost(null);
-    }, 300);
+    }
   };
 
-  const handleChat = (userId: number) => {
+  const handleChat = (userId: string) => {
     alert(`Starting chat with user ${userId}. This would open chat window in real app.`);
   };
 
-  const handleViewProfile = (postId: number) => {
+  const handleViewProfile = (postId: string) => {
     alert(`Viewing profile of post ${postId}. This would navigate to profile page in real app.`);
   };
 
-  const handleFollow = (postId: number) => {
-    setPosts(prev =>
-      prev.map(post =>
-        post.id === postId ? { ...post, isFollowing: !post.isFollowing } : post
-      )
-    );
+  const handleFollow = async (postId: string) => {
+    try {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+      
+      const newFollowingCount = !post.isFollowing ? post.followingCount + 1 : post.followingCount - 1;
+      
+      // Update local state immediately
+      setPosts(prev =>
+        prev.map(p =>
+          p.id === postId 
+            ? { 
+                ...p, 
+                isFollowing: !p.isFollowing,
+                followingCount: newFollowingCount
+              } 
+            : p
+        )
+      );
+      
+      // Update ref as well
+      postsRef.current = postsRef.current.map(p =>
+        p.id === postId 
+          ? { 
+              ...p, 
+              isFollowing: !p.isFollowing,
+              followingCount: newFollowingCount
+            } 
+          : p
+      );
+      
+      // Update in database - extract the actual persona ID from the post ID
+      const personaId = postId.split('-')[0];
+      await personaService.updatePersonaStats(personaId, {
+        followingCount: newFollowingCount,
+        lastActive: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error following user:', error);
+      // Revert on error
+      setPosts(prev =>
+        prev.map(p =>
+          p.id === postId 
+            ? { 
+                ...p, 
+                isFollowing: !p.isFollowing,
+                followingCount: !p.isFollowing ? p.followingCount - 1 : p.followingCount + 1
+              } 
+            : p
+        )
+      );
+    }
   };
 
-  const handleGift = (postId: number) => {
+  const handleGift = (postId: string) => {
     alert(`Sending gift to user ${postId}. This would open gift modal in real app.`);
   };
 
@@ -250,19 +418,73 @@ export default function HomePage() {
     return num.toString();
   };
 
+  // Show additional photos on hover or click
+  const renderAdditionalPhotos = (post: Post) => {
+    if (!post.additionalPhotos || post.additionalPhotos.length === 0) {
+      return null;
+    }
+    
+    const displayPhotos = post.additionalPhotos.slice(0, 3);
+    const extraCount = post.additionalPhotos.length - 3;
+    
+    return (
+      <div className="absolute bottom-4 left-4 flex gap-2">
+        {displayPhotos.map((photo, index) => (
+          <div 
+            key={`${post.id}-photo-${index}`} 
+            className="w-12 h-12 rounded-lg overflow-hidden border-2 border-white shadow-lg cursor-pointer hover:scale-110 transition-transform"
+            onClick={(e) => {
+              e.stopPropagation();
+              openImageModal(photo);
+            }}
+          >
+            <Image
+              src={photo}
+              alt={`Additional photo ${index + 1}`}
+              width={48}
+              height={48}
+              className="object-cover w-full h-full"
+            />
+          </div>
+        ))}
+        {extraCount > 0 && (
+          <div className="w-12 h-12 rounded-lg bg-black/50 flex items-center justify-center text-white text-sm font-medium border-2 border-white shadow-lg">
+            +{extraCount}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Calculate if we should show offer
   const shouldShowOffer = showOffer && isAuthenticated && !authLoading && !isChecking;
 
-  // Show loading while checking auth
-  if (authLoading || isChecking) {
+  // Show loading while checking auth or initial loading
+  if (authLoading || isChecking || isLoading) {
     return (
       <div className="min-h-screen bg-white text-gray-900">
         <LayoutController />
         <main className="max-w-6xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-center h-[60vh]">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-[#5e17eb] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading...</p>
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+            {/* Main Feed Skeleton */}
+            <div className="flex-1 max-w-2xl mx-auto w-full space-y-8">
+              {[...Array(3)].map((_, i) => (
+                <PostSkeleton key={`skeleton-${i}`} />
+              ))}
+            </div>
+            
+            {/* Sidebar Skeleton */}
+            <div className="hidden lg:block w-80 flex-shrink-0">
+              <div className="sticky top-24 space-y-6">
+                <div className="p-6 border border-gray-200 rounded-xl bg-white">
+                  <div className="h-6 w-32 bg-gray-300 rounded mb-5"></div>
+                  <div className="space-y-4">
+                    {[...Array(6)].map((_, i) => (
+                      <ProfileCardSkeleton key={`sidebar-skeleton-${i}`} />
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </main>
@@ -315,8 +537,8 @@ export default function HomePage() {
               
               {/* Stories/Online Users */}
               <div className="flex gap-4 sm:gap-6 mb-6 sm:mb-8 pb-3 px-1 overflow-x-auto">
-                {suggestedPeople.slice(0, 4).map(person => (
-                  <div key={person.id} className="flex flex-col items-center flex-shrink-0">
+                {suggestedPeople.slice(0, 4).map((person, index) => (
+                  <div key={`story-${person.id}-${index}`} className="flex flex-col items-center flex-shrink-0">
                     <div className="relative mb-2">
                       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[#5e17eb] p-0.5">
                         <Image
@@ -332,7 +554,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <span className="text-xs sm:text-sm font-medium text-gray-900">{person.username}</span>
-                    <span className="text-xs text-gray-500">{person.compatibility}% match</span>
+                    <span className="text-xs text-gray-500">{person.age} years</span>
                   </div>
                 ))}
               </div>
@@ -340,9 +562,9 @@ export default function HomePage() {
 
             {/* Posts - Single Column */}
             <div className="space-y-6 sm:space-y-8">
-              {filteredPosts.map(post => (
+              {filteredPosts.map((post, index) => (
                 <div
-                  key={post.id}
+                  key={`${post.id}-${index}`}
                   className="border border-gray-200 rounded-xl overflow-hidden bg-white"
                 >
                   {/* Post Header with Follow button next to three dots */}
@@ -380,6 +602,12 @@ export default function HomePage() {
                             <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
                             <span>{post.timeAgo}</span>
                           </div>
+                          {/* Bio snippet */}
+                          {post.bio && (
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-1">
+                              {post.bio}
+                            </p>
+                          )}
                         </div>
                       </div>
                       
@@ -397,6 +625,7 @@ export default function HomePage() {
                             <>
                               <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               <span className="hidden sm:inline">Following</span>
+                              <span className="ml-1 text-xs">({post.followingCount})</span>
                             </>
                           ) : (
                             <>
@@ -412,7 +641,7 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Post Image */}
+                  {/* Post Image with additional photos overlay */}
                   <div 
                     className="relative h-[300px] sm:h-[400px] md:h-[500px] cursor-pointer group"
                     onClick={() => openImageModal(post.imageUrl)}
@@ -424,6 +653,8 @@ export default function HomePage() {
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                       sizes="(max-width: 768px) 100vw, 672px"
                     />
+                    {/* Show additional photos overlay */}
+                    {renderAdditionalPhotos(post)}
                   </div>
 
                   {/* Post Actions - Premium Design */}
@@ -434,6 +665,7 @@ export default function HomePage() {
                         <button
                           onClick={() => handleLike(post.id)}
                           className="relative group"
+                          disabled={likingPost === post.id}
                         >
                           {likingPost === post.id && (
                             <div className="absolute -inset-1 sm:-inset-2">
@@ -459,7 +691,7 @@ export default function HomePage() {
                         >
                           <MessageCircle className="w-5 h-5 sm:w-[22px] sm:h-[22px]" />
                           <span className="absolute -top-1 -right-1 text-xs bg-[#5e17eb] text-white rounded-full px-1.5 py-0.5 font-medium">
-                            1
+                            {post.comments}
                           </span>
                         </button>
 
@@ -494,17 +726,26 @@ export default function HomePage() {
                       <span className="text-gray-600 text-sm sm:text-base">{post.comments} messages</span>
                     </div>
 
-                    {/* Caption */}
-                    <div className="mb-3 sm:mb-5">
+                    {/* Caption and Bio */}
+                    <div className="mb-3 sm:mb-5 space-y-2">
                       <span className="font-semibold text-gray-900 mr-2 text-sm sm:text-base">{post.username}</span>
                       <span className="text-gray-800 text-sm sm:text-base">{post.caption}</span>
+                      {post.bio && post.bio !== post.caption && (
+                        <p className="text-gray-600 text-sm mt-2">{post.bio}</p>
+                      )}
                     </div>
 
                     {/* Interests */}
                     <div className="flex flex-wrap gap-1 sm:gap-2 mb-4 sm:mb-6">
                       {post.interests.map((interest, idx) => (
-                        <span key={idx} className="px-2 sm:px-4 py-1 sm:py-2 bg-gray-100 text-xs sm:text-sm rounded-full text-gray-700 hover:bg-gray-200 transition-colors duration-200">
+                        <span key={`${post.id}-interest-${idx}`} className="px-2 sm:px-4 py-1 sm:py-2 bg-gray-100 text-xs sm:text-sm rounded-full text-gray-700 hover:bg-gray-200 transition-colors duration-200">
                           {interest}
+                        </span>
+                      ))}
+                      {/* Personality traits */}
+                      {post.personalityTraits?.slice(0, 2).map((trait, idx) => (
+                        <span key={`${post.id}-trait-${idx}`} className="px-2 sm:px-4 py-1 sm:py-2 bg-[#5e17eb]/10 text-xs sm:text-sm rounded-full text-[#5e17eb] hover:bg-[#5e17eb]/20 transition-colors duration-200">
+                          {trait}
                         </span>
                       ))}
                     </div>
@@ -537,6 +778,22 @@ export default function HomePage() {
                   </div>
                 </div>
               ))}
+              
+              {/* Loading skeleton for infinite scroll */}
+              {isLoadingMore && (
+                <div className="space-y-8">
+                  <PostSkeleton key="skeleton-loading-1" />
+                  <PostSkeleton key="skeleton-loading-2" />
+                </div>
+              )}
+              
+              {/* End of feed message */}
+              {!hasMore && !isLoadingMore && posts.length > 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="text-lg font-medium">You&apos;ve seen all {posts.length} profiles for now!</p>
+                  <p className="text-sm mt-2">Check back later for more matches</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -544,16 +801,19 @@ export default function HomePage() {
           <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="sticky top-24 space-y-6">
               {/* Suggestions */}
-              <div className="p-6 border border-gray-200 rounded-xl bg-white ">
+              <div className="p-6 border border-gray-200 rounded-xl bg-white">
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="font-bold text-lg text-gray-900">Suggestions For You</h3>
-                  <button className="text-sm text-[#5e17eb] hover:underline font-medium transition-colors">
-                    See All
+                  <button 
+                    onClick={() => loadInitialData()}
+                    className="text-sm text-[#5e17eb] hover:underline font-medium transition-colors"
+                  >
+                    Refresh
                   </button>
                 </div>
                 <div className="space-y-4">
-                  {suggestedPeople.map(person => (
-                    <div key={person.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                  {suggestedPeople.map((person, index) => (
+                    <div key={`suggestion-${person.id}-${index}`} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200">
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <div className="w-12 h-12 rounded-full overflow-hidden">
@@ -575,9 +835,7 @@ export default function HomePage() {
                             <MapPin size={10} />
                             {person.location}
                           </div>
-                          <div className="text-xs text-[#5e17eb] font-medium">
-                            {person.compatibility}% match
-                          </div>
+                          <div className="text-xs text-gray-500">{person.age} years</div>
                         </div>
                       </div>
                       <button 
@@ -619,20 +877,28 @@ export default function HomePage() {
                 <h3 className="font-bold mb-5 text-gray-900">Your Activity</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-[#5e17eb]">1,234</div>
-                    <div className="text-xs text-gray-500">Profile Views</div>
+                    <div className="text-2xl font-bold text-[#5e17eb]">
+                      {posts.reduce((acc, post) => acc + post.likes, 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-gray-500">Total Likes</div>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-[#5e17eb]">567</div>
-                    <div className="text-xs text-gray-500">Likes Received</div>
+                    <div className="text-2xl font-bold text-[#5e17eb]">
+                      {posts.filter(p => p.isFollowing).length}
+                    </div>
+                    <div className="text-xs text-gray-500">Following</div>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-[#5e17eb]">89</div>
-                    <div className="text-xs text-gray-500">Matches</div>
+                    <div className="text-2xl font-bold text-[#5e17eb]">
+                      {posts.length}
+                    </div>
+                    <div className="text-xs text-gray-500">Profiles Viewed</div>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-[#5e17eb]">24</div>
-                    <div className="text-xs text-gray-500">Active Chats</div>
+                    <div className="text-2xl font-bold text-[#5e17eb]">
+                      {posts.filter(p => p.isOnline).length}
+                    </div>
+                    <div className="text-xs text-gray-500">Online Now</div>
                   </div>
                 </div>
               </div>
