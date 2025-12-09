@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to Appwrite CSV Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area.dragover {
+            background: #e8ebff;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .preview {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .preview h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .preview-content {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #333;
+            white-space: pre-wrap;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 JSON to Appwrite CSV Converter</h1>
+        <p class="subtitle">Convert your persona JSON data to Appwrite-compatible CSV format</p>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <h3>Drop your JSON file here</h3>
+            <p>or click to browse</p>
+            <input type="file" id="fileInput" accept=".json">
+        </div>
+
+        <div class="file-info" id="fileInfo"></div>
+
+        <div class="actions">
+            <button class="btn" id="convertBtn" disabled>Convert to CSV</button>
+            <button class="btn" id="downloadBtn" style="display: none;">Download CSV</button>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="preview" id="preview">
+            <h3>Preview (First 3 rows):</h3>
+            <div class="preview-content" id="previewContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let jsonData = null;
+        let csvData = null;
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const status = document.getElementById('status');
+        const preview = document.getElementById('preview');
+        const previewContent = document.getElementById('previewContent');
+
+        // Upload area click
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        // Handle file
+        function handleFile(file) {
+            if (file.type !== 'application/json') {
+                showStatus('Please upload a valid JSON file', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    jsonData = JSON.parse(e.target.result);
+                    
+                    // Handle both single object and array
+                    if (!Array.isArray(jsonData)) {
+                        jsonData = [jsonData];
+                    }
+
+                    fileInfo.textContent = `✓ Loaded: ${file.name} (${jsonData.length} record${jsonData.length > 1 ? 's' : ''})`;
+                    convertBtn.disabled = false;
+                    showStatus('JSON file loaded successfully! Click "Convert to CSV" to proceed.', 'success');
+                } catch (error) {
+                    showStatus('Error parsing JSON: ' + error.message, 'error');
+                    jsonData = null;
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Convert to CSV
+        convertBtn.addEventListener('click', () => {
+            if (!jsonData) return;
+
+            try {
+                csvData = convertToAppwriteCSV(jsonData);
+                downloadBtn.style.display = 'inline-block';
+                showStatus('Conversion successful! Click "Download CSV" to save.', 'success');
+                showPreview(csvData);
+            } catch (error) {
+                showStatus('Error converting to CSV: ' + error.message, 'error');
+            }
+        });
+
+        // Convert JSON to Appwrite CSV
+        function convertToAppwriteCSV(data) {
+            const headers = [
+                'profileNumber', 'username', 'email', 'gender', 'age', 'birthday',
+                'bio', 'profilePic', 'additionalPhotos', 'location', 'interests',
+                'personalityTraits', 'personality', 'fieldOfWork', 'englishLevel',
+                'languages', 'martialStatus', 'credits', 'totalChats', 'totalMatches',
+                'followingCount', 'isVerified', 'isPremium', 'preferences', 'goals',
+                'createdAt', 'lastActive'
+            ];
+
+            let csv = headers.join(',') + '\n';
+
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    let value = row[header];
+
+                    // Handle undefined/null
+                    if (value === undefined || value === null) {
+                        return '';
+                    }
+
+                    // Handle arrays - convert to JSON array string for Appwrite
+                    if (Array.isArray(value)) {
+                        value = JSON.stringify(value);
+                    }
+
+                    // Handle booleans
+                    if (typeof value === 'boolean') {
+                        return value.toString();
+                    }
+
+                    // Handle numbers
+                    if (typeof value === 'number') {
+                        return value.toString();
+                    }
+
+                    // Handle objects (preferences, goals)
+                    if (typeof value === 'object') {
+                        value = JSON.stringify(value);
+                    }
+
+                    // Convert to string and escape
+                    value = String(value);
+                    
+                    // Escape quotes and wrap in quotes
+                    value = value.replace(/"/g, '""');
+                    return `"${value}"`;
+                });
+
+                csv += values.join(',') + '\n';
+            });
+
+            return csv;
+        }
+
+        // Download CSV
+        downloadBtn.addEventListener('click', () => {
+            if (!csvData) return;
+
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'persona_appwrite.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showStatus('CSV downloaded successfully!', 'success');
+        });
+
+        // Show status
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = 'status ' + type;
+            status.style.display = 'block';
+        }
+
+        // Show preview
+        function showPreview(csv) {
+            const lines = csv.split('\n').slice(0, 4); // Header + 3 rows
+            previewContent.textContent = lines.join('\n');
+            preview.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

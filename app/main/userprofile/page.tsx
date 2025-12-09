@@ -520,7 +520,7 @@ export default function ProfilePage() {
                 onClick={() => setShowCompletionModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-full"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 bg-red-500 rounded-full " />
               </button>
             </div>
             
