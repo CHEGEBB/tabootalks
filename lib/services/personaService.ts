@@ -39,6 +39,7 @@ export interface PersonaProfile {
 
 // Parsed versions for easier frontend use
 export interface ParsedPersonaProfile extends Omit<PersonaProfile, 'preferences' | 'goals'> {
+  [x: string]: any;
   preferences: {
     ageRange?: [number, number];
     distance?: number;
