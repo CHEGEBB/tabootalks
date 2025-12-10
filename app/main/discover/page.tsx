@@ -1,250 +1,87 @@
-
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
 // app/main/discover/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Search, Filter, Users, Star, Flame, ChevronRight, MapPin, Heart, MessageCircle, Eye, UserPlus, CheckCircle, X, Sliders, Grid, List, Menu, X as XIcon } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Search, Filter, Users, Star, Flame, ChevronRight, MapPin, Heart, MessageCircle, Eye, UserPlus, CheckCircle, X, Grid, List, X as XIcon, Sparkles } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import LayoutController from '@/components/layout/LayoutController';
+import personaService, { ParsedPersonaProfile, PersonaFilters } from '@/lib/services/personaService';
 import './discover.scss';
-
-const mockProfiles = [
-  {
-    id: 1,
-    username: 'Anastasiya',
-    age: 29,
-    location: 'Berlin, Germany',
-    distance: '3 km',
-    isOnline: true,
-    isVerified: true,
-    isPremium: true,
-    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop',
-    bio: 'Adventure seeker and coffee lover',
-    interests: ['Travel', 'Music', 'Photography'],
-    compatibility: 92
-  },
-  {
-    id: 2,
-    username: 'Emily',
-    age: 24,
-    location: 'Munich, Germany',
-    distance: '12 km',
-    isOnline: true,
-    isVerified: true,
-    isPremium: true,
-    imageUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop',
-    bio: 'Yoga instructor and wellness enthusiast',
-    interests: ['Yoga', 'Meditation', 'Nature'],
-    compatibility: 87
-  },
-  {
-    id: 3,
-    username: 'Dewi',
-    age: 27,
-    location: 'Hamburg, Germany',
-    distance: '8 km',
-    isOnline: false,
-    isVerified: false,
-    isPremium: false,
-    imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=500&fit=crop',
-    bio: 'Beach lover and surf enthusiast',
-    interests: ['Surfing', 'Beach', 'Travel'],
-    compatibility: 78
-  },
-  {
-    id: 4,
-    username: 'Adriana',
-    age: 31,
-    location: 'Frankfurt, Germany',
-    distance: '5 km',
-    isOnline: true,
-    isVerified: true,
-    isPremium: true,
-    imageUrl: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop',
-    bio: 'Professional chef and food blogger',
-    interests: ['Cooking', 'Wine', 'Travel'],
-    compatibility: 95
-  },
-  {
-    id: 5,
-    username: 'Iryna',
-    age: 26,
-    location: 'Cologne, Germany',
-    distance: '15 km',
-    isOnline: true,
-    isVerified: true,
-    isPremium: true,
-    imageUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop',
-    bio: 'Fashion designer and model',
-    interests: ['Fashion', 'Design', 'Art'],
-    compatibility: 84
-  },
-  {
-    id: 6,
-    username: 'Sophia',
-    age: 28,
-    location: 'Berlin, Germany',
-    distance: '4 km',
-    isOnline: false,
-    isVerified: true,
-    isPremium: false,
-    imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=500&fit=crop',
-    bio: 'Software engineer and tech enthusiast',
-    interests: ['Technology', 'Hiking', 'Games'],
-    compatibility: 91
-  },
-  {
-    id: 7,
-    username: 'Laura',
-    age: 30,
-    location: 'Munich, Germany',
-    distance: '10 km',
-    isOnline: true,
-    isVerified: true,
-    isPremium: true,
-    imageUrl: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=400&h=500&fit=crop',
-    bio: 'Musician and composer',
-    interests: ['Music', 'Piano', 'Concerts'],
-    compatibility: 89
-  },
-  {
-    id: 8,
-    username: 'Mia',
-    age: 25,
-    location: 'Hamburg, Germany',
-    distance: '7 km',
-    isOnline: false,
-    isVerified: false,
-    isPremium: false,
-    imageUrl: 'https://images.unsplash.com/photo-1605515223642-fd67abd879ab?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    bio: 'Photographer capturing beautiful moments',
-    interests: ['Photography', 'Art', 'Travel'],
-    compatibility: 76
-  },
-  {
-    id: 9,
-    username: 'Chloe',
-    age: 27,
-    location: 'Frankfurt, Germany',
-    distance: '6 km',
-    isOnline: true,
-    isVerified: true,
-    isPremium: true,
-    imageUrl: 'https://images.unsplash.com/photo-1599842057482-a4aaf242f54e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    bio: 'Marketing specialist and travel blogger',
-    interests: ['Travel', 'Food', 'Photography'],
-    compatibility: 88
-  },
-  {
-    id: 10,
-    username: 'Grace',
-    age: 32,
-    location: 'Cologne, Germany',
-    distance: '18 km',
-    isOnline: false,
-    isVerified: false,
-    isPremium: false,
-    imageUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop',
-    bio: 'Architect and interior designer',
-    interests: ['Design', 'Art', 'Architecture'],
-    compatibility: 82
-  },
-  {
-    id: 11,
-    username: 'Natalie',
-    age: 29,
-    location: 'Berlin, Germany',
-    distance: '2 km',
-    isOnline: true,
-    isVerified: true,
-    isPremium: true,
-    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop',
-    bio: 'Fitness trainer and nutritionist',
-    interests: ['Fitness', 'Health', 'Sports'],
-    compatibility: 93
-  },
-  {
-    id: 12,
-    username: 'Isabella',
-    age: 26,
-    location: 'Munich, Germany',
-    distance: '14 km',
-    isOnline: true,
-    isVerified: false,
-    isPremium: false,
-    imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=500&fit=crop',
-    bio: 'Student and part-time model',
-    interests: ['Fashion', 'Photography', 'Dancing'],
-    compatibility: 79
-  },
-  {
-    id: 13,
-    username: 'Emma',
-    age: 33,
-    location: 'Hamburg, Germany',
-    distance: '9 km',
-    isOnline: true,
-    isVerified: true,
-    isPremium: true,
-    imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=500&fit=crop',
-    bio: 'Business consultant and entrepreneur',
-    interests: ['Business', 'Travel', 'Wine'],
-    compatibility: 90
-  },
-  {
-    id: 14,
-    username: 'Olivia',
-    age: 28,
-    location: 'Frankfurt, Germany',
-    distance: '5 km',
-    isOnline: false,
-    isVerified: true,
-    isPremium: false,
-    imageUrl: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=400&h=500&fit=crop',
-    bio: 'Graphic designer and illustrator',
-    interests: ['Art', 'Design', 'Technology'],
-    compatibility: 85
-  },
-  {
-    id: 15,
-    username: 'Charlotte',
-    age: 31,
-    location: 'Cologne, Germany',
-    distance: '16 km',
-    isOnline: true,
-    isVerified: false,
-    isPremium: false,
-    imageUrl: 'https://images.unsplash.com/photo-1713145869354-0bbea969cc8c?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    bio: 'Teacher and book lover',
-    interests: ['Reading', 'Education', 'Travel'],
-    compatibility: 81
-  },
-];
 
 // Available locations for filtering
 const locations = ['Berlin', 'Munich', 'Hamburg', 'Frankfurt', 'Cologne', 'Stuttgart', 'Düsseldorf', 'Leipzig'];
-const interests = ['Travel', 'Music', 'Photography', 'Sports', 'Art', 'Food', 'Fashion', 'Technology', 'Fitness', 'Books'];
+
+// Common interests for quick filtering
+const commonInterests = ['Travel', 'Music', 'Art', 'Sports', 'Food', 'Fashion', 'Technology', 'Photography', 'Fitness', 'Books'];
+
+// Convert Appwrite persona to display profile format
+const convertPersonaToDisplayProfile = (persona: ParsedPersonaProfile) => {
+  // Calculate distance (for demo purposes)
+  const distances = ['2 km', '3 km', '5 km', '8 km', '12 km', '15 km'];
+  const randomDistance = distances[Math.floor(Math.random() * distances.length)];
+  
+  // Calculate compatibility score
+  const compatibility = Math.floor(Math.random() * 30) + 70; // 70-100%
+  
+  // Determine if online (based on lastActive - if within last 15 minutes)
+  const lastActive = new Date(persona.lastActive || persona.$createdAt);
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+  const isOnline = lastActive > fifteenMinutesAgo;
+  
+  return {
+    id: persona.$id,
+    personaId: persona.$id,
+    profileNumber: persona.profileNumber,
+    username: persona.username,
+    age: persona.age,
+    location: persona.location,
+    distance: randomDistance,
+    isOnline,
+    isVerified: persona.isVerified,
+    isPremium: persona.isPremium,
+    imageUrl: persona.profilePic || 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=800&h=800&fit=crop',
+    bio: persona.bio || `Looking for meaningful connections in ${persona.location}`,
+    interests: persona.interests || [],
+    compatibility,
+    gender: persona.gender,
+    followingCount: persona.followingCount || 0,
+    lastActive: persona.lastActive,
+    email: persona.email,
+    fieldOfWork: persona.fieldOfWork,
+    englishLevel: persona.englishLevel,
+    languages: persona.languages || [],
+    martialStatus: persona.martialStatus,
+    personality: persona.personality,
+    personalityTraits: persona.personalityTraits || []
+  };
+};
 
 export default function DiscoverPage() {
-  const [profiles, setProfiles] = useState(mockProfiles);
-  const [filteredProfiles, setFilteredProfiles] = useState(mockProfiles);
+  const router = useRouter();
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [filteredProfiles, setFilteredProfiles] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'online' | 'following'>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isMobile, setIsMobile] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalProfiles, setTotalProfiles] = useState(0);
   
-  const profilesPerPage = viewMode === 'grid' ? (isMobile ? 6 : 12) : (isMobile ? 4 : 6);
-
+  const [icebreakerProfiles, setIcebreakerProfiles] = useState<any[]>([]);
+  const [showIcebreakerModal, setShowIcebreakerModal] = useState(false);
+  const [selectedIcebreakerProfile, setSelectedIcebreakerProfile] = useState<any>(null);
+  
   // Filter states
   const [filters, setFilters] = useState({
-    gender: 'women',
+    gender: '' as 'male' | 'female' | '',
     minAge: 18,
     maxAge: 40,
     location: [] as string[],
@@ -266,49 +103,129 @@ export default function DiscoverPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Fixed: Proper active filter count calculation
-  const activeFilterCount = (() => {
-    let count = 0;
-    
-    if (Array.isArray(filters.location)) count += filters.location.length;
-    if (Array.isArray(filters.interests)) count += filters.interests.length;
-    
-    if (filters.verifiedOnly) count += 1;
-    if (filters.premiumOnly) count += 1;
-    
-    if (filters.minAge > 18) count += 1;
-    if (filters.maxAge < 40) count += 1;
-    if (filters.maxDistance < 50) count += 1;
-    
-    return count;
-  })();
-
-  // Filter profiles based on active tab and filters
+  // Load initial data
   useEffect(() => {
+    loadInitialProfiles();
+    loadIcebreakerProfiles();
+  }, []);
+
+  const loadInitialProfiles = async () => {
     setIsLoading(true);
-    
-    let result = [...profiles];
+    try {
+      // Get total count first
+      const total = await personaService.getPersonaCount();
+      setTotalProfiles(total);
+      
+      // Get initial batch of personas
+      const queryFilters: PersonaFilters = {
+        limit: 12,
+        offset: 0
+      };
+
+      // Apply initial gender filter if set
+      if (filters.gender) queryFilters.gender = filters.gender;
+
+      const initialPersonas = await personaService.getAllPersonas(queryFilters);
+      const displayProfiles = initialPersonas.map(convertPersonaToDisplayProfile);
+
+      setProfiles(displayProfiles);
+      setFilteredProfiles(displayProfiles);
+      setHasMore(initialPersonas.length === 12);
+    } catch (error) {
+      console.error('Error loading profiles:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadIcebreakerProfiles = async () => {
+    try {
+      // Get random profiles for icebreakers
+      const randomPersonas = await personaService.getRandomPersonas(5);
+      const icebreakerProfilesData = randomPersonas.map(convertPersonaToDisplayProfile);
+      setIcebreakerProfiles(icebreakerProfilesData);
+    } catch (error) {
+      console.error('Error loading icebreaker profiles:', error);
+    }
+  };
+
+  const loadMoreProfiles = async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const offset = profiles.length;
+      
+      const queryFilters: PersonaFilters = {
+        limit: 12,
+        offset: 0
+      };
+
+      // Apply active filters
+      if (filters.gender) queryFilters.gender = filters.gender;
+      if (filters.minAge > 18) queryFilters.minAge = filters.minAge;
+      if (filters.maxAge < 40) queryFilters.maxAge = filters.maxAge;
+      if (filters.location.length > 0) {
+        // For multiple locations, we need to handle differently
+        // Since Appwrite query only supports exact match, we'll use the first location
+        queryFilters.location = filters.location[0];
+      }
+      if (filters.verifiedOnly) queryFilters.isVerified = true;
+      if (filters.premiumOnly) queryFilters.isPremium = true;
+
+      const newPersonas = await personaService.getAllPersonas(queryFilters);
+
+      if (newPersonas.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      const newDisplayProfiles = newPersonas.map(convertPersonaToDisplayProfile);
+      const updatedProfiles = [...profiles, ...newDisplayProfiles];
+      
+      setProfiles(updatedProfiles);
+      
+      // Apply current filters to the new combined list
+      applyFiltersToProfiles(updatedProfiles);
+      
+      setHasMore(newPersonas.length === 12);
+
+    } catch (error) {
+      console.error('Error loading more profiles:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const applyFiltersToProfiles = useCallback((profilesToFilter: any[]) => {
+    let result = [...profilesToFilter];
     
     // Apply tab filter
     if (activeTab === 'following') {
-      result = result.slice(0, 6); // Mock following
+      result = result.filter(profile => profile.followingCount > 0);
     } else if (activeTab === 'online') {
       result = result.filter(profile => profile.isOnline);
     }
     
     // Apply search filter
-    if (searchQuery) {
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
       result = result.filter(profile =>
-        profile.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        profile.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        profile.bio.toLowerCase().includes(searchQuery.toLowerCase())
+        profile.username.toLowerCase().includes(query) ||
+        profile.location.toLowerCase().includes(query) ||
+        profile.bio.toLowerCase().includes(query) ||
+        (profile.interests && profile.interests.some((interest: string) => 
+          interest.toLowerCase().includes(query)
+        ))
       );
     }
     
     // Apply advanced filters
     result = result.filter(profile => {
+      // Age filter
       if (profile.age < filters.minAge || profile.age > filters.maxAge) return false;
       
+      // Location filter
       if (filters.location.length > 0) {
         const hasLocation = filters.location.some(loc => 
           profile.location.toLowerCase().includes(loc.toLowerCase())
@@ -316,47 +233,124 @@ export default function DiscoverPage() {
         if (!hasLocation) return false;
       }
       
+      // Distance filter (mock distance for demo)
       const distance = parseInt(profile.distance.replace(' km', ''));
       if (distance > filters.maxDistance) return false;
       
+      // Interests filter
       if (filters.interests.length > 0) {
         const hasInterest = filters.interests.some(interest =>
-          profile.interests.some(profileInterest => 
+          profile.interests && profile.interests.some((profileInterest: string) => 
             profileInterest.toLowerCase().includes(interest.toLowerCase())
           )
         );
         if (!hasInterest) return false;
       }
       
+      // Verified filter
       if (filters.verifiedOnly && !profile.isVerified) return false;
+      
+      // Premium filter
       if (filters.premiumOnly && !profile.isPremium) return false;
+      
+      // Gender filter
+      if (filters.gender && profile.gender !== filters.gender) return false;
       
       return true;
     });
     
-    setTimeout(() => {
-      setFilteredProfiles(result);
-      setIsLoading(false);
-      setCurrentPage(1);
-    }, 300);
-  }, [activeTab, searchQuery, filters, profiles]);
+    setFilteredProfiles(result);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [activeTab, searchQuery, filters]);
 
-  // Calculate pagination
+  // Apply filters when they change
+  useEffect(() => {
+    applyFiltersToProfiles(profiles);
+  }, [applyFiltersToProfiles, profiles]);
+
+  // Active filter count calculation
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    
+    if (filters.gender) count += 1;
+    if (filters.location.length > 0) count += 1;
+    if (filters.interests.length > 0) count += 1;
+    if (filters.verifiedOnly) count += 1;
+    if (filters.premiumOnly) count += 1;
+    if (filters.minAge > 18) count += 1;
+    if (filters.maxAge < 40) count += 1;
+    if (filters.maxDistance < 50) count += 1;
+    
+    return count;
+  }, [filters]);
+
+  // Pagination calculations
+  const profilesPerPage = viewMode === 'grid' ? (isMobile ? 6 : 12) : (isMobile ? 4 : 8);
   const totalPages = Math.ceil(filteredProfiles.length / profilesPerPage);
   const startIndex = (currentPage - 1) * profilesPerPage;
   const endIndex = startIndex + profilesPerPage;
   const currentProfiles = filteredProfiles.slice(startIndex, endIndex);
 
-  const handleFollow = (profileId: number) => {
-    console.log('Follow profile:', profileId);
+  // Profile actions
+  const handleFollow = async (profileId: string) => {
+    try {
+      // Update local state immediately for better UX
+      setProfiles(prev => prev.map(profile => 
+        profile.id === profileId 
+          ? { ...profile, followingCount: profile.followingCount + 1 }
+          : profile
+      ));
+      
+      // Update in Appwrite
+      const profile = profiles.find(p => p.id === profileId);
+      if (profile) {
+        await personaService.updatePersonaStats(profileId, {
+          followingCount: profile.followingCount + 1,
+          lastActive: new Date().toISOString()
+        });
+      }
+      
+      // Show success feedback
+      console.log('Followed profile:', profileId);
+    } catch (error) {
+      console.error('Error following profile:', error);
+      // Revert on error
+      setProfiles(prev => prev.map(profile => 
+        profile.id === profileId 
+          ? { ...profile, followingCount: profile.followingCount - 1 }
+          : profile
+      ));
+    }
   };
 
-  const handleLike = (profileId: number) => {
-    console.log('Like profile:', profileId);
+  const handleLike = async (profileId: string) => {
+    try {
+      // In a real app, you would update like count in database
+      console.log('Liked profile:', profileId);
+      
+      // Update local state for immediate feedback
+      setProfiles(prev => prev.map(profile => 
+        profile.id === profileId 
+          ? { ...profile, liked: true } // Add liked flag
+          : profile
+      ));
+    } catch (error) {
+      console.error('Error liking profile:', error);
+    }
   };
 
-  const handleChat = (profileId: number) => {
-    console.log('Start chat with profile:', profileId);
+  const handleChat = (profileId: string) => {
+    // Navigate to chat with this user
+    router.push(`/main/chats?user=${profileId}`);
+  };
+
+  const handleViewProfile = (profileId: string) => {
+    router.push(`/main/profile/${profileId}`);
+  };
+
+  const handleSendIcebreaker = (profile: any) => {
+    setSelectedIcebreakerProfile(profile);
+    setShowIcebreakerModal(true);
   };
 
   const updateFilter = (key: keyof typeof filters, value: any) => {
@@ -365,7 +359,7 @@ export default function DiscoverPage() {
 
   const clearFilters = () => {
     setFilters({
-      gender: 'women',
+      gender: '',
       minAge: 18,
       maxAge: 40,
       location: [],
@@ -375,15 +369,175 @@ export default function DiscoverPage() {
       premiumOnly: false
     });
     setSearchQuery('');
+    setActiveTab('all');
   };
 
   const closeMobileSidebar = () => {
     setShowFilters(false);
   };
 
+  // Icebreaker modal component
+  const IcebreakerModal = () => {
+    const [message, setMessage] = useState('');
+    const [isSending, setIsSending] = useState(false);
+    const [sent, setSent] = useState(false);
+
+    const icebreakerMessages = [
+      "Hey! I noticed we both love travel. What's your favorite destination?",
+      "Your profile caught my eye! What's the best book you've read recently?",
+      "Hello! I see we have similar taste in music. What are you listening to lately?",
+      "Hi there! Your photography is amazing. Do you have a favorite subject to shoot?",
+      "Hey! I'm also into fitness. What's your go-to workout routine?"
+    ];
+
+    const handleSend = async () => {
+      if (!message.trim() || !selectedIcebreakerProfile) return;
+      
+      setIsSending(true);
+      try {
+        // In a real app, send the icebreaker message to the user
+        console.log('Sending icebreaker to:', selectedIcebreakerProfile.username);
+        console.log('Message:', message);
+        
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setSent(true);
+        
+        // Close modal after success
+        setTimeout(() => {
+          setShowIcebreakerModal(false);
+          setSelectedIcebreakerProfile(null);
+          setMessage('');
+          setSent(false);
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Error sending icebreaker:', error);
+      } finally {
+        setIsSending(false);
+      }
+    };
+
+    const selectRandomMessage = () => {
+      const randomIndex = Math.floor(Math.random() * icebreakerMessages.length);
+      setMessage(icebreakerMessages[randomIndex]);
+    };
+
+    if (!selectedIcebreakerProfile) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Send Icebreaker</h3>
+              <button
+                onClick={() => setShowIcebreakerModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <XIcon className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-xl">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden">
+                <Image
+                  src={selectedIcebreakerProfile.imageUrl}
+                  alt={selectedIcebreakerProfile.username}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900">{selectedIcebreakerProfile.username}, {selectedIcebreakerProfile.age}</h4>
+                <p className="text-sm text-gray-600">{selectedIcebreakerProfile.location}</p>
+              </div>
+            </div>
+            
+            {sent ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">Icebreaker Sent!</h4>
+                <p className="text-gray-600">Your message has been sent to {selectedIcebreakerProfile.username}</p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Your Message
+                  </label>
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Start a conversation with an interesting question or comment..."
+                    className="w-full h-32 px-4 py-3 border border-gray-300 rounded-xl focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none resize-none"
+                  />
+                </div>
+                
+                <div className="flex gap-2 mb-6">
+                  <button
+                    onClick={selectRandomMessage}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Suggest
+                  </button>
+                  <button
+                    onClick={() => setMessage('')}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowIcebreakerModal(false)}
+                    className="flex-1 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSend}
+                    disabled={!message.trim() || isSending}
+                    className="flex-1 py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSending ? 'Sending...' : 'Send Icebreaker'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Skeleton loading component
+  const ProfileSkeleton = () => (
+    <div className="profile-card bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse">
+      <div className="aspect-[4/5] bg-gray-200 rounded-t-xl"></div>
+      <div className="p-4">
+        <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div className="h-10 bg-gray-200 rounded w-full mb-2"></div>
+        <div className="h-10 bg-gray-200 rounded w-full"></div>
+      </div>
+    </div>
+  );
+
+  // Mobile grid/list view configuration
+  const gridColumns = isMobile ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
+
   return (
     <div className="min-h-screen bg-white no-overflow discover-container">
       <LayoutController />
+
+      {/* Icebreaker Modal */}
+      {showIcebreakerModal && <IcebreakerModal />}
 
       {/* Mobile Sidebar Overlay */}
       {showFilters && isMobile && (
@@ -505,7 +659,7 @@ export default function DiscoverPage() {
                   >
                     <span>All Profiles</span>
                     <span className="text-sm opacity-80 bg-white/20 px-2 py-1 rounded">
-                      {profiles.length}
+                      {totalProfiles}
                     </span>
                   </button>
                   <button
@@ -530,7 +684,9 @@ export default function DiscoverPage() {
                     }`}
                   >
                     <span>Following</span>
-                    <span className="text-sm opacity-80 bg-white/20 px-2 py-1 rounded">6</span>
+                    <span className="text-sm opacity-80 bg-white/20 px-2 py-1 rounded">
+                      {profiles.filter(p => p.followingCount > 0).length}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -553,11 +709,11 @@ export default function DiscoverPage() {
                   {/* Gender Selection */}
                   <div>
                     <h4 className="font-medium text-gray-900 mb-3">Looking for</h4>
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <button
-                        onClick={() => updateFilter('gender', 'women')}
-                        className={`flex-1 py-2 rounded-lg font-medium transition-all duration-200 ${
-                          filters.gender === 'women'
+                        onClick={() => updateFilter('gender', 'female')}
+                        className={`py-2 rounded-lg font-medium transition-all duration-200 ${
+                          filters.gender === 'female'
                             ? 'bg-[#5e17eb] text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
@@ -565,14 +721,24 @@ export default function DiscoverPage() {
                         Women
                       </button>
                       <button
-                        onClick={() => updateFilter('gender', 'men')}
-                        className={`flex-1 py-2 rounded-lg font-medium transition-all duration-200 ${
-                          filters.gender === 'men'
+                        onClick={() => updateFilter('gender', 'male')}
+                        className={`py-2 rounded-lg font-medium transition-all duration-200 ${
+                          filters.gender === 'male'
                             ? 'bg-[#5e17eb] text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
                         Men
+                      </button>
+                      <button
+                        onClick={() => updateFilter('gender', '')}
+                        className={`py-2 rounded-lg font-medium transition-all duration-200 ${
+                          !filters.gender
+                            ? 'bg-[#5e17eb] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        All
                       </button>
                     </div>
                   </div>
@@ -585,7 +751,6 @@ export default function DiscoverPage() {
                     <div className="space-y-4">
                       <div className="flex gap-4">
                         <div className="flex-1">
-                          <label className="text-sm text-gray-600 mb-1 block">From</label>
                           <input
                             type="number"
                             min="18"
@@ -593,28 +758,31 @@ export default function DiscoverPage() {
                             value={filters.minAge}
                             onChange={(e) => updateFilter('minAge', parseInt(e.target.value) || 18)}
                             className="w-full px-3 text-gray-600 py-2 border border-gray-300 placeholder:text-gray-400 rounded-lg focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none"
+                            placeholder="Min"
                           />
                         </div>
                         <div className="flex-1">
-                          <label className="text-sm text-gray-600 mb-1 block">To</label>
                           <input
                             type="number"
                             min="18"
                             max="80"
                             value={filters.maxAge}
                             onChange={(e) => updateFilter('maxAge', parseInt(e.target.value) || 40)}
-                            className="w-full px-3 py-2 border text-gray-600  border-gray-300 rounded-lg focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none"
+                            className="w-full px-3 py-2 border text-gray-600 border-gray-300 rounded-lg focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none"
+                            placeholder="Max"
                           />
                         </div>
                       </div>
-                      <input
-                        type="range"
-                        min="18"
-                        max="80"
-                        value={filters.maxAge}
-                        onChange={(e) => updateFilter('maxAge', parseInt(e.target.value))}
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#5e17eb]"
-                      />
+                      <div className="relative pt-4">
+                        <input
+                          type="range"
+                          min="18"
+                          max="80"
+                          value={filters.maxAge}
+                          onChange={(e) => updateFilter('maxAge', parseInt(e.target.value))}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -629,7 +797,7 @@ export default function DiscoverPage() {
                       max="100"
                       value={filters.maxDistance}
                       onChange={(e) => updateFilter('maxDistance', parseInt(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#5e17eb]"
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                     />
                   </div>
 
@@ -638,21 +806,32 @@ export default function DiscoverPage() {
                     <h4 className="font-medium text-gray-900 mb-3">Location</h4>
                     <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                       {locations.map((loc) => (
-                        <label key={loc} className="flex items-center gap-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={filters.location.includes(loc)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                updateFilter('location', [...filters.location, loc]);
-                              } else {
-                                updateFilter('location', filters.location.filter(l => l !== loc));
-                              }
-                            }}
-                            className="rounded border-gray-300 text-[#5e17eb] focus:ring-[#5e17eb]"
-                          />
-                          <span className="text-gray-700">{loc}</span>
-                        </label>
+                        <button
+                          key={loc}
+                          onClick={() => {
+                            if (filters.location.includes(loc)) {
+                              updateFilter('location', filters.location.filter(l => l !== loc));
+                            } else {
+                              updateFilter('location', [...filters.location, loc]);
+                            }
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3 ${
+                            filters.location.includes(loc)
+                              ? 'bg-[#5e17eb] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                            filters.location.includes(loc)
+                              ? 'border-white'
+                              : 'border-gray-300'
+                          }`}>
+                            {filters.location.includes(loc) && (
+                              <div className="w-2 h-2 bg-white rounded-sm"></div>
+                            )}
+                          </div>
+                          <span>{loc}</span>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -661,7 +840,7 @@ export default function DiscoverPage() {
                   <div>
                     <h4 className="font-medium text-gray-900 mb-3">Interests</h4>
                     <div className="flex flex-wrap gap-2">
-                      {interests.map((interest) => (
+                      {commonInterests.map((interest) => (
                         <button
                           key={interest}
                           onClick={() => {
@@ -685,36 +864,73 @@ export default function DiscoverPage() {
 
                   {/* Additional Filters */}
                   <div className="space-y-3">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.verifiedOnly}
-                        onChange={(e) => updateFilter('verifiedOnly', e.target.checked)}
-                        className="rounded border-gray-300 text-[#5e17eb] focus:ring-[#5e17eb]"
-                      />
-                      <span className="text-gray-700">Verified Only</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.premiumOnly}
-                        onChange={(e) => updateFilter('premiumOnly', e.target.checked)}
-                        className="rounded border-gray-300 text-[#5e17eb] focus:ring-[#5e17eb]"
-                      />
-                      <span className="text-gray-700">Premium Only</span>
-                    </label>
+                    <button
+                      onClick={() => updateFilter('verifiedOnly', !filters.verifiedOnly)}
+                      className={`w-full px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3 ${
+                        filters.verifiedOnly
+                          ? 'bg-[#5e17eb] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                        filters.verifiedOnly
+                          ? 'border-white'
+                          : 'border-gray-300'
+                      }`}>
+                        {filters.verifiedOnly && (
+                          <div className="w-3 h-3 bg-white rounded-sm"></div>
+                        )}
+                      </div>
+                      <span>Verified Only</span>
+                    </button>
+                    <button
+                      onClick={() => updateFilter('premiumOnly', !filters.premiumOnly)}
+                      className={`w-full px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3 ${
+                        filters.premiumOnly
+                          ? 'bg-[#5e17eb] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                        filters.premiumOnly
+                          ? 'border-white'
+                          : 'border-gray-300'
+                      }`}>
+                        {filters.premiumOnly && (
+                          <div className="w-3 h-3 bg-white rounded-sm"></div>
+                        )}
+                      </div>
+                      <span>Premium Only</span>
+                    </button>
                   </div>
                 </div>
               </div>
 
               {/* Spark New Chats */}
               <div className="bg-gradient-to-br from-[#5e17eb] to-[#ff2e2e] rounded-xl p-6 text-white">
-                <h3 className="font-bold text-lg mb-4">Spark New Chats with Icebreakers</h3>
+                <h3 className="font-bold text-lg mb-4">Spark New Chats</h3>
+                <p className="text-white/90 text-sm mb-4">
+                  Break the ice with ready-to-send conversation starters
+                </p>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg backdrop-blur-sm hover:bg-white/20 transition-colors cursor-pointer">
-                    <span className="font-medium">Get Started</span>
-                    <Flame className="w-4 h-4" />
-                  </div>
+                  <button 
+                    onClick={() => {
+                      if (icebreakerProfiles.length > 0) {
+                        const randomProfile = icebreakerProfiles[Math.floor(Math.random() * icebreakerProfiles.length)];
+                        handleSendIcebreaker(randomProfile);
+                      }
+                    }}
+                    className="w-full flex items-center justify-between p-3 bg-white/10 rounded-lg backdrop-blur-sm hover:bg-white/20 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Flame className="w-5 h-5" />
+                      <div>
+                        <span className="font-medium block">Send Icebreaker</span>
+                        <span className="text-xs opacity-80">Start a conversation</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
@@ -722,21 +938,23 @@ export default function DiscoverPage() {
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h3 className="font-bold text-lg text-gray-900 mb-4">Get More with Credits</h3>
                 <div className="space-y-3">
-                  {['Chat with anyone you like', 'Send Virtual Gifts', 'Get Credits'].map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
-                    >
-                      <div className={`w-2 h-2 rounded-full ${
-                        index === 0 ? 'bg-[#5e17eb]' :
-                        index === 1 ? 'bg-[#ff2e2e]' :
-                        'bg-yellow-500'
-                      }`}></div>
-                      <span className="text-gray-700 group-hover:text-gray-900">{item}</span>
-                    </div>
-                  ))}
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                    <div className="w-2 h-2 rounded-full bg-[#5e17eb]"></div>
+                    <span className="text-gray-700">Chat with anyone you like</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                    <div className="w-2 h-2 rounded-full bg-[#ff2e2e]"></div>
+                    <span className="text-gray-700">Send Virtual Gifts</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                    <span className="text-gray-700">Get Premium Features</span>
+                  </div>
                 </div>
-                <button className="w-full mt-6 py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors">
+                <button 
+                  onClick={() => router.push('/main/credits')}
+                  className="w-full mt-6 py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors"
+                >
                   Get Credits
                 </button>
               </div>
@@ -758,7 +976,7 @@ export default function DiscoverPage() {
                 >
                   All
                   <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">
-                    {profiles.length}
+                    {filteredProfiles.length}
                   </span>
                 </button>
                 <button
@@ -784,7 +1002,7 @@ export default function DiscoverPage() {
                 >
                   Following
                   <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">
-                    6
+                    {profiles.filter(p => p.followingCount > 0).length}
                   </span>
                 </button>
               </div>
@@ -807,9 +1025,15 @@ export default function DiscoverPage() {
               </div>
               <div className="hidden sm:flex items-center gap-4">
                 <div className="text-sm text-gray-600">
-                  Page {currentPage} of {totalPages}
+                  Showing {Math.min(filteredProfiles.length, endIndex)} of {filteredProfiles.length}
                 </div>
-                <select className="bg-transparent border-none focus:ring-0 text-gray-900 font-medium">
+                <select 
+                  onChange={(e) => {
+                    // Sort functionality can be added here
+                    console.log('Sort by:', e.target.value);
+                  }}
+                  className="bg-transparent border-none focus:ring-0 text-gray-900 font-medium"
+                >
                   <option>Sort: Newest</option>
                   <option>Sort: Distance</option>
                   <option>Sort: Compatibility</option>
@@ -821,6 +1045,14 @@ export default function DiscoverPage() {
             {/* Active Filters Display */}
             {activeFilterCount > 0 && (
               <div className="mb-6 filter-chips">
+                {filters.gender && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
+                    {filters.gender === 'female' ? 'Women' : 'Men'}
+                    <button onClick={() => updateFilter('gender', '')} className="hover:text-[#4a13c4]">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
                 {filters.minAge > 18 && (
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
                     Age from {filters.minAge}
@@ -882,23 +1114,16 @@ export default function DiscoverPage() {
 
             {/* Loading State */}
             {isLoading ? (
-              <div className="profiles-grid">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                  <div key={i} className="profile-card bg-gray-100 rounded-xl animate-pulse">
-                    <div className="aspect-[4/5] bg-gray-200 rounded-t-xl"></div>
-                    <div className="p-4">
-                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
-                      <div className="h-10 bg-gray-200 rounded w-full"></div>
-                    </div>
-                  </div>
+              <div className={`profiles-grid ${gridColumns} gap-4`}>
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <ProfileSkeleton key={i} />
                 ))}
               </div>
             ) : (
               <>
                 {/* Profiles Grid/List */}
                 {viewMode === 'grid' ? (
-                  <div className="profiles-grid">
+                  <div className={`profiles-grid ${gridColumns} gap-4`}>
                     {currentProfiles.map(profile => (
                       <div
                         key={profile.id}
@@ -974,12 +1199,12 @@ export default function DiscoverPage() {
                               {profile.bio}
                             </p>
                             <div className="flex flex-wrap gap-1 mt-2">
-                              {profile.interests.slice(0, 2).map((interest, idx) => (
+                              {profile.interests?.slice(0, 2).map((interest: string, idx: number) => (
                                 <span key={idx} className="px-2 py-1 bg-white/20 text-white text-xs rounded-full backdrop-blur-sm">
                                   {interest}
                                 </span>
                               ))}
-                              {profile.interests.length > 2 && (
+                              {profile.interests?.length > 2 && (
                                 <span className="px-2 py-1 bg-white/20 text-white text-xs rounded-full backdrop-blur-sm">
                                   +{profile.interests.length - 2}
                                 </span>
@@ -1008,16 +1233,17 @@ export default function DiscoverPage() {
                           </div>
                           
                           <div className="action-buttons flex gap-2">
-                            <Link
-                              href={`/main/profile/${profile.id}`}
+                            <button
+                              onClick={() => handleViewProfile(profile.id)}
                               className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:border-gray-400 hover:bg-gray-50 transition-colors duration-300"
                             >
                               <Eye className="w-4 h-4" />
                               View Profile
-                            </Link>
+                            </button>
                             <button
                               onClick={() => handleFollow(profile.id)}
-                              className="px-3 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors duration-300"
+                              className="px-3 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors duration-300 flex items-center justify-center"
+                              title="Follow"
                             >
                               <UserPlus className="w-5 h-5" />
                             </button>
@@ -1081,7 +1307,7 @@ export default function DiscoverPage() {
                             </p>
                             
                             <div className="flex flex-wrap gap-2 mb-4">
-                              {profile.interests.map((interest, idx) => (
+                              {profile.interests?.slice(0, 4).map((interest: string, idx: number) => (
                                 <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
                                   {interest}
                                 </span>
@@ -1104,16 +1330,17 @@ export default function DiscoverPage() {
                                 <MessageCircle className="w-4 h-4 inline mr-2" />
                                 Chat
                               </button>
-                              <Link
-                                href={`/main/profile/${profile.id}`}
+                              <button
+                                onClick={() => handleViewProfile(profile.id)}
                                 className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:border-gray-400 hover:bg-gray-50 transition-colors duration-300"
                               >
                                 <Eye className="w-4 h-4 inline mr-2" />
                                 View Profile
-                              </Link>
+                              </button>
                               <button
                                 onClick={() => handleFollow(profile.id)}
                                 className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors duration-300"
+                                title="Follow"
                               >
                                 <UserPlus className="w-5 h-5" />
                               </button>
@@ -1126,7 +1353,7 @@ export default function DiscoverPage() {
                 )}
 
                 {/* No Results */}
-                {filteredProfiles.length === 0 && (
+                {filteredProfiles.length === 0 && !isLoading && (
                   <div className="text-center py-16">
                     <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
                       <Users className="w-12 h-12 text-gray-400" />
@@ -1142,6 +1369,29 @@ export default function DiscoverPage() {
                       className="px-6 py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors duration-300"
                     >
                       Clear All Filters
+                    </button>
+                  </div>
+                )}
+
+                {/* Load More Button */}
+                {hasMore && !isLoading && filteredProfiles.length > 0 && (
+                  <div className="flex justify-center mt-8">
+                    <button
+                      onClick={loadMoreProfiles}
+                      disabled={isLoadingMore}
+                      className="px-8 py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoadingMore ? (
+                        <span className="flex items-center gap-2">
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Loading...
+                        </span>
+                      ) : (
+                        'Load More Profiles'
+                      )}
                     </button>
                   </div>
                 )}
