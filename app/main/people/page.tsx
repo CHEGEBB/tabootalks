@@ -330,7 +330,7 @@ interface ImageModalProps {
 }
 
 const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, images, currentIndex, onIndexChange, alt }) => {
-  if (!isOpen) return null;
+  if (!isOpen || !images || images.length === 0) return null;
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -363,15 +363,17 @@ const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, images, curren
         )}
         
         {/* Image container */}
-        <div className="relative w-full h-full">
-          <Image
-            src={images[currentIndex]}
-            alt={`${alt} photo ${currentIndex + 1}`}
-            fill
-            className="object-contain"
-            sizes="100vw"
-            priority
-          />
+        <div className="relative w-full h-full min-h-[400px]">
+          {images[currentIndex] && (
+            <Image
+              src={images[currentIndex]}
+              alt={`${alt} photo ${currentIndex + 1}`}
+              fill
+              className="object-contain"
+              sizes="100vw"
+              priority
+            />
+          )}
         </div>
         
         {/* Next button */}
@@ -632,13 +634,15 @@ export default function PeoplePage() {
               <div className="relative h-[600px] md:h-[750px]"> {/* Increased height */}
                 <SwipeReject onReject={handleReject} onHold={handleHold}>
                   <div className="relative w-full h-full">
-                    <Image
-                      src={currentUser.photos[currentPhotoIndex]}
-                      alt={`${currentUser.name}'s photo`}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
+                    {currentUser.photos[currentPhotoIndex] && (
+                      <Image
+                        src={currentUser.photos[currentPhotoIndex]}
+                        alt={`${currentUser.name}'s photo`}
+                        fill
+                        className="object-cover"
+                        priority
+                      />
+                    )}
                   </div>
                 </SwipeReject>
                 
@@ -1010,8 +1014,6 @@ export default function PeoplePage() {
                 </div>
               </div>
             </div>
-
-            {/* REMOVED Online Now section as requested */}
           </div>
         </div>
       </div>
@@ -1077,14 +1079,16 @@ export default function PeoplePage() {
       </div>
 
       {/* Enhanced Image Modal with Navigation */}
-      <ImageModal
-        isOpen={isImageModalOpen}
-        onClose={() => setIsImageModalOpen(false)}
-        images={currentUser.photos}
-        currentIndex={modalImageIndex}
-        onIndexChange={setModalImageIndex}
-        alt={currentUser.name}
-      />
+      {currentUser && (
+        <ImageModal
+          isOpen={isImageModalOpen}
+          onClose={() => setIsImageModalOpen(false)}
+          images={currentUser.photos}
+          currentIndex={modalImageIndex}
+          onIndexChange={setModalImageIndex}
+          alt={currentUser.name}
+        />
+      )}
 
       {/* Credits Popup */}
       {showCreditsPopup && (
