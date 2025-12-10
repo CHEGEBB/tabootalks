@@ -686,10 +686,7 @@ export default function HomePage() {
                     </button>
                   </div>
                 </div>
-                <button className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2.5 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors self-start">
-                  <Filter className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-                  <span className="text-xs sm:text-sm font-medium">Filters</span>
-                </button>
+              
               </div>
               
               <div className="flex gap-4 sm:gap-6 mb-6 sm:mb-8 pb-3 px-1 overflow-x-auto">
