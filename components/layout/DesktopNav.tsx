@@ -210,19 +210,9 @@ export default function DesktopNav({ activeTab, setActiveTab }: Omit<DesktopNavP
               <span className="absolute top-3 right-3 h-3 w-3 rounded-full bg-[#ff2e2e]"></span>
             </button>
             
-            <button 
-              onClick={() => handleRightSideAction('explore')}
-              className="p-3 text-gray-600 hover:text-[#5e17eb] transition hover:bg-gray-100 rounded-full"
-            >
-              <Compass size={24} />
-            </button>
+           
             
-            <button 
-              onClick={() => handleRightSideAction('create')}
-              className="p-3 text-gray-600 hover:text-[#5e17eb] transition hover:bg-gray-100 rounded-full"
-            >
-              <PlusCircle size={24} />
-            </button>
+           
 
             {/* Credits Display - from profile */}
             <button 

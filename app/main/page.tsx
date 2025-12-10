@@ -11,6 +11,8 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useOffer } from '@/lib/hooks/useOffer';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import { CiPaperplane } from 'react-icons/ci';
+import { useCredits } from '@/lib/hooks/useCredits';
+
 
 // Types for our posts
 interface Post {
@@ -43,7 +45,9 @@ interface Post {
   martialStatus?: string;
   personality?: string;
 }
-
+const handleBuyCredits = () => {
+  window.location.href = '/main/credits';
+}
 // Skeleton loader component
 const PostSkeleton = () => (
   <div className="border border-gray-200 rounded-xl overflow-hidden bg-white animate-pulse">
@@ -333,6 +337,8 @@ export default function HomePage() {
   const postsRef = useRef<Post[]>([]);
   const loadedIdsRef = useRef<Set<string>>(new Set());
   const isLoadingRef = useRef(false);
+  const { credits: userCredits, isLoading: creditsLoading, refreshCredits } = useCredits();
+
 
   const ITEMS_PER_PAGE = 6;
 
@@ -680,10 +686,7 @@ export default function HomePage() {
                     </button>
                   </div>
                 </div>
-                <button className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2.5 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors self-start">
-                  <Filter className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-                  <span className="text-xs sm:text-sm font-medium">Filters</span>
-                </button>
+              
               </div>
               
               <div className="flex gap-4 sm:gap-6 mb-6 sm:mb-8 pb-3 px-1 overflow-x-auto">
@@ -994,26 +997,34 @@ export default function HomePage() {
               </div>
 
               <div className="p-6 border border-gray-200 rounded-xl bg-gradient-to-br from-[#5e17eb]/5 to-white">
-                <h3 className="font-bold mb-4 text-gray-900 flex items-center gap-2">
-                  <Star size={18} className="text-[#5e17eb]" />
-                  Your Credits
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-                    <div>
-                      <div className="font-medium text-gray-600">Balance</div>
-                      <div className="text-3xl font-bold text-[#5e17eb]">{currentUser.credits}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500">Active</div>
-                      <div className="text-sm text-green-600 font-medium">✓ Valid</div>
-                    </div>
+              <h3 className="font-bold mb-4 text-gray-900 flex items-center gap-2">
+                <Star size={18} className="text-[#5e17eb]" />
+                Your Credits
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+                  <div>
+                    <div className="font-medium text-gray-600">Balance</div>
+                    {creditsLoading ? (
+                      <div className="h-10 w-24 bg-gray-200 rounded animate-pulse mt-2"></div>
+                    ) : (
+                      <div className="text-3xl font-bold text-[#5e17eb]">{userCredits.toLocaleString()}</div>
+                    )}
                   </div>
-                  <button className="w-full py-3.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all duration-300">
-                    Buy More Credits
-                  </button>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">Active</div>
+                    <div className="text-sm text-green-600 font-medium">✓ Valid</div>
+                  </div>
                 </div>
+                <button 
+                  className="w-full py-3.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" 
+                  onClick={() => router.push('/main/credits')}
+                  disabled={creditsLoading}
+                >
+                  {creditsLoading ? 'Loading...' : 'Buy More Credits'}
+                </button>
               </div>
+            </div>
 
               <div className="p-6 border border-gray-200 rounded-xl bg-white">
                 <h3 className="font-bold mb-5 text-gray-900">Your Activity</h3>
