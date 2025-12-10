@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, MoreVertical, MapPin, Eye, Gift, Star, Sparkles, Filter, Camera, UserCheck, UserPlus, CheckCircle, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Heart, MessageCircle, MoreVertical, MapPin, Eye, Gift, Star, Sparkles, Filter, Camera, UserCheck, UserPlus, CheckCircle, ChevronLeft, ChevronRight, X, MessageCircleCodeIcon, MessageCirclePlus } from 'lucide-react';
 import Image from 'next/image';
 import LayoutController from '@/components/layout/LayoutController';
 import Offer from '@/components/features/credits/CreditOffer';
@@ -10,6 +10,7 @@ import ProfileNotification from '@/components/ui/ProfileNotification';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useOffer } from '@/lib/hooks/useOffer';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
+import { CiPaperplane } from 'react-icons/ci';
 
 // Types for our posts
 interface Post {
@@ -907,10 +908,9 @@ export default function HomePage() {
                           />
                           <div className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 sm:gap-2">
                             <button className="p-1 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-                              <Sparkles className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                             </button>
-                            <button className="p-1 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-                              <Sparkles className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                            <button className="p-1 sm:p-2 text-black hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                              <CiPaperplane className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                             </button>
                           </div>
                         </div>
