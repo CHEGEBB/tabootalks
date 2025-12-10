@@ -4,7 +4,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Filter, Users, Star, Flame, ChevronRight, MapPin, Heart, MessageCircle, Eye, UserPlus, CheckCircle, X, Grid, List, X as XIcon, Sparkles } from 'lucide-react';
+import { Search, Filter, Users, Star, Flame, ChevronRight, MapPin, Heart, MessageCircle, Eye, UserPlus, CheckCircle, X, Grid, List, X as XIcon, Sparkles, MessageCircleCodeIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import LayoutController from '@/components/layout/LayoutController';
@@ -473,21 +473,21 @@ export default function DiscoverPage() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Start a conversation with an interesting question or comment..."
-                    className="w-full h-32 px-4 py-3 border border-gray-300 rounded-xl focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none resize-none"
+                    className="w-full h-32 px-4 py-3 border text-gray-500 placeholder:text-gray-500 border-gray-300 rounded-xl focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none resize-none"
                   />
                 </div>
                 
                 <div className="flex gap-2 mb-6">
                   <button
                     onClick={selectRandomMessage}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-500 text-gray-100 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <MessageCircleCodeIcon className="w-4 h-4" />
                     Suggest
                   </button>
                   <button
                     onClick={() => setMessage('')}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                    className="px-4 py-2 bg-red-500 text-gray-100 rounded-lg font-medium hover:bg-red-700 transition-colors"
                   >
                     Clear
                   </button>
