@@ -435,7 +435,7 @@ export default function PeoplePage() {
     try {
       // Fetch personas from Appwrite
       const personas = await personaService.getAllPersonas({
-        limit: 10,
+        limit: 55,
         offset: 0
       });
       
@@ -473,8 +473,13 @@ export default function PeoplePage() {
     setIsHoldingImage(false);
     
     setTimeout(() => {
-      setCurrentUserIndex((prev) => (prev + 1) % users.length);
-      setNextUserIndex((prev) => (prev + 1) % users.length);
+      const newIndex = (currentUserIndex + 1) % users.length;
+      setCurrentUserIndex(newIndex);
+      
+      // Calculate next user index correctly
+      const nextIndex = (newIndex + 1) % users.length;
+      setNextUserIndex(nextIndex);
+      
       setIsAnimatingOut(false);
       
       if (containerRef.current) {
@@ -488,8 +493,14 @@ export default function PeoplePage() {
     
     setCurrentPhotoIndex(0);
     setIsHoldingImage(false);
-    setCurrentUserIndex((prev) => (prev - 1 + users.length) % users.length);
-    setNextUserIndex((prev) => (prev + 1) % users.length);
+    
+    // Calculate previous index correctly
+    const newIndex = (currentUserIndex - 1 + users.length) % users.length;
+    setCurrentUserIndex(newIndex);
+    
+    // Calculate next user index correctly (should be the one after the new current index)
+    const nextIndex = (newIndex + 1) % users.length;
+    setNextUserIndex(nextIndex);
     
     if (containerRef.current) {
       containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
