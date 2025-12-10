@@ -2,281 +2,138 @@
 // app/main/people/page.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, X, ChevronLeft, ChevronRight, MapPin, Camera, Users, Gift, Star, MoreVertical, CheckCircle, Mail, CreditCard, MessageSquare, Book, Coffee, Plane, Music, Dumbbell, Utensils, Trophy, Gamepad2, Palette, Bike, Mountain, Film, Pizza } from 'lucide-react';
+import { useState, useEffect, useRef, JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal } from 'react';
+import { Heart, MessageCircle, X, ChevronLeft, ChevronRight, MapPin, Camera, Users, Gift, Star, MoreVertical, CheckCircle, Mail, CreditCard, MessageSquare, Book, Coffee, Plane, Music, Dumbbell, Utensils, Trophy, Gamepad2, Palette, Bike, Mountain, Film, Pizza, Globe, Calendar, User, Briefcase } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import LayoutController from '@/components/layout/LayoutController';
-
-// Mock user data for browsing - ORIGINAL CONTENT
-const mockUsers = [
-  {
-    id: 1,
-    name: 'Isabella',
-    age: 29,
-    location: 'Medellín, Colombia',
-    bio: 'Lawyer passionate about justice and human rights',
-    mainImage: 'https://images.pexels.com/photos/28186672/pexels-photo-28186672.jpeg',
-    photos: [
-      'https://images.pexels.com/photos/28186672/pexels-photo-28186672.jpeg',
-      'https://images.pexels.com/photos/28186669/pexels-photo-28186669.jpeg',
-      'https://images.pexels.com/photos/28308890/pexels-photo-28308890.jpeg',
-      'https://images.pexels.com/photos/28186675/pexels-photo-28186675.jpeg',
-      'https://images.pexels.com/photos/28484164/pexels-photo-28484164.jpeg',
-      'https://images.pexels.com/photos/29203103/pexels-photo-29203103.jpeg',
-      'https://images.pexels.com/photos/28308893/pexels-photo-28308893.jpeg',
-      'https://images.pexels.com/photos/28221333/pexels-photo-28221333.jpeg',
-      'https://images.pexels.com/photos/28221334/pexels-photo-28221334.jpeg',
-      'https://images.pexels.com/photos/28292103/pexels-photo-28292103.jpeg',
-      'https://images.pexels.com/photos/28308891/pexels-photo-28308891.jpeg',
-      'https://images.pexels.com/photos/28186673/pexels-photo-28186673.jpeg',
-    ],
-    interests: ['Reading', 'Law', 'Travel', 'Photography'],
-    lookingFor: ['Finding a friend', 'Get attention', 'I am bored', 'People Aged: 18 - 90'],
-    personalityType: 'Bookworm',
-    about: ['Kind', 'Hard-working', 'Ambitious', 'Dedicated'],
-    description: 'In a nutshell, I can say that I am a very hard-working person. I have dedicated a large part of my life to boosting my career with the firm dream of becoming the woman I have always imagined. My focus and dedication are reflected in every project I undertake...',
-    isVerified: true,
-    online: true,
-    photosCount: 12,
-    lastActive: 'Online now',
-    country: 'Colombia',
-    birthDate: '1994-10-16',
-    maritalStatus: 'Not Married',
-    profession: 'Lawyer'
-  },
-  {
-    id: 2,
-    name: 'Sofia',
-    age: 26,
-    location: 'Bogotá, Colombia',
-    bio: 'Architect designing sustainable spaces',
-    mainImage: 'https://images.pexels.com/photos/8865688/pexels-photo-8865688.jpeg',
-    photos: [
-      'https://images.pexels.com/photos/8865688/pexels-photo-8865688.jpeg',
-      'https://images.pexels.com/photos/8865678/pexels-photo-8865678.jpeg',
-      'https://images.pexels.com/photos/8865689/pexels-photo-8865689.jpeg',
-      'https://images.pexels.com/photos/8865681/pexels-photo-8865681.jpeg',
-      'https://images.pexels.com/photos/8865684/pexels-photo-8865684.jpeg',
-      'https://images.pexels.com/photos/8865680/pexels-photo-8865680.jpeg',
-    ],
-    interests: ['Architecture', 'Art', 'Travel', 'Yoga'],
-    lookingFor: ['Serious relationship', 'Travel partner', 'Cultural exchange'],
-    personalityType: 'Creative Soul',
-    about: ['Creative', 'Thoughtful', 'Passionate'],
-    description: 'Designing buildings that tell stories and create meaningful spaces for people to connect.',
-    isVerified: true,
-    online: false,
-    photosCount: 6,
-    lastActive: '2 hours ago',
-    country: 'Colombia',
-    birthDate: '1997-05-22',
-    maritalStatus: 'Single',
-    profession: 'Architect'
-  },
-  {
-    id: 3,
-    name: 'Valentina',
-    age: 31,
-    location: 'Frankfurt, Germany',
-    bio: 'Doctor making a difference in healthcare',
-    mainImage: 'https://images.pexels.com/photos/15582476/pexels-photo-15582476.jpeg',
-    photos: [
-      'https://images.pexels.com/photos/20341989/pexels-photo-20341989.jpeg',
-      'https://images.pexels.com/photos/20341998/pexels-photo-20341998.jpeg',
-      'https://images.pexels.com/photos/15582475/pexels-photo-15582475.jpeg',
-      'https://images.pexels.com/photos/15582476/pexels-photo-15582476.jpeg',
-      'https://images.pexels.com/photos/15582475/pexels-photo-15582475.jpeg',
-    ],
-    interests: ['Medicine', 'Dancing', 'Cooking', 'Reading'],
-    lookingFor: ['Meaningful connection', 'Someone caring', 'Long-term partner'],
-    personalityType: 'Caregiver',
-    about: ['Compassionate', 'Intelligent', 'Dedicated'],
-    description: 'Passionate about helping others and making a positive impact in people\'s lives.',
-    isVerified: true,
-    online: true,
-    photosCount: 5,
-    lastActive: 'Online now',
-    country: 'Germany',
-    birthDate: '1992-08-15',
-    maritalStatus: 'Divorced',
-    profession: 'Dancer'
-  },
-  {
-    id: 4,
-    name: 'Camila',
-    age: 24,
-    location: 'Cartagena, Colombia',
-    bio: 'Fashion designer with a passion for colors',
-    mainImage: 'https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?w=800&h=1200&fit=crop',
-    photos: [
-      'https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photo-1534751516642-a1af1ef26a56?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photo-1494790108755-2616b786d4d7?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photos/1438761681033-6461ffad8d80?w=800&h=1200&fit=crop',
-    ],
-    interests: ['Fashion', 'Art', 'Beach', 'Dancing'],
-    lookingFor: ['Fun times', 'Beach dates', 'Creative partner'],
-    personalityType: 'Free Spirit',
-    about: ['Creative', 'Energetic', 'Optimistic'],
-    description: 'Bringing colors and joy to the world through fashion design.',
-    isVerified: false,
-    online: true,
-    photosCount: 7,
-    lastActive: 'Online now',
-    country: 'Colombia',
-    birthDate: '1999-11-30',
-    maritalStatus: 'Single',
-    profession: 'Fashion Designer'
-  },
-  {
-    id: 5,
-    name: 'Daniela',
-    age: 28,
-    location: 'Barranquilla, Colombia',
-    bio: 'Software engineer building the future',
-    mainImage: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800&h=1200&fit=crop',
-    photos: [
-      'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photo-1494790108755-2616b786d4d7?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=1200&fit=crop',
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=1200&fit=crop',
-    ],
-    interests: ['Technology', 'Gaming', 'Music', 'Travel'],
-    lookingFor: ['Tech conversations', 'Gaming partner', 'Intellectual connection'],
-    personalityType: 'Innovator',
-    about: ['Intelligent', 'Analytical', 'Curious'],
-    description: 'Creating innovative solutions through code and technology.',
-    isVerified: true,
-    online: false,
-    photosCount: 6,
-    lastActive: '1 day ago',
-    country: 'Colombia',
-    birthDate: '1995-03-18',
-    maritalStatus: 'Not Married',
-    profession: 'Software Engineer'
-  },
-];
-
-// People you might like - separate from main browsing
-const suggestedPeople = [
-  {
-    id: 101,
-    name: 'Ekaterina',
-    age: 35,
-    location: 'Rime, Ukraine',
-    photos: 31,
-    image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=500&fit=crop',
-    online: true
-  },
-  {
-    id: 102,
-    name: 'Chao Xiaofei',
-    age: 35,
-    location: 'Guangzhou, China',
-    photos: 12,
-    image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop',
-    online: true
-  },
-  {
-    id: 103,
-    name: 'Iryna',
-    age: 28,
-    location: 'Mydolayn, Ukraine',
-    photos: 15,
-    image: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop',
-    online: true
-  },
-  {
-    id: 104,
-    name: 'Natalia',
-    age: 29,
-    location: 'Chicago, United States',
-    photos: 26,
-    image: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=400&h=500&fit=crop',
-    online: false
-  },
-  {
-    id: 105,
-    name: 'Ruzzle',
-    age: 29,
-    location: 'Pasig, Philippines',
-    photos: 12,
-    image: 'https://images.unsplash.com/photo-1507591064344-4c6ce005-128?w=400&h=500&fit=crop',
-    online: true
-  },
-];
+import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 
 // Get icon for interest
 const getInterestIcon = (interest: string) => {
   switch(interest.toLowerCase()) {
     case 'reading': return <Book className="w-4 h-4" />;
-    case 'law': return <Scale className="w-4 h-4" />;
+    case 'books': return <Book className="w-4 h-4" />;
     case 'travel': return <Plane className="w-4 h-4" />;
     case 'photography': return <Camera className="w-4 h-4" />;
-    case 'architecture': return <Building className="w-4 h-4" />;
     case 'art': return <Palette className="w-4 h-4" />;
-    case 'yoga': return <Wind className="w-4 h-4" />;
-    case 'medicine': return <Heart className="w-4 h-4" />;
-    case 'dancing': return <Music className="w-4 h-4" />;
-    case 'cooking': return <Utensils className="w-4 h-4" />;
-    case 'fashion': return <Shirt className="w-4 h-4" />;
-    case 'beach': return <Sun className="w-4 h-4" />;
-    case 'technology': return <Cpu className="w-4 h-4" />;
-    case 'gaming': return <Gamepad2 className="w-4 h-4" />;
     case 'music': return <Music className="w-4 h-4" />;
+    case 'dance': return <Music className="w-4 h-4" />;
     case 'fitness': return <Dumbbell className="w-4 h-4" />;
     case 'sports': return <Trophy className="w-4 h-4" />;
-    case 'cycling': return <Bike className="w-4 h-4" />;
-    case 'hiking': return <Mountain className="w-4 h-4" />;
-    case 'movies': return <Film className="w-4 h-4" />;
+    case 'cooking': return <Utensils className="w-4 h-4" />;
     case 'food': return <Pizza className="w-4 h-4" />;
     default: return <Star className="w-4 h-4" />;
   }
 };
 
-// Custom icons
-const Scale = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-  </svg>
-);
+// Format date to show only date, not time
+const formatBirthday = (birthday: string) => {
+  if (!birthday) return 'Not specified';
+  
+  try {
+    const date = new Date(birthday);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch {
+    return birthday;
+  }
+};
 
-const Building = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-  </svg>
-);
+// Extract location (city/region) from full location string
+const getLocationDisplay = (location: string) => {
+  if (!location) return 'Unknown';
+  
+  // Split by comma and take first part (city/region)
+  const parts = location.split(',');
+  return parts[0]?.trim() || location;
+};
 
-const Wind = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2" />
-  </svg>
-);
+// Convert Appwrite persona to display user format
+const convertPersonaToDisplayUser = (persona: ParsedPersonaProfile) => {
+  // Determine online status based on lastActive (within last 15 minutes)
+  const lastActive = new Date(persona.lastActive || persona.$createdAt);
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+  const isOnline = lastActive > fifteenMinutesAgo;
+  
+  // Get all photos
+  const allPhotos = [
+    persona.profilePic,
+    ...(persona.additionalPhotos || [])
+  ].filter(Boolean);
+  
+  // Common looking for items
+  const commonLookingFor = [
+    'Finding a friend',
+    'Get attention',
+    'I am bored',
+    `People Aged: ${persona.preferences?.ageRange?.[0] || 18} - ${persona.preferences?.ageRange?.[1] || 90}`
+  ];
+  
+  // Determine personality type based on traits
+  const personalityType = persona.personalityTraits?.[0] || 'Adventurer';
+  
+  // About me traits
+  const aboutTraits = persona.personalityTraits?.slice(0, 4) || ['Kind', 'Friendly', 'Adventurous', 'Creative'];
+  
+  // Description/bio
+  const description = persona.bio || `Looking for meaningful connections. I enjoy ${persona.interests?.slice(0, 2).join(' and ')} in my free time.`;
+  
+  // Get location display (city/region only)
+  const locationDisplay = getLocationDisplay(persona.location);
+  
+  return {
+    id: persona.$id,
+    name: persona.username,
+    age: persona.age,
+    location: locationDisplay,
+    country: locationDisplay,
+    bio: persona.bio || `Professional ${persona.fieldOfWork || 'individual'}`,
+    mainImage: persona.profilePic || '/default-avatar.png',
+    photos: allPhotos.length > 0 ? allPhotos : ['/default-avatar.png'],
+    interests: persona.interests || ['Travel', 'Music', 'Art', 'Food'],
+    lookingFor: commonLookingFor,
+    personalityType,
+    about: aboutTraits,
+    description,
+    isVerified: persona.isVerified,
+    online: isOnline,
+    photosCount: allPhotos.length || 1,
+    lastActive: isOnline ? 'Online now' : 'Recently active',
+    birthDate: formatBirthday(persona.birthday),
+    maritalStatus: persona.martialStatus || 'Not specified',
+    profession: persona.fieldOfWork || 'Not specified',
+    fullLocation: persona.location,
+    englishLevel: persona.englishLevel || 'Not specified',
+    languages: persona.languages || [],
+    personalityTraits: persona.personalityTraits || []
+  };
+};
 
-const Sun = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-  </svg>
-);
+// Convert persona to suggested person format
+const convertPersonaToSuggestedPerson = (persona: ParsedPersonaProfile, index: number) => {
+  const lastActive = new Date(persona.lastActive || persona.$createdAt);
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+  const isOnline = lastActive > fifteenMinutesAgo;
+  
+  const locationDisplay = getLocationDisplay(persona.location);
+  
+  return {
+    id: persona.$id,
+    name: persona.username,
+    age: persona.age,
+    location: locationDisplay,
+    photos: (persona.additionalPhotos?.length || 0) + 1,
+    image: persona.profilePic || '/default-avatar.png',
+    online: isOnline,
+    interests: persona.interests?.slice(0, 2) || ['Travel', 'Music']
+  };
+};
 
-const Cpu = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-  </svg>
-);
-
-const Shirt = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-  </svg>
-);
-
-// Swipe-to-reject component interface
+// Swipe-to-reject component
 interface SwipeRejectProps {
   onReject: () => void;
   onHold: (isHolding: boolean) => void;
@@ -296,7 +153,6 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
     setStartPos({ x: touch.clientX, y: touch.clientY });
     setIsDragging(true);
     
-    // Start hold detection
     holdTimeoutRef.current = setTimeout(() => {
       setIsHolding(true);
       onHold(true);
@@ -310,13 +166,11 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
     const deltaX = touch.clientX - startPos.x;
     const deltaY = touch.clientY - startPos.y;
     
-    // Update position with resistance
     setPosition({ 
       x: deltaX * 0.8, 
       y: deltaY * 0.3 
     });
 
-    // If swiping left significantly, clear hold timeout
     if (deltaX < -50) {
       if (holdTimeoutRef.current) {
         clearTimeout(holdTimeoutRef.current);
@@ -334,7 +188,6 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
     setIsHolding(false);
     onHold(false);
 
-    // If swiped left enough, trigger reject
     if (position.x < -100) {
       setPosition({ x: -window.innerWidth, y: 0 });
       setTimeout(() => {
@@ -342,7 +195,6 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
         setPosition({ x: 0, y: 0 });
       }, 300);
     } else {
-      // Return to original position
       setPosition({ x: 0, y: 0 });
     }
   };
@@ -370,7 +222,7 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
     });
 
     if (deltaX < -50) {
-     if (holdTimeoutRef.current) {
+      if (holdTimeoutRef.current) {
         clearTimeout(holdTimeoutRef.current);
       }
       setIsHolding(false);
@@ -380,8 +232,8 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
 
   const handleMouseUp = () => {
     if (holdTimeoutRef.current) {
-        clearTimeout(holdTimeoutRef.current);
-      }
+      clearTimeout(holdTimeoutRef.current);
+    }
     setIsDragging(false);
     setIsHolding(false);
     onHold(false);
@@ -397,7 +249,6 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
     }
   };
 
-  // Add global mouse/touch event listeners for better UX
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       if (isDragging) {
@@ -445,7 +296,6 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
     >
       {children}
       
-      {/* NOPE Watermark that appears when holding */}
       {isHolding && (
         <div className="absolute top-4 right-4 z-50">
           <div className="bg-red-500 text-white px-6 py-3 rounded-full font-bold text-xl md:text-2xl shadow-lg animate-pulse border-2 border-white">
@@ -454,7 +304,6 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
         </div>
       )}
 
-      {/* Visual feedback for dragging left */}
       {isDragging && position.x < -30 && (
         <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-40">
           <div className="text-red-500 font-bold text-xl md:text-2xl opacity-70">
@@ -463,7 +312,6 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
         </div>
       )}
 
-      {/* Hold overlay */}
       {isHolding && (
         <div className="absolute inset-0 bg-black/20 z-30 rounded-lg md:rounded-xl" />
       )}
@@ -471,29 +319,160 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
   );
 };
 
+// Enhanced Image Modal Component with Navigation
+interface ImageModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  images: string[];
+  currentIndex: number;
+  onIndexChange: (index: number) => void;
+  alt: string;
+}
+
+const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, images, currentIndex, onIndexChange, alt }) => {
+  if (!isOpen) return null;
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onIndexChange((currentIndex - 1 + images.length) % images.length);
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onIndexChange((currentIndex + 1) % images.length);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="relative w-full max-w-4xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+        >
+          <X className="w-6 h-6" />
+        </button>
+        
+        {/* Previous button */}
+        {images.length > 1 && (
+          <button
+            onClick={handlePrev}
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+        )}
+        
+        {/* Image container */}
+        <div className="relative w-full h-full">
+          <Image
+            src={images[currentIndex]}
+            alt={`${alt} photo ${currentIndex + 1}`}
+            fill
+            className="object-contain"
+            sizes="100vw"
+            priority
+          />
+        </div>
+        
+        {/* Next button */}
+        {images.length > 1 && (
+          <button
+            onClick={handleNext}
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        )}
+        
+        {/* Image counter */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-medium">
+          {currentIndex + 1} / {images.length}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Default avatar image
+const DEFAULT_AVATAR = '/default-avatar.png';
+
 export default function PeoplePage() {
+  const router = useRouter();
   const [currentUserIndex, setCurrentUserIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  const [likedUsers, setLikedUsers] = useState<number[]>([]);
+  const [likedUsers, setLikedUsers] = useState<string[]>([]);
   const [showCreditsPopup, setShowCreditsPopup] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
   const [isHoldingImage, setIsHoldingImage] = useState(false);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const [nextUserIndex, setNextUserIndex] = useState(1);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  
+  // State for dynamic data
+  const [users, setUsers] = useState<any[]>([]);
+  const [suggestedPeople, setSuggestedPeople] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userActivity, setUserActivity] = useState({
+    chats: 156,
+    likes: 42,
+    following: 89
+  });
+
   const containerRef = useRef<HTMLDivElement>(null);
   
-  const currentUser = mockUsers[currentUserIndex];
-  const nextUser = mockUsers[nextUserIndex];
+  // Load users from Appwrite
+  useEffect(() => {
+    loadUsers();
+    loadSuggestedPeople();
+  }, []);
+
+  const loadUsers = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch personas from Appwrite
+      const personas = await personaService.getAllPersonas({
+        limit: 10,
+        offset: 0
+      });
+      
+      const displayUsers = personas.map(convertPersonaToDisplayUser);
+      setUsers(displayUsers);
+      
+      if (displayUsers.length > 1) {
+        setNextUserIndex(1);
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadSuggestedPeople = async () => {
+    try {
+      const randomPersonas = await personaService.getRandomPersonas(6);
+      const suggestedData = randomPersonas.map(convertPersonaToSuggestedPerson);
+      setSuggestedPeople(suggestedData);
+    } catch (error) {
+      console.error('Error loading suggested people:', error);
+    }
+  };
+
+  const currentUser = users[currentUserIndex];
+  const nextUser = users[nextUserIndex];
   
   const nextProfile = () => {
+    if (users.length === 0) return;
+    
     setIsAnimatingOut(true);
     setCurrentPhotoIndex(0);
     setIsHoldingImage(false);
     
     setTimeout(() => {
-      setCurrentUserIndex((prev) => (prev + 1) % mockUsers.length);
-      setNextUserIndex((prev) => (prev + 1) % mockUsers.length);
+      setCurrentUserIndex((prev) => (prev + 1) % users.length);
+      setNextUserIndex((prev) => (prev + 1) % users.length);
       setIsAnimatingOut(false);
       
       if (containerRef.current) {
@@ -503,21 +482,35 @@ export default function PeoplePage() {
   };
   
   const prevProfile = () => {
+    if (users.length === 0) return;
+    
     setCurrentPhotoIndex(0);
     setIsHoldingImage(false);
-    setCurrentUserIndex((prev) => (prev - 1 + mockUsers.length) % mockUsers.length);
-    setNextUserIndex((prev) => (prev + 1) % mockUsers.length);
+    setCurrentUserIndex((prev) => (prev - 1 + users.length) % users.length);
+    setNextUserIndex((prev) => (prev + 1) % users.length);
     
     if (containerRef.current) {
       containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
   
-  const handleLike = () => {
+  const handleLike = async () => {
+    if (!currentUser) return;
+    
     if (!likedUsers.includes(currentUser.id)) {
       setLikedUsers([...likedUsers, currentUser.id]);
+      
+      // Update like count in Appwrite
+      try {
+        await personaService.updatePersonaStats(currentUser.id, {
+          followingCount: 1,
+          lastActive: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating like count:', error);
+      }
     }
-    nextProfile();
+    // DO NOT change profile on like - only on X/skip
   };
   
   const handleReject = () => {
@@ -529,11 +522,21 @@ export default function PeoplePage() {
   };
   
   const handleChat = () => {
-    alert(`Starting chat with ${currentUser.name}`);
+    if (currentUser) {
+      router.push(`/main/chats?user=${currentUser.id}`);
+    }
   };
 
   const handleHold = (isHolding: boolean) => {
     setIsHoldingImage(isHolding);
+  };
+
+  const handleGalleryImageClick = (index: number, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    setModalImageIndex(index);
+    setIsImageModalOpen(true);
   };
 
   // Handle scroll to hide/show action buttons on mobile
@@ -552,18 +555,38 @@ export default function PeoplePage() {
   // Preload next user image
   useEffect(() => {
     if (nextUser?.photos?.[0]) {
-      // Use HTMLImageElement constructor or createElement
-      const img = new window.Image(); // or const img = document.createElement('img');
+      const img = new window.Image();
       img.src = nextUser.photos[0];
     }
-  }, [nextUserIndex]);
+  }, [nextUserIndex, nextUser]);
+
+  // Loading skeleton
+  if (isLoading || !currentUser) {
+    return (
+      <div className="min-h-screen bg-white">
+        <LayoutController />
+        <div className="max-w-7xl mx-auto px-4 pt-20 pb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <div className="bg-gray-200 rounded-xl h-[700px] animate-pulse"></div>
+            </div>
+            <div className="space-y-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-gray-200 rounded-xl h-64 animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
       <LayoutController />
       
       {/* Clean Top Navigation */}
-      <div className="fixed top-18 lg:top-24 left-0 border-indigo-600 border-bottom-2 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-2 shadow-sm">
+      <div className="fixed top-18 lg:top-24 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-2 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -571,7 +594,7 @@ export default function PeoplePage() {
               <span className="font-semibold text-gray-900 text-sm md:text-base">People</span>
             </div>
             <div className="text-xs text-gray-500">
-              {currentUserIndex + 1} of {mockUsers.length}
+              {currentUserIndex + 1} of {users.length}
             </div>
           </div>
           
@@ -604,47 +627,38 @@ export default function PeoplePage() {
           
           {/* LEFT COLUMN: Image Container */}
           <div className="lg:col-span-2 space-y-4 md:space-y-6 relative">
-            {/* NEXT USER PREVIEW (behind current) */}
-            {!isAnimatingOut && nextUser && (
-              <div className="absolute inset-0 z-0 opacity-30 transform scale-95">
-                <div className="bg-gray-100 rounded-lg md:rounded-xl overflow-hidden shadow h-[500px] md:h-[650px]">
-                  <div className="relative h-full">
-                    <Image
-                      src={nextUser.photos[0]}
-                      alt={`${nextUser.name}'s photo`}
-                      fill
-                      className="object-cover blur-sm"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* MAIN IMAGE CONTAINER WITH SWIPE FUNCTIONALITY */}
+            {/* MAIN IMAGE CONTAINER WITH SWIPE FUNCTIONALITY - TALLER RECTANGLE */}
             <div className={`relative z-10 bg-gray-100 rounded-lg md:rounded-xl overflow-hidden shadow transition-all duration-300 ${isAnimatingOut ? 'opacity-0 translate-x-full' : 'opacity-100'}`}>
-              <div className="relative h-[500px] md:h-[650px]">
+              <div className="relative h-[600px] md:h-[750px]"> {/* Increased height */}
                 <SwipeReject onReject={handleReject} onHold={handleHold}>
-                  <Image
-                    src={currentUser.photos[currentPhotoIndex]}
-                    alt={`${currentUser.name}'s photo`}
-                    fill
-                    className="object-cover"
-                    priority
-                  />
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={currentUser.photos[currentPhotoIndex]}
+                      alt={`${currentUser.name}'s photo`}
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+                  </div>
                 </SwipeReject>
                 
                 {/* Photo Navigation */}
                 {currentUser.photos.length > 1 && (
                   <>
                     <button 
-                      onClick={() => setCurrentPhotoIndex(prev => (prev - 1 + currentUser.photos.length) % currentUser.photos.length)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentPhotoIndex(prev => (prev - 1 + currentUser.photos.length) % currentUser.photos.length);
+                      }}
                       className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-black z-20"
                     >
                       <ChevronLeft className="w-4 h-4 md:w-6 md:h-6" />
                     </button>
                     <button 
-                      onClick={() => setCurrentPhotoIndex(prev => (prev + 1) % currentUser.photos.length)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentPhotoIndex(prev => (prev + 1) % currentUser.photos.length);
+                      }}
                       className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-black z-20"
                     >
                       <ChevronRight className="w-4 h-4 md:w-6 md:h-6" />
@@ -660,14 +674,20 @@ export default function PeoplePage() {
                 {/* Quick Action Buttons */}
                 <div className="absolute top-2 md:top-4 left-2 md:left-4 flex gap-1 md:gap-2 z-20">
                   <button 
-                    onClick={handleSkip}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSkip();
+                    }}
                     className="bg-black/80 hover:bg-black text-white w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300"
                     title="Skip profile"
                   >
                     <X className="w-3 h-3 md:w-4 md:h-4" />
                   </button>
                   <button 
-                    onClick={handleLike}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleLike();
+                    }}
                     className="bg-black/80 hover:bg-black text-white w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300"
                     title="Like profile"
                   >
@@ -700,8 +720,6 @@ export default function PeoplePage() {
                     </div>
                   </div>
                 </div>
-
-               
               </div>
             </div>
 
@@ -710,19 +728,31 @@ export default function PeoplePage() {
               {/* Basic Info Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
                 <div className="bg-blue-50 border border-blue-100 rounded-lg md:rounded-xl p-3 md:p-4">
-                  <div className="text-xs md:text-sm text-blue-600 font-medium mb-0.5 md:mb-1">Country</div>
-                  <div className="text-base md:text-xl font-bold text-gray-900">{currentUser.country}</div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Globe className="w-4 h-4 text-blue-600" />
+                    <div className="text-xs md:text-sm text-blue-600 font-medium">Location</div>
+                  </div>
+                  <div className="text-base md:text-xl font-bold text-gray-900">{currentUser.location}</div>
                 </div>
                 <div className="bg-purple-50 border border-purple-100 rounded-lg md:rounded-xl p-3 md:p-4">
-                  <div className="text-xs md:text-sm text-purple-600 font-medium mb-0.5 md:mb-1">Birth Date</div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4 text-purple-600" />
+                    <div className="text-xs md:text-sm text-purple-600 font-medium">Birth Date</div>
+                  </div>
                   <div className="text-base md:text-xl font-bold text-gray-900">{currentUser.birthDate}</div>
                 </div>
                 <div className="bg-pink-50 border border-pink-100 rounded-lg md:rounded-xl p-3 md:p-4">
-                  <div className="text-xs md:text-sm text-pink-600 font-medium mb-0.5 md:mb-1">Status</div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <User className="w-4 h-4 text-pink-600" />
+                    <div className="text-xs md:text-sm text-pink-600 font-medium">Status</div>
+                  </div>
                   <div className="text-base md:text-xl font-bold text-gray-900">{currentUser.maritalStatus}</div>
                 </div>
                 <div className="bg-indigo-50 border border-indigo-100 rounded-lg md:rounded-xl p-3 md:p-4">
-                  <div className="text-xs md:text-sm text-indigo-600 font-medium mb-0.5 md:mb-1">Profession</div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Briefcase className="w-4 h-4 text-indigo-600" />
+                    <div className="text-xs md:text-sm text-indigo-600 font-medium">Profession</div>
+                  </div>
                   <div className="text-base md:text-xl font-bold text-gray-900">{currentUser.profession}</div>
                 </div>
               </div>
@@ -734,7 +764,7 @@ export default function PeoplePage() {
                   <h2 className="text-lg md:text-xl font-bold text-gray-900">Interests</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {currentUser.interests.map((interest, index) => (
+                  {currentUser.interests.map((interest: string, index: number) => (
                     <div 
                       key={index}
                       className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl text-gray-700 text-sm md:text-base font-medium hover:bg-gray-100 transition-colors"
@@ -753,7 +783,7 @@ export default function PeoplePage() {
                   <h2 className="text-lg md:text-xl font-bold text-gray-900">Looking For</h2>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-3 md:mb-4">
-                  {currentUser.lookingFor.map((item, index) => (
+                  {currentUser.lookingFor.map((item: string, index: number) => (
                     <div 
                       key={index}
                       className="p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl hover:bg-gray-100 transition-colors cursor-pointer text-center"
@@ -776,7 +806,7 @@ export default function PeoplePage() {
                   <h2 className="text-lg md:text-xl font-bold text-gray-900">About Me</h2>
                 </div>
                 <div className="flex flex-wrap gap-2 md:gap-3 mb-3 md:mb-4">
-                  {currentUser.about.map((trait, index) => (
+                  {currentUser.about.map((trait: string, index: number) => (
                     <div 
                       key={index}
                       className="px-3 md:px-4 py-1.5 md:py-2.5 bg-purple-600 text-white rounded-lg md:rounded-xl font-bold text-sm md:text-lg shadow-sm"
@@ -799,84 +829,137 @@ export default function PeoplePage() {
               </div>
             </div>
 
-            {/* PHOTOS CONTAINER */}
-            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
-              <div className="flex items-center justify-between mb-4 md:mb-6">
-                <h2 className="text-lg md:text-2xl font-bold text-gray-900">Public Photos ({currentUser.photosCount})</h2>
-                <button className="text-purple-600 font-bold hover:underline text-sm md:text-lg">
-                  View All
-                </button>
+            {/* PHOTOS CONTAINER - MODAL ONLY FOR THESE IMAGES */}
+            {currentUser.photosCount > 0 && (
+              <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
+                <div className="flex items-center justify-between mb-4 md:mb-6">
+                  <h2 className="text-lg md:text-2xl font-bold text-gray-900">Photos ({currentUser.photosCount})</h2>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                  {currentUser.photos.map((photo: string, index: number) => (
+                    <div 
+                      key={index}
+                      className="aspect-[3/4] rounded-lg md:rounded-xl overflow-hidden cursor-pointer group shadow hover:shadow-md transition-all duration-300"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGalleryImageClick(index, e);
+                      }}
+                    >
+                      <Image
+                        src={photo}
+                        alt={`${currentUser.name}'s photo ${index + 1}`}
+                        width={300}
+                        height={400}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                {currentUser.photos.map((photo, index) => (
-                  <div 
-                    key={index}
-                    className="aspect-[3/4] rounded-lg md:rounded-xl overflow-hidden cursor-pointer group shadow hover:shadow-md transition-all duration-300"
-                    onClick={() => setCurrentPhotoIndex(index)}
-                  >
-                    <Image
-                      src={photo}
-                      alt={`Photo ${index + 1}`}
-                      width={300}
-                      height={400}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
 
           {/* RIGHT COLUMN: People You Might Like + Sidebar */}
           <div className="space-y-4 md:space-y-6">
-            {/* People You Might Like */}
+            {/* ENHANCED: People You Might Like */}
             <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
-                <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
-                People You Might Like
-              </h3>
+              <div className="flex items-center justify-between mb-3 md:mb-4">
+                <h3 className="text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
+                  People You Might Like
+                </h3>
+                <button 
+                  className="text-purple-600 text-xs md:text-sm font-medium hover:text-purple-700 transition-colors"
+                  onClick={() => loadSuggestedPeople()}
+                >
+                  Refresh
+                </button>
+              </div>
               
               <div className="space-y-3 md:space-y-4">
                 {suggestedPeople.map((person) => (
                   <div 
                     key={person.id}
-                    className="p-3 md:p-4 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl hover:bg-gray-100 transition-all duration-300 cursor-pointer hover:scale-[1.02]"
-                    onClick={() => alert(`Viewing ${person.name}'s profile`)}
+                    className="p-3 md:p-4 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl hover:bg-gray-100 transition-all duration-300 cursor-pointer hover:scale-[1.02] group"
+                    onClick={() => {
+                      const userIndex = users.findIndex(u => u.id === person.id);
+                      if (userIndex !== -1) {
+                        setCurrentUserIndex(userIndex);
+                        setNextUserIndex((userIndex + 1) % users.length);
+                        setCurrentPhotoIndex(0);
+                        if (containerRef.current) {
+                          containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }
+                    }}
                   >
                     <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-3">
-                      <div className="relative">
-                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 border-white shadow">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 border-white shadow relative group-hover:border-purple-300 transition-colors">
                           <Image
                             src={person.image}
                             alt={person.name}
-                            width={48}
-                            height={48}
-                            className="object-cover"
+                            fill
+                            className="object-cover rounded-full"
+                            sizes="(max-width: 768px) 48px, 56px"
                           />
                         </div>
                         {person.online && (
                           <div className="absolute bottom-0 right-0 w-2 h-2 md:w-2.5 md:h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <div className="font-bold text-gray-900 text-sm md:text-base">
-                          {person.name}, {person.age}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1 md:gap-2">
+                          <div className="font-bold text-gray-900 text-sm md:text-base truncate">
+                            {person.name}, {person.age}
+                          </div>
+                          {Math.random() > 0.5 && (
+                            <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-blue-400 flex-shrink-0" />
+                          )}
                         </div>
-                        <div className="text-gray-600 text-xs md:text-sm flex items-center gap-1">
-                          <MapPin className="w-2 h-2 md:w-3 md:h-3" />
-                          {person.location}
+                        <div className="text-gray-600 text-xs md:text-sm flex items-center gap-1 truncate mt-0.5">
+                          <MapPin className="w-2 h-2 md:w-3 md:h-3 flex-shrink-0" />
+                          <span className="truncate">{person.location}</span>
                         </div>
+                        {person.interests && (
+                          <div className="flex items-center gap-1 mt-1">
+                            {person.interests.slice(0, 2).map((interest: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined, idx: Key | null | undefined) => (
+                              <span key={idx} className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                {interest}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-gray-500 text-xs flex items-center gap-1">
+                      <div className="text-gray-500 text-xs flex items-center gap-1 flex-shrink-0">
                         <Camera className="w-2 h-2 md:w-3 md:h-3" />
                         <span className="font-medium">{person.photos}</span>
                       </div>
                     </div>
-                    <button className="w-full py-2 md:py-2.5 bg-purple-600 text-white rounded-lg font-medium md:font-bold hover:bg-purple-700 transition-all duration-300 flex items-center justify-center gap-1 md:gap-2 text-sm">
-                      <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
-                      Start Chat
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/main/chats?user=${person.id}`);
+                        }}
+                        className="flex-1 py-2 md:py-2.5 bg-purple-600 text-white rounded-lg font-medium md:font-bold hover:bg-purple-700 transition-all duration-300 flex items-center justify-center gap-1 md:gap-2 text-sm"
+                      >
+                        <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
+                        Chat
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!likedUsers.includes(person.id)) {
+                            setLikedUsers([...likedUsers, person.id]);
+                          }
+                        }}
+                        className="px-3 md:px-4 py-2 md:py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all duration-300 flex items-center justify-center"
+                      >
+                        <Heart className={`w-3 h-3 md:w-4 md:h-4 ${likedUsers.includes(person.id) ? 'text-red-500 fill-red-500' : ''}`} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -915,57 +998,20 @@ export default function PeoplePage() {
               <div className="space-y-2 md:space-y-3">
                 <div className="flex items-center justify-between p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="font-medium text-gray-700 text-sm md:text-base">Chats</div>
-                  <div className="text-lg md:text-2xl font-bold text-purple-600">156</div>
+                  <div className="text-lg md:text-2xl font-bold text-purple-600">{userActivity.chats}</div>
                 </div>
                 <div className="flex items-center justify-between p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="text-lg md:text-2xl font-bold text-purple-600">42</div>
+                  <div className="font-medium text-gray-900 text-sm md:text-base">Likes</div>
+                  <div className="text-lg md:text-2xl font-bold text-purple-600">{userActivity.likes}</div>
                 </div>
                 <div className="flex items-center justify-between p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="font-medium text-gray-900 text-sm md:text-base">Following</div>
-                  <div className="text-lg md:text-2xl font-bold text-purple-600">89</div>
+                  <div className="text-lg md:text-2xl font-bold text-purple-600">{userActivity.following}</div>
                 </div>
               </div>
             </div>
 
-            {/* Online Now */}
-            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
-              <div className="flex items-center justify-between mb-3 md:mb-4">
-                <h3 className="text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  Online now:
-                </h3>
-              </div>
-              
-              <div className="space-y-2 md:space-y-3">
-                {suggestedPeople.slice(0, 3).map((person) => (
-                  <div key={person.id} className="p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <div className="relative">
-                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden">
-                          <Image
-                            src={person.image}
-                            alt={person.name}
-                            width={32}
-                            height={32}
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="absolute bottom-0 right-0 w-1.5 h-1.5 md:w-2 md:h-2 bg-green-500 rounded-full border border-white"></div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-bold text-gray-900 text-sm md:text-base">
-                          {person.name}, {person.age}
-                        </div>
-                        <div className="text-gray-600 text-xs md:text-sm">{person.location}</div>
-                      </div>
-                      <div className="text-gray-500 text-xs md:text-sm">
-                        {person.photos}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* REMOVED Online Now section as requested */}
           </div>
         </div>
       </div>
@@ -1001,13 +1047,13 @@ export default function PeoplePage() {
         </div>
       )}
 
-      {/* Desktop Floating Action Buttons */}
+      {/* Desktop Floating Action Buttons - LOVE BUTTON FIXED */}
       <div className="fixed bottom-8 right-8 z-30 hidden md:block">
         <div className="flex gap-4">
           <button 
             onClick={handleSkip}
             className="bg-white text-gray-800 border border-gray-300 w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50 transition-all duration-300 hover:scale-110"
-            title="Skip"
+            title="Skip (changes profile)"
           >
             <X className="w-5 h-5" />
           </button>
@@ -1023,12 +1069,22 @@ export default function PeoplePage() {
           <button 
             onClick={handleLike}
             className="bg-red-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all duration-300 hover:scale-110"
-            title="Like"
+            title="Like (does NOT change profile)"
           >
             <Heart className={`w-5 h-5 ${likedUsers.includes(currentUser.id) ? 'fill-white' : ''}`} />
           </button>
         </div>
       </div>
+
+      {/* Enhanced Image Modal with Navigation */}
+      <ImageModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        images={currentUser.photos}
+        currentIndex={modalImageIndex}
+        onIndexChange={setModalImageIndex}
+        alt={currentUser.name}
+      />
 
       {/* Credits Popup */}
       {showCreditsPopup && (
