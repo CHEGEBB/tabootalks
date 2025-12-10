@@ -97,6 +97,7 @@ const ProfileCard = ({
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={handleGetStarted}
               className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl py-2.5 flex items-center justify-center gap-2 font-semibold text-sm shadow-lg"
             >
               <Heart className="w-4 h-4" />
@@ -105,6 +106,8 @@ const ProfileCard = ({
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={handleGetStarted}
+
               className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2.5 flex items-center justify-center"
             >
               <MessageCircle className="w-4 h-4" />
@@ -118,6 +121,9 @@ const ProfileCard = ({
     </div>
   </motion.div>
 );
+const handleGetStarted = () => {
+  window.location.href = '/signup';
+};
 
 const ProfileGrid: React.FC<ProfileGridProps> = ({ onGetStarted }) => {
   // Masonry layout profiles with varied heights and diverse images

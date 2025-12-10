@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, MoreVertical, MapPin, Eye, Gift, Star, Sparkles, Filter, Camera, UserCheck, UserPlus, CheckCircle, ChevronLeft, ChevronRight, X, MessageCircleCodeIcon, MessageCirclePlus } from 'lucide-react';
+import { Heart, MessageCircle, MoreVertical, MapPin, Eye, Gift, Star, Sparkles, Filter, Camera, UserCheck, UserPlus, CheckCircle, ChevronLeft, ChevronRight, X, MessageCircleCodeIcon, MessageCirclePlus, Flag, Shield, AlertCircle, Check, Ban, UserX } from 'lucide-react';
 import Image from 'next/image';
 import LayoutController from '@/components/layout/LayoutController';
 import Offer from '@/components/features/credits/CreditOffer';
@@ -12,7 +12,6 @@ import { useOffer } from '@/lib/hooks/useOffer';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import { CiPaperplane } from 'react-icons/ci';
 import { useCredits } from '@/lib/hooks/useCredits';
-
 
 // Types for our posts
 interface Post {
@@ -45,9 +44,340 @@ interface Post {
   martialStatus?: string;
   personality?: string;
 }
+
+// Report Abuse Modal Component
+const ReportAbuseModal = ({ 
+  isOpen, 
+  onClose, 
+  username,
+  onReportSuccess 
+}: { 
+  isOpen: boolean;
+  onClose: () => void;
+  username: string;
+  onReportSuccess: () => void;
+}) => {
+  const [selectedReason, setSelectedReason] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  
+  const reportReasons = [
+    { value: 'spam', label: 'Spam or misleading content' },
+    { value: 'inappropriate', label: 'Inappropriate content' },
+    { value: 'harassment', label: 'Harassment or bullying' },
+    { value: 'hate_speech', label: 'Hate speech or discrimination' },
+    { value: 'fake_profile', label: 'Fake profile or impersonation' },
+    { value: 'scam', label: 'Scam or fraud' },
+    { value: 'violence', label: 'Violent or dangerous behavior' },
+    { value: 'underage', label: 'Underage user' },
+    { value: 'other', label: 'Other' }
+  ];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedReason) {
+      alert('Please select a reason for reporting');
+      return;
+    }
+    
+    if (!description.trim()) {
+      alert('Please provide a detailed description');
+      return;
+    }
+    
+    if (!email.trim()) {
+      alert('Please enter your email address');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Here you would typically send the report to your backend
+      console.log('Report submitted:', {
+        username,
+        reason: selectedReason,
+        description,
+        email,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Show success state
+      setIsSuccess(true);
+      setTimeout(() => {
+        setIsSuccess(false);
+        onClose();
+        onReportSuccess();
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      alert('Failed to submit report. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <Flag className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Report Abuse</h2>
+                <p className="text-sm text-gray-600">Help us keep the community safe</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+
+          {isSuccess ? (
+            <div className="py-8 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Report Submitted Successfully!</h3>
+              <p className="text-gray-600">
+                Thank you for helping us keep the community safe. Our team will review your report shortly.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              {/* User Info */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
+                    <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-500"></div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{username}</h3>
+                    <p className="text-sm text-gray-500">Report this user for inappropriate behavior</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reason Selection */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Please tell us what happened. The more details you provide, the better.
+                </label>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Select a reason *
+                  </label>
+                  <div className="space-y-2">
+                    {reportReasons.map((reason) => (
+                      <label
+                        key={reason.value}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                          selectedReason === reason.value
+                            ? 'border-[#5e17eb] bg-[#5e17eb]/5'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="reason"
+                          value={reason.value}
+                          checked={selectedReason === reason.value}
+                          onChange={(e) => setSelectedReason(e.target.value)}
+                          className="w-4 h-4 text-[#5e17eb] focus:ring-[#5e17eb]"
+                        />
+                        <span className="text-sm text-gray-700">{reason.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Add a detailed description *
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Please provide specific details about what you observed..."
+                    className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all min-h-[120px] resize-none"
+                    required
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Your email address *
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    We&apos;ll use this email to contact you if we need more information about your report.
+                  </p>
+                </div>
+              </div>
+
+              {/* Terms Notice */}
+              <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <div className="flex gap-3">
+                  <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-blue-800 mb-2">
+                      <strong>Important:</strong> By clicking &ldquo;Report Content&rdquo;, you confirm that the information you provided is accurate and complete.
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      Please note that after submitting your report, our safety team will review the content and take appropriate action.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 px-4 py-3.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-3.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Flag className="w-5 h-5" />
+                      Report Content
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Three Dots Dropdown Component
+const PostOptionsDropdown = ({ 
+  post, 
+  isOpen, 
+  onClose, 
+  onReportClick 
+}: { 
+  post: Post;
+  isOpen: boolean;
+  onClose: () => void;
+  onReportClick: () => void;
+}) => {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const options = [
+    {
+      icon: <Flag className="w-4 h-4" />,
+      label: 'Report Abuse',
+      color: 'text-red-600',
+      hoverColor: 'hover:bg-red-50',
+      onClick: onReportClick
+    },
+    
+    {
+      icon: <AlertCircle className="w-4 h-4" />,
+      label: 'Get Help',
+      color: 'text-blue-600',
+      hoverColor: 'hover:bg-blue-50',
+      onClick: () => {
+        console.log('Get help clicked');
+        onClose();
+        window.open('/help', '_blank');
+      }
+    }
+  ];
+
+  return (
+    <div
+      ref={dropdownRef}
+      className="absolute right-0 top-10 z-50 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2"
+    >
+      <div className="px-3 py-2 border-b border-gray-100">
+        <p className="text-xs font-medium text-gray-500">Post Options</p>
+      </div>
+      
+      {options.map((option, index) => (
+        <button
+          key={index}
+          onClick={() => {
+            option.onClick();
+            onClose();
+          }}
+          className={`w-full flex items-center gap-3 px-4 py-3 text-sm ${option.color} ${option.hoverColor} transition-colors`}
+        >
+          {option.icon}
+          <span className="font-medium">{option.label}</span>
+        </button>
+      ))}
+      
+      <div className="px-4 py-3 border-t border-gray-100">
+        <p className="text-xs text-gray-500">
+          Reporting helps keep our community safe.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const handleBuyCredits = () => {
   window.location.href = '/main/credits';
 }
+
 // Skeleton loader component
 const PostSkeleton = () => (
   <div className="border border-gray-200 rounded-xl overflow-hidden bg-white animate-pulse">
@@ -334,11 +664,16 @@ export default function HomePage() {
     location: 'Berlin, Germany'
   });
 
+  // New states for report functionality
+  const [openDropdownPostId, setOpenDropdownPostId] = useState<string | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedPostForReport, setSelectedPostForReport] = useState<Post | null>(null);
+  const [showReportSuccessToast, setShowReportSuccessToast] = useState(false);
+
   const postsRef = useRef<Post[]>([]);
   const loadedIdsRef = useRef<Set<string>>(new Set());
   const isLoadingRef = useRef(false);
   const { credits: userCredits, isLoading: creditsLoading, refreshCredits } = useCredits();
-
 
   const ITEMS_PER_PAGE = 6;
 
@@ -449,6 +784,16 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isLoadingMore, hasMore, page]);
 
+  // Show success toast for report
+  useEffect(() => {
+    if (showReportSuccessToast) {
+      const timer = setTimeout(() => {
+        setShowReportSuccessToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showReportSuccessToast]);
+
   const filteredPosts = activeTab === 'all' 
     ? posts 
     : posts.filter(post => post.isFollowing);
@@ -499,7 +844,6 @@ export default function HomePage() {
   };
 
   const handleChat = (userId: string) => {
-    // Navigate to chats with this user
     router.push(`/main/chats?user=${userId}`);
   };
 
@@ -557,7 +901,6 @@ export default function HomePage() {
   };
 
   const handleGift = () => {
-    // Gift functionality would go here
     console.log('Send gift');
   };
 
@@ -574,6 +917,21 @@ export default function HomePage() {
       return (num / 1000).toFixed(1) + 'k';
     }
     return num.toString();
+  };
+
+  const handleThreeDotsClick = (postId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenDropdownPostId(openDropdownPostId === postId ? null : postId);
+  };
+
+  const handleReportClick = (post: Post) => {
+    setSelectedPostForReport(post);
+    setOpenDropdownPostId(null);
+    setShowReportModal(true);
+  };
+
+  const handleReportSuccess = () => {
+    setShowReportSuccessToast(true);
   };
 
   const renderAdditionalPhotos = (post: Post) => {
@@ -656,6 +1014,29 @@ export default function HomePage() {
     <div className="min-h-screen bg-white text-gray-900">
       <LayoutController />
 
+      {/* Report Success Toast */}
+      {showReportSuccessToast && (
+        <div className="fixed top-4 right-4 z-[100]">
+          <div className="bg-green-50 border border-green-200 rounded-xl shadow-lg p-4 flex items-center gap-3 animate-slide-in">
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <Check className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-green-800">Report Submitted</h4>
+              <p className="text-sm text-green-700">
+                Thank you for helping keep our community safe. Our team will review your report.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowReportSuccessToast(false)}
+              className="ml-4 text-green-600 hover:text-green-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           <div className="flex-1 max-w-2xl mx-auto w-full">
@@ -686,43 +1067,41 @@ export default function HomePage() {
                     </button>
                   </div>
                 </div>
-              
               </div>
               
               <div className="flex gap-4 sm:gap-6 mb-6 sm:mb-8 pb-3 px-1 overflow-x-auto">
-              {suggestedPeople.slice(0, 4).map((person, index) => (
-                <button 
-                  key={`story-${person.id}-${index}`} 
-                  className="flex flex-col items-center flex-shrink-0 cursor-pointer group focus:outline-none"
-                  onClick={() => handleViewProfile(person.personaId)}
-                >
-                  <div className="relative mb-2">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[#5e17eb] p-0.5 group-hover:border-[#4a13c4] group-focus:border-[#4a13c4] transition-colors duration-300">
-                      <Image
-                        src={person.imageUrl}
-                        alt={person.username}
-                        width={80}
-                        height={80}
-                        className="rounded-full object-cover w-full h-full group-hover:scale-110 group-focus:scale-110 transition-transform duration-300"
-                      />
+                {suggestedPeople.slice(0, 4).map((person, index) => (
+                  <button 
+                    key={`story-${person.id}-${index}`} 
+                    className="flex flex-col items-center flex-shrink-0 cursor-pointer group focus:outline-none"
+                    onClick={() => handleViewProfile(person.personaId)}
+                  >
+                    <div className="relative mb-2">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[#5e17eb] p-0.5 group-hover:border-[#4a13c4] group-focus:border-[#4a13c4] transition-colors duration-300">
+                        <Image
+                          src={person.imageUrl}
+                          alt={person.username}
+                          width={80}
+                          height={80}
+                          className="rounded-full object-cover w-full h-full group-hover:scale-110 group-focus:scale-110 transition-transform duration-300"
+                        />
+                      </div>
+                      {person.isOnline && (
+                        <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white group-hover:scale-110 transition-transform"></div>
+                      )}
+                      {person.isOnline && (
+                        <div className="absolute inset-0 rounded-full border-2 border-[#5e17eb] animate-ping opacity-50"></div>
+                      )}
                     </div>
-                    {person.isOnline && (
-                      <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white group-hover:scale-110 transition-transform"></div>
-                    )}
-                    {/* Optional: Add a subtle pulse animation for online users */}
-                    {person.isOnline && (
-                      <div className="absolute inset-0 rounded-full border-2 border-[#5e17eb] animate-ping opacity-50"></div>
-                    )}
-                  </div>
-                  <span className="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-[#5e17eb] group-focus:text-[#5e17eb] transition-colors duration-200">
-                    {person.username}
-                  </span>
-                  <span className="text-xs text-gray-500 group-hover:text-gray-700 transition-colors">
-                    {person.age} years
-                  </span>
-                </button>
-              ))}
-            </div>
+                    <span className="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-[#5e17eb] group-focus:text-[#5e17eb] transition-colors duration-200">
+                      {person.username}
+                    </span>
+                    <span className="text-xs text-gray-500 group-hover:text-gray-700 transition-colors">
+                      {person.age} years
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-6 sm:space-y-8">
@@ -732,7 +1111,7 @@ export default function HomePage() {
                 return (
                   <div
                     key={`${post.id}-${index}`}
-                    className="border border-gray-200 rounded-xl overflow-hidden bg-white"
+                    className="border border-gray-200 rounded-xl overflow-hidden bg-white relative"
                   >
                     <div className="p-4 sm:p-5">
                       <div className="flex items-center justify-between">
@@ -798,9 +1177,21 @@ export default function HomePage() {
                               </>
                             )}
                           </button>
-                          <button className="p-1.5 sm:p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                            <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
-                          </button>
+                          <div className="relative">
+                            <button 
+                              onClick={(e) => handleThreeDotsClick(post.id, e)}
+                              className="p-1.5 sm:p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                              <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                            
+                            <PostOptionsDropdown
+                              post={post}
+                              isOpen={openDropdownPostId === post.id}
+                              onClose={() => setOpenDropdownPostId(null)}
+                              onReportClick={() => handleReportClick(post)}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -997,34 +1388,34 @@ export default function HomePage() {
               </div>
 
               <div className="p-6 border border-gray-200 rounded-xl bg-gradient-to-br from-[#5e17eb]/5 to-white">
-              <h3 className="font-bold mb-4 text-gray-900 flex items-center gap-2">
-                <Star size={18} className="text-[#5e17eb]" />
-                Your Credits
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
-                  <div>
-                    <div className="font-medium text-gray-600">Balance</div>
-                    {creditsLoading ? (
-                      <div className="h-10 w-24 bg-gray-200 rounded animate-pulse mt-2"></div>
-                    ) : (
-                      <div className="text-3xl font-bold text-[#5e17eb]">{userCredits.toLocaleString()}</div>
-                    )}
+                <h3 className="font-bold mb-4 text-gray-900 flex items-center gap-2">
+                  <Star size={18} className="text-[#5e17eb]" />
+                  Your Credits
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+                    <div>
+                      <div className="font-medium text-gray-600">Balance</div>
+                      {creditsLoading ? (
+                        <div className="h-10 w-24 bg-gray-200 rounded animate-pulse mt-2"></div>
+                      ) : (
+                        <div className="text-3xl font-bold text-[#5e17eb]">{userCredits.toLocaleString()}</div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">Active</div>
+                      <div className="text-sm text-green-600 font-medium">✓ Valid</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-500">Active</div>
-                    <div className="text-sm text-green-600 font-medium">✓ Valid</div>
-                  </div>
+                  <button 
+                    className="w-full py-3.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" 
+                    onClick={() => router.push('/main/credits')}
+                    disabled={creditsLoading}
+                  >
+                    {creditsLoading ? 'Loading...' : 'Buy More Credits'}
+                  </button>
                 </div>
-                <button 
-                  className="w-full py-3.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" 
-                  onClick={() => router.push('/main/credits')}
-                  disabled={creditsLoading}
-                >
-                  {creditsLoading ? 'Loading...' : 'Buy More Credits'}
-                </button>
               </div>
-            </div>
 
               <div className="p-6 border border-gray-200 rounded-xl bg-white">
                 <h3 className="font-bold mb-5 text-gray-900">Your Activity</h3>
@@ -1059,6 +1450,19 @@ export default function HomePage() {
           </div>
         </div>
       </main>
+
+      {/* Report Abuse Modal */}
+      {selectedPostForReport && (
+        <ReportAbuseModal
+          isOpen={showReportModal}
+          onClose={() => {
+            setShowReportModal(false);
+            setSelectedPostForReport(null);
+          }}
+          username={selectedPostForReport.username}
+          onReportSuccess={handleReportSuccess}
+        />
+      )}
 
       {selectedPostForModal.post && (
         <EnhancedImageModal
