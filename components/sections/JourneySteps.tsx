@@ -52,6 +52,9 @@ const floatingCards = [
   { icon: <Gift className="w-5 h-5 text-pink-500" />, text: "10 Free Credits", position: "top-24 right-12", delay: 0.5 },
   { icon: <Star className="w-5 h-5 text-purple-500" />, text: "250+ Profiles", position: "bottom-20 left-12", delay: 1 }
 ];
+const handleGetStarted = () => {
+  window.location.href = '/signup';
+};
 
 const JourneySteps: React.FC = () => {
   return (
@@ -262,6 +265,7 @@ const JourneySteps: React.FC = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={handleGetStarted}
             className="px-8 py-4 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-full font-bold text-base shadow-xl hover:shadow-2xl transition-all flex items-center gap-2"
           >
             Get Started Now
