@@ -2,399 +2,1352 @@
 
 /* Container and layout adjustments */
 .discover-container {
-    min-height: 100vh;
-    background-color: white;
-    
-    main {
-      width: 100%;
-      max-width: 100%;
-      
-      @media (max-width: 640px) {
-        padding-left: 1rem;
-        padding-right: 1rem;
-      }
-      
-      @media (min-width: 1920px) {
-        max-width: 90%;
-        margin: 0 auto;
-      }
-      
-      @media (min-width: 2560px) {
-        max-width: 80%;
-      }
-    }
-  }
+  min-height: 100vh;
+  background-color: white;
+  overflow-x: hidden;
   
-  /* Fluid Grid System - Dynamic columns based on available space */
-  .profiles-grid {
-    display: grid;
-    gap: 1.5rem;
-    
-    // Start with a flexible base - let cards decide width
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    
-    // For very small screens
-    @media (max-width: 480px) {
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 1rem;
-    }
-    
-    // Small tablets
-    @media (min-width: 640px) and (max-width: 767px) {
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    }
-    
-    // Tablets
-    @media (min-width: 768px) and (max-width: 1023px) {
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
-    
-    // Desktops - more columns when space allows
-    @media (min-width: 1024px) and (max-width: 1279px) {
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    }
-    
-    // Large desktops - adjust based on available width
-    @media (min-width: 1280px) and (max-width: 1535px) {
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
-    
-    // Extra large screens - use more columns
-    @media (min-width: 1536px) and (max-width: 1919px) {
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    }
-    
-    // 2K+ screens - more columns with larger cards
-    @media (min-width: 1920px) {
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 2rem;
-    }
-    
-    // 4K screens - maximize space utilization
-    @media (min-width: 2560px) {
-      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-      gap: 2.5rem;
-    }
-  }
-  
-  /* Fluid Card Sizing - Cards grow with available space */
-  .profile-card {
+  main {
     width: 100%;
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
+    max-width: 100%;
     
-    // Make cards taller on larger screens
-    .card-image {
-      aspect-ratio: 4/5;
-      
-      @media (min-width: 768px) {
-        aspect-ratio: 3/4;
-      }
-      
-      @media (min-width: 1280px) {
-        aspect-ratio: 2/3;
-      }
-      
-      @media (min-width: 1920px) {
-        aspect-ratio: 3/5;
-      }
+    @media (max-width: 640px) {
+      padding-left: 1rem;
+      padding-right: 1rem;
     }
     
-    // Increase font sizes and padding on larger screens
-    .profile-name {
-      font-size: 1.25rem;
-      
-      @media (min-width: 768px) {
-        font-size: 1.375rem;
-      }
-      
-      @media (min-width: 1280px) {
-        font-size: 1.5rem;
-      }
+    @media (min-width: 1920px) {
+      max-width: 90%;
+      margin: 0 auto;
     }
     
-    .profile-info {
-      font-size: 0.875rem;
-      
-      @media (min-width: 768px) {
-        font-size: 0.9375rem;
-      }
+    @media (min-width: 2560px) {
+      max-width: 80%;
     }
+  }
+}
+
+/* Fluid Grid System - Dynamic columns based on available space */
+.profiles-grid {
+  display: grid;
+  gap: 1.5rem;
+  width: 100%;
+  
+  // Mobile-first: Single column on very small screens
+  @media (max-width: 479px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  // Small mobile
+  @media (min-width: 480px) and (max-width: 639px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  // Tablets
+  @media (min-width: 640px) and (max-width: 767px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  // Large tablets
+  @media (min-width: 768px) and (max-width: 1023px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  // Small desktops
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  // Desktops
+  @media (min-width: 1280px) and (max-width: 1535px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  // Large desktops
+  @media (min-width: 1536px) and (max-width: 1919px) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.75rem;
+  }
+  
+  // 2K+ screens
+  @media (min-width: 1920px) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+  
+  // 4K screens
+  @media (min-width: 2560px) {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2.5rem;
+  }
+}
+
+/* List View Styling */
+.list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  
+  .profile-item {
+    width: 100%;
     
-    // Adjust card padding based on screen size
-    .card-content {
+    @media (max-width: 767px) {
       padding: 1rem;
       
-      @media (min-width: 768px) {
-        padding: 1.25rem;
+      .profile-name {
+        font-size: 1.125rem;
       }
       
-      @media (min-width: 1280px) {
-        padding: 1.5rem;
-      }
-    }
-    
-    // Make action buttons larger on bigger screens
-    .action-button {
-      padding: 0.75rem;
-      font-size: 0.875rem;
-      
-      @media (min-width: 768px) {
-        padding: 0.875rem;
-        font-size: 0.9375rem;
-      }
-      
-      @media (min-width: 1280px) {
-        padding: 1rem;
-        font-size: 1rem;
-      }
-    }
-  }
-  
-  /* Dynamic Columns System - Adjusts based on container width */
-  @mixin dynamic-columns($min-card-width) {
-    grid-template-columns: repeat(auto-fill, minmax($min-card-width, 1fr));
-  }
-  
-  .dynamic-grid {
-    // The magic: auto-fill with flexible min width
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-    
-    // On wider screens, allow larger min width
-    @container (width > 600px) {
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-    }
-    
-    @container (width > 800px) {
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-    }
-    
-    @container (width > 1000px) {
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
-    }
-    
-    @container (width > 1200px) {
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
-    }
-  }
-  
-  /* Make sidebar width dynamic based on screen size */
-  .sidebar-container {
-    @media (max-width: 1023px) {
-      display: none;
-      width: 100%;
-      
-      &.sidebar-open {
-        display: block;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: white;
-        z-index: 50;
-        overflow-y: auto;
-        padding: 1rem;
+      .action-buttons {
+        flex-wrap: wrap;
         
-        .sidebar-close {
-          position: absolute;
-          top: 1rem;
-          right: 1rem;
-          z-index: 51;
+        button {
+          flex: 1;
+          min-width: 120px;
+          font-size: 0.875rem;
+          padding: 0.5rem 0.75rem;
+          
+          svg {
+            width: 1rem;
+            height: 1rem;
+          }
         }
       }
     }
     
-    @media (min-width: 1024px) {
-      display: block;
-      flex: 0 0 auto;
-      width: 320px; // Fixed base width
-      
-      @media (min-width: 1280px) {
-        width: 340px; // Slightly wider on larger screens
-      }
-      
-      @media (min-width: 1536px) {
-        width: 360px; // Even wider on 2K screens
-      }
-    }
-  }
-  
-  /* Make main content area truly flexible */
-  .main-content-area {
-    flex: 1;
-    min-width: 0; // Critical for flex items to shrink properly
-    
     @media (min-width: 768px) {
-      min-width: 400px;
-    }
-    
-    @media (min-width: 1280px) {
-      min-width: 500px;
-    }
-  }
-  
-  /* Responsive card text */
-  .responsive-card-text {
-    .card-title {
-      font-size: 1.125rem;
+      padding: 1.5rem;
       
-      @media (min-width: 768px) {
+      .profile-name {
         font-size: 1.25rem;
       }
+    }
+  }
+}
+
+/* Fluid Card Sizing - Cards grow with available space */
+.profile-card {
+  width: 100%;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  
+  // Make cards responsive
+  .card-image {
+    position: relative;
+    width: 100%;
+    
+    @media (max-width: 639px) {
+      aspect-ratio: 4/5;
+    }
+    
+    @media (min-width: 640px) and (max-width: 1023px) {
+      aspect-ratio: 3/4;
+    }
+    
+    @media (min-width: 1024px) {
+      aspect-ratio: 2/3;
+    }
+    
+    @media (min-width: 1536px) {
+      aspect-ratio: 3/5;
+    }
+  }
+  
+  // Responsive typography
+  .profile-name {
+    font-size: 1rem;
+    
+    @media (min-width: 640px) {
+      font-size: 1.125rem;
+    }
+    
+    @media (min-width: 768px) {
+      font-size: 1.25rem;
+    }
+    
+    @media (min-width: 1024px) {
+      font-size: 1.375rem;
+    }
+    
+    @media (min-width: 1280px) {
+      font-size: 1.5rem;
+    }
+  }
+  
+  .profile-info {
+    font-size: 0.75rem;
+    
+    @media (min-width: 640px) {
+      font-size: 0.8125rem;
+    }
+    
+    @media (min-width: 768px) {
+      font-size: 0.875rem;
+    }
+    
+    @media (min-width: 1024px) {
+      font-size: 0.9375rem;
+    }
+  }
+  
+  // Card content padding
+  .card-content {
+    padding: 1rem;
+    
+    @media (min-width: 640px) {
+      padding: 1.125rem;
+    }
+    
+    @media (min-width: 768px) {
+      padding: 1.25rem;
+    }
+    
+    @media (min-width: 1024px) {
+      padding: 1.5rem;
+    }
+  }
+  
+  // Action buttons responsiveness
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+    
+    @media (max-width: 639px) {
+      flex-direction: column;
       
-      @media (min-width: 1280px) {
-        font-size: 1.375rem;
+      button {
+        width: 100%;
+        justify-content: center;
+        padding: 0.75rem;
+        font-size: 0.875rem;
+        
+        svg {
+          width: 1rem;
+          height: 1rem;
+          margin-right: 0.5rem;
+        }
       }
       
-      @media (min-width: 1920px) {
-        font-size: 1.5rem;
+      // Small follow button in mobile
+      button:last-child {
+        width: auto;
+        padding: 0.5rem;
+        min-width: unset;
+        
+        svg {
+          margin-right: 0;
+        }
       }
     }
     
-    .card-subtitle {
-      font-size: 0.875rem;
+    @media (min-width: 640px) and (max-width: 767px) {
+      button {
+        padding: 0.625rem;
+        font-size: 0.8125rem;
+        
+        svg {
+          width: 0.875rem;
+          height: 0.875rem;
+        }
+      }
       
-      @media (min-width: 768px) {
+      button:last-child {
+        padding: 0.625rem;
+        min-width: 2.5rem;
+      }
+    }
+    
+    @media (min-width: 768px) {
+      button {
+        padding: 0.75rem;
+        font-size: 0.875rem;
+        
+        svg {
+          width: 1rem;
+          height: 1rem;
+        }
+      }
+      
+      button:last-child {
+        padding: 0.75rem;
+        min-width: 3rem;
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      button {
+        padding: 0.875rem;
         font-size: 0.9375rem;
       }
       
-      @media (min-width: 1280px) {
+      button:last-child {
+        padding: 0.875rem;
+      }
+    }
+    
+    @media (min-width: 1280px) {
+      button {
+        padding: 1rem;
         font-size: 1rem;
       }
-    }
-    
-    .card-bio {
-      font-size: 0.8125rem;
       
-      @media (min-width: 768px) {
-        font-size: 0.875rem;
-      }
-      
-      @media (min-width: 1280px) {
-        font-size: 0.9375rem;
+      button:last-child {
+        padding: 1rem;
       }
     }
   }
-  
-  /* Adjust badge sizes on larger screens */
-  .card-badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
+}
+
+/* Make sidebar width dynamic based on screen size */
+.sidebar-container {
+  @media (max-width: 1023px) {
+    display: none;
+    width: 100%;
     
-    @media (min-width: 768px) {
-      font-size: 0.8125rem;
-      padding: 0.375rem 0.75rem;
-    }
-    
-    @media (min-width: 1280px) {
-      font-size: 0.875rem;
-      padding: 0.5rem 1rem;
-    }
-  }
-  
-  /* Interest tags scaling */
-  .interest-tag {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    
-    @media (min-width: 768px) {
-      font-size: 0.8125rem;
-      padding: 0.375rem 0.75rem;
-    }
-    
-    @media (min-width: 1280px) {
-      font-size: 0.875rem;
-      padding: 0.5rem 0.75rem;
-    }
-  }
-  
-  /* Mobile-specific adjustments remain the same */
-  .mobile-controls {
-    @media (max-width: 640px) {
-      .search-toggle,
-      .filters-toggle {
+    &.sidebar-open {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
+      z-index: 50;
+      overflow-y: auto;
+      padding: 1rem;
+      animation: slideIn 0.3s ease-out;
+      
+      .sidebar-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 51;
+        padding: 0.5rem;
         background: #f3f4f6;
         border-radius: 0.5rem;
-        padding: 0.5rem;
+        transition: background 0.2s;
         
-        &:active {
+        &:hover {
           background: #e5e7eb;
         }
       }
     }
   }
   
-  .mobile-nav-fixed {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 40;
-    background: white;
-    border-top: 1px solid #e5e7eb;
-    padding: 0.5rem 0;
+  @media (min-width: 1024px) {
+    display: block;
+    flex: 0 0 auto;
+    width: 320px;
+    position: sticky;
+    top: 1rem;
+    height: fit-content;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    
+    @media (min-width: 1280px) {
+      width: 340px;
+    }
+    
+    @media (min-width: 1536px) {
+      width: 360px;
+    }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Make main content area truly flexible */
+.main-content-area {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  
+  @media (min-width: 640px) {
+    min-width: 300px;
   }
   
-  .no-overflow {
-    overflow-x: hidden;
+  @media (min-width: 768px) {
+    min-width: 400px;
   }
   
-  .action-buttons {
-    @media (max-width: 640px) {
-      flex-direction: column;
+  @media (min-width: 1024px) {
+    min-width: 500px;
+  }
+  
+  @media (min-width: 1280px) {
+    min-width: 600px;
+  }
+}
+
+/* Responsive card text */
+.responsive-card-text {
+  .card-title {
+    font-size: 1.125rem;
+    
+    @media (min-width: 768px) {
+      font-size: 1.25rem;
+    }
+    
+    @media (min-width: 1280px) {
+      font-size: 1.375rem;
+    }
+    
+    @media (min-width: 1920px) {
+      font-size: 1.5rem;
+    }
+  }
+  
+  .card-subtitle {
+    font-size: 0.875rem;
+    
+    @media (min-width: 768px) {
+      font-size: 0.9375rem;
+    }
+    
+    @media (min-width: 1280px) {
+      font-size: 1rem;
+    }
+  }
+  
+  .card-bio {
+    font-size: 0.8125rem;
+    
+    @media (min-width: 768px) {
+      font-size: 0.875rem;
+    }
+    
+    @media (min-width: 1280px) {
+      font-size: 0.9375rem;
+    }
+  }
+}
+
+/* Adjust badge sizes on larger screens */
+.card-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  
+  @media (min-width: 768px) {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+  }
+  
+  @media (min-width: 1280px) {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Interest tags scaling */
+.interest-tag {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  
+  @media (min-width: 768px) {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+  }
+  
+  @media (min-width: 1280px) {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* Mobile Controls */
+.mobile-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  
+  @media (max-width: 639px) {
+    .search-toggle,
+    .filters-toggle {
+      background: #f3f4f6;
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+      transition: background 0.2s;
+      
+      &:active {
+        background: #e5e7eb;
+      }
+      
+      svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+    
+    .filters-toggle {
+      position: relative;
+      
+      span {
+        position: absolute;
+        top: -0.25rem;
+        right: -0.25rem;
+        background: #ff2e2e;
+        color: white;
+        font-size: 0.75rem;
+        border-radius: 50%;
+        width: 1.25rem;
+        height: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  @media (min-width: 640px) {
+    display: none;
+  }
+}
+
+.no-overflow {
+  overflow-x: hidden;
+}
+
+/* Pagination Responsiveness */
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
+  @media (max-width: 639px) {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 0;
+    
+    .page-numbers {
+      order: 2;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      
+      button {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 0.875rem;
+      }
+    }
+    
+    .prev-button,
+    .next-button {
+      order: 1;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 0.75rem;
+      font-size: 0.875rem;
+    }
+    
+    .next-button {
+      order: 3;
+    }
+  }
+  
+  @media (min-width: 640px) {
+    .page-numbers {
+      display: flex;
       gap: 0.5rem;
       
-      button, a {
-        width: 100%;
+      button {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 0.875rem;
+        
+        @media (min-width: 768px) {
+          width: 2.75rem;
+          height: 2.75rem;
+        }
+        
+        @media (min-width: 1024px) {
+          width: 3rem;
+          height: 3rem;
+        }
+      }
+    }
+    
+    .prev-button,
+    .next-button {
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      
+      @media (min-width: 768px) {
+        padding: 0.875rem 1.25rem;
+      }
+      
+      @media (min-width: 1024px) {
+        padding: 1rem 1.5rem;
+      }
+    }
+  }
+}
+
+/* Filter Chips */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  
+  @media (max-width: 639px) {
+    gap: 0.375rem;
+    
+    .filter-chip {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      
+      button {
+        padding: 0.125rem;
+        display: flex;
+        align-items: center;
         justify-content: center;
-        padding: 0.75rem;
         
         svg {
-          width: 1.25rem;
-          height: 1.25rem;
+          width: 0.75rem;
+          height: 0.75rem;
         }
       }
     }
   }
   
-  .pagination-container {
-    @media (max-width: 640px) {
-      flex-direction: column;
-      gap: 1rem;
-      
-      .page-numbers {
-        order: 3;
-        justify-content: center;
-      }
-      
-      .prev-button,
-      .next-button {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-  }
-  
-  .filter-chips {
-    @media (max-width: 640px) {
-      flex-wrap: wrap;
+  @media (min-width: 640px) {
+    .filter-chip {
+      font-size: 0.8125rem;
+      padding: 0.5rem 1rem;
       gap: 0.375rem;
       
-      .filter-chip {
-        font-size: 0.75rem;
-        padding: 0.375rem 0.75rem;
+      button svg {
+        width: 0.875rem;
+        height: 0.875rem;
+      }
+    }
+  }
+}
+
+/* Mobile Overlay */
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 49;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Grid/List View Toggle Responsiveness */
+.view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #f3f4f6;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  
+  @media (max-width: 639px) {
+    button {
+      padding: 0.5rem;
+      
+      svg {
+        width: 1.25rem;
+        height: 1.25rem;
       }
     }
   }
   
-  .mobile-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 49;
+  @media (min-width: 640px) {
+    button {
+      padding: 0.625rem;
+      
+      svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
   }
+}
+
+/* Load More Button */
+.load-more-button {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+  
+  button {
+    min-width: 200px;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    
+    @media (max-width: 639px) {
+      min-width: 180px;
+      padding: 0.875rem 1.75rem;
+      font-size: 0.9375rem;
+    }
+  }
+}
+
+/* Image optimization for mobile */
+.card-image img {
+  transition: transform 0.3s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+/* Ensure no horizontal scroll on mobile */
+@media (max-width: 639px) {
+  .discover-container {
+    overflow-x: hidden;
+    
+    main {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+  }
+  
+  .profiles-grid,
+  .list-view {
+    padding: 0.25rem;
+  }
+}
+
+/* Smooth scrolling for mobile */
+@media (max-width: 1023px) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+// Responsive fluid grid system for Discover page
+
+/* Container and layout adjustments */
+.discover-container {
+  min-height: 100vh;
+  background-color: white;
+  overflow-x: hidden;
+  
+  main {
+    width: 100%;
+    max-width: 100%;
+    
+    @media (max-width: 640px) {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    
+    @media (min-width: 1920px) {
+      max-width: 90%;
+      margin: 0 auto;
+    }
+    
+    @media (min-width: 2560px) {
+      max-width: 80%;
+    }
+  }
+}
+
+/* Grid System - Responsive columns */
+.profiles-grid {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  
+  // Mobile-first: Single column
+  @media (max-width: 639px) {
+    grid-template-columns: 1fr;
+  }
+  
+  // Small tablets: 2 columns
+  @media (min-width: 640px) and (max-width: 767px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  // Tablets: 2 columns
+  @media (min-width: 768px) and (max-width: 1023px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+  
+  // Small desktops: 3 columns
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  
+  // Desktops: 3-4 columns
+  @media (min-width: 1280px) and (max-width: 1535px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  
+  // Large desktops: 4 columns
+  @media (min-width: 1536px) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.75rem;
+  }
+}
+
+/* Profile Card Styling */
+.profile-card {
+  width: 100%;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: white;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+  
+  // Card image container
+  .card-image {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/5;
+    overflow: hidden;
+    
+    img {
+      transition: transform 0.5s ease;
+    }
+    
+    &:hover img {
+      transform: scale(1.05);
+    }
+  }
+  
+  // Card content
+  .card-content {
+    padding: 1rem;
+    
+    @media (min-width: 768px) {
+      padding: 1.25rem;
+    }
+  }
+  
+  // Action buttons
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    
+    button {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      font-weight: 500;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        transform: translateY(-1px);
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+      
+      svg {
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+    
+    // Follow button (smaller)
+    button:last-child {
+      flex: 0 0 auto;
+      width: 3rem;
+      min-width: unset;
+      
+      @media (max-width: 639px) {
+        width: 2.75rem;
+      }
+    }
+  }
+}
+
+/* List View Styling */
+.list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  
+  .profile-item {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+    
+    @media (max-width: 767px) {
+      padding: 1rem;
+    }
+  }
+  
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    
+    button {
+      flex: 1;
+      min-width: 120px;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      
+      @media (max-width: 639px) {
+        min-width: 100px;
+        padding: 0.625rem 0.75rem;
+        font-size: 0.8125rem;
+      }
+      
+      svg {
+        width: 1rem;
+        height: 1rem;
+        margin-right: 0.5rem;
+      }
+    }
+  }
+}
+
+/* Sidebar Styles */
+.sidebar-container {
+  @media (max-width: 1023px) {
+    display: none;
+    
+    &.sidebar-open {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 1rem;
+      animation: slideIn 0.3s ease-out;
+      
+      .sidebar-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1001;
+        padding: 0.5rem;
+        background: #f3f4f6;
+        border-radius: 0.5rem;
+        
+        &:hover {
+          background: #e5e7eb;
+        }
+      }
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    display: block;
+    width: 320px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 1rem;
+    height: fit-content;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    
+    @media (min-width: 1280px) {
+      width: 340px;
+    }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Main Content Area */
+.main-content-area {
+  flex: 1;
+  min-width: 0;
+  
+  @media (min-width: 768px) {
+    min-width: 400px;
+  }
+  
+  @media (min-width: 1024px) {
+    min-width: 500px;
+  }
+  
+  @media (min-width: 1280px) {
+    min-width: 600px;
+  }
+}
+
+/* Mobile Controls */
+.mobile-controls {
+  display: flex;
+  gap: 0.5rem;
+  
+  button {
+    padding: 0.5rem;
+    background: #f3f4f6;
+    border-radius: 0.5rem;
+    
+    &:active {
+      background: #e5e7eb;
+    }
+    
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+}
+
+/* Filter Chips */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    background: rgba(94, 23, 235, 0.1);
+    color: #5e17eb;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.125rem;
+      
+      &:hover {
+        color: #4a13c4;
+      }
+      
+      svg {
+        width: 0.875rem;
+        height: 0.875rem;
+      }
+    }
+    
+    @media (max-width: 639px) {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.75rem;
+    }
+  }
+}
+
+/* Range Slider Styles */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 0.5rem;
+  background: #e5e7eb;
+  border-radius: 0.25rem;
+  outline: none;
+  
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: #5e17eb;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  &::-moz-range-thumb {
+    width: 1.25rem;
+    height: 1.25rem;
+    background: #5e17eb;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Pagination */
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 0;
+  border-top: 1px solid #e5e7eb;
+  
+  @media (max-width: 639px) {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 0;
+    
+    .page-numbers {
+      order: 2;
+      display: flex;
+      gap: 0.5rem;
+      
+      button {
+        width: 2.5rem;
+        height: 2.5rem;
+      }
+    }
+    
+    .prev-button,
+    .next-button {
+      order: 1;
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .next-button {
+      order: 3;
+    }
+  }
+  
+  .page-numbers {
+    display: flex;
+    gap: 0.5rem;
+    
+    button {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      
+      &:hover:not(.active) {
+        background: #f3f4f6;
+      }
+    }
+  }
+  
+  .prev-button,
+  .next-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    color: #6b7280;
+    font-weight: 500;
+    transition: color 0.2s ease;
+    
+    &:hover:not(:disabled) {
+      color: #374151;
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+/* Mobile Overlay */
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Icebreaker Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 1rem;
+  max-width: 28rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive Typography */
+.responsive-text {
+  h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #111827;
+    
+    @media (min-width: 768px) {
+      font-size: 2.25rem;
+    }
+  }
+  
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    
+    @media (min-width: 768px) {
+      font-size: 1.5rem;
+    }
+  }
+  
+  p {
+    color: #6b7280;
+    font-size: 0.875rem;
+    
+    @media (min-width: 768px) {
+      font-size: 1rem;
+    }
+  }
+}
+
+/* No Overflow */
+.no-overflow {
+  overflow-x: hidden;
+}
+
+/* Grid/List View Toggle */
+.view-toggle {
+  display: flex;
+  background: #f3f4f6;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  
+  button {
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    
+    &.active {
+      background: white;
+      color: #5e17eb;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+}
+
+/* Load More Button */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+  
+  button {
+    padding: 1rem 2rem;
+    background: #5e17eb;
+    color: white;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    
+    &:hover:not(:disabled) {
+      background: #4a13c4;
+      transform: translateY(-1px);
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    @media (max-width: 639px) {
+      width: 100%;
+      max-width: 20rem;
+    }
+  }
+}
