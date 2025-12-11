@@ -3,6 +3,7 @@
 import { account, databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/config';
 import { ID, OAuthProvider } from 'appwrite';
 import storageService from '@/lib/appwrite/storage';
+import { conversationService } from './conversationService'; // ✅ ADD THIS IMPORT
 
 // Updated UserProfile interface to match Appwrite schema
 interface UserProfile {
@@ -120,6 +121,10 @@ export const authService = {
       // 4. Auto-login after signup
       await account.createEmailPasswordSession(signupData.email, signupData.password);
 
+      // ✅ 4.5 Initialize conversation service after login
+      await conversationService.initialize();
+      console.log('✅ ConversationService initialized after signup');
+
       // 5. Create welcome credit transaction
       await databases.createDocument(
         DATABASE_ID,
@@ -149,6 +154,72 @@ export const authService = {
       }
       
       throw new Error(error.message || 'Failed to create account');
+    }
+  },
+
+  /**
+   * LOGIN - Add this function if you don't have it
+   */
+  async login(loginData: LoginData): Promise<{ user: any; profile: UserProfile }> {
+    try {
+      // 1. Create session
+      await account.createEmailPasswordSession(loginData.email, loginData.password);
+      console.log('✅ Session created');
+
+      // 2. Get user data
+      const authUser = await account.get();
+      
+      // 3. Get profile
+      const profileDoc = await databases.getDocument(
+        DATABASE_ID,
+        COLLECTIONS.USERS,
+        authUser.$id
+      );
+
+      const profile: UserProfile = {
+        userId: profileDoc.userId,
+        username: profileDoc.username,
+        email: profileDoc.email,
+        age: profileDoc.age || undefined,
+        gender: profileDoc.gender || undefined,
+        goals: profileDoc.goals || undefined,
+        bio: profileDoc.bio || undefined,
+        profilePic: profileDoc.profilePic || null,
+        credits: profileDoc.credits || 0,
+        location: profileDoc.location || undefined,
+        createdAt: profileDoc.createdAt,
+        lastActive: profileDoc.lastActive,
+        preferences: profileDoc.preferences || JSON.stringify({}),
+        birthday: profileDoc.birthday || undefined,
+        martialStatus: profileDoc.martialStatus || undefined,
+        fieldOfWork: profileDoc.fieldOfWork || undefined,
+        englishLevel: profileDoc.englishLevel || undefined,
+        languages: profileDoc.languages || [],
+        interests: profileDoc.interests || [],
+        personalityTraits: profileDoc.personalityTraits || [],
+        totalChats: profileDoc.totalChats || 0,
+        totalMatches: profileDoc.totalMatches || 0,
+        followingCount: profileDoc.followingCount || 0,
+        isVerified: profileDoc.isVerified || false,
+        isPremium: profileDoc.isPremium || false
+      };
+
+      // ✅ 4. Initialize conversation service after successful login
+      await conversationService.initialize();
+      console.log('✅ ConversationService initialized after login');
+
+      return {
+        user: authUser,
+        profile
+      };
+    } catch (error: any) {
+      console.error('❌ Login error:', error);
+      
+      if (error.code === 401) {
+        throw new Error('Invalid email or password');
+      }
+      
+      throw new Error(error.message || 'Failed to login');
     }
   },
 
@@ -282,23 +353,28 @@ export const authService = {
     }
   },
 
-
-
   /**
-   * LOGOUT
-   * Ends current session
+   * LOGOUT - WITH CONVERSATION SERVICE CLEANUP
+   * Ends current session and clears all caches
    */
   async logout(): Promise<void> {
     try {
+      // ✅ 1. Clear conversation service cache FIRST
+      conversationService.clearAllCache();
+      console.log('✅ ConversationService cache cleared');
+
+      // 2. Delete Appwrite session
       await account.deleteSession('current');
       console.log('✅ User logged out');
     } catch (error: any) {
       console.error('❌ Logout error:', error);
+      
+      // Even if logout fails, clear the cache
+      conversationService.clearAllCache();
+      
       throw new Error(error.message || 'Failed to logout');
     }
   },
-
- 
 
   /**
    * FORGOT PASSWORD
@@ -374,12 +450,13 @@ export const authService = {
    */
   async deleteAccount(userId: string): Promise<void> {
     try {
-      // 1. Delete user profile document
+      // 1. Clear conversation service cache
+      conversationService.clearAllCache();
+      
+      // 2. Delete user profile document
       await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USERS, userId);
 
-      // 2. Delete auth account (must be done last)
-      // Note: This will automatically delete the current session
-      // User needs to be logged in to delete their own account
+      // 3. Delete auth account (must be done last)
       await account.updateStatus(); // This deletes the account
       
       console.log('✅ Account deleted');

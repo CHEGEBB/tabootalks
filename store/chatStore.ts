@@ -28,6 +28,7 @@ interface ChatStore {
   messagesByBot: Record<string, ChatMessage[]>;
   botProfiles: Record<string, any>;
   activeBotId: string | null;
+  hasLoadedConversations: boolean; // Add this property
   
   // Actions
   setConversations: (conversations: Conversation[]) => void;
@@ -36,6 +37,7 @@ interface ChatStore {
   updateBotProfile: (botId: string, profile: any) => void;
   setActiveBotId: (botId: string) => void;
   clearOptimisticMessages: (botId: string) => void;
+  setHasLoadedConversations: (loaded: boolean) => void; // Add this action
   
   // Derived state
   getActiveMessages: () => ChatMessage[];
@@ -50,6 +52,7 @@ export const useChatStore = create<ChatStore>()(
       messagesByBot: {},
       botProfiles: {},
       activeBotId: null,
+      hasLoadedConversations: false, // Initialize it
       
       // Actions
       setConversations: (conversations) => set({ conversations }),
@@ -88,6 +91,9 @@ export const useChatStore = create<ChatStore>()(
             }
           };
         }),
+      
+      // Add this action
+      setHasLoadedConversations: (loaded) => set({ hasLoadedConversations: loaded }),
       
       // Derived state
       getActiveMessages: () => {

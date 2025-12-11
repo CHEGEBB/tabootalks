@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { account } from '@/lib/appwrite/config';
 import { useRouter } from 'next/navigation';
 import { OAuthProvider } from 'appwrite';
+import { conversationService } from '@/lib/services/conversationService';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -43,7 +44,6 @@ const LoginPage = () => {
 
     checkSession();
   }, [router]);
-
   const allImages = [
     'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&h=500&fit=crop',
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop',
