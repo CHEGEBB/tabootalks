@@ -11,7 +11,7 @@ import {
   Image as ImageIcon, Gift, Mail, Smile, Phone, Video,
   MoreVertical, UserPlus, Home, Compass, PlusSquare, Users,
   MessageCircleCodeIcon, MapPin, Eye, Camera, Heart, Star,
-  Paperclip, Sparkles, Clock, XCircle, Filter
+  Paperclip, Sparkles, Clock, XCircle, Filter, X
 } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -20,15 +20,33 @@ import { conversationService, Conversation, ChatMessage } from '@/lib/services/c
 import { ParsedPersonaProfile } from '@/lib/services/personaService';
 import LayoutController from '@/components/layout/LayoutController';
 import { useChatStore } from '@/store/chatStore'; 
-import { useChat } from '@/lib/hooks/useChat'; // ADD THIS
+import { useChat } from '@/lib/hooks/useChat';
 
-// Chat Bubble Component - UPDATED with optimistic handling
-const ChatBubble = ({ message, isOwn, time, isRead, senderName, isOptimistic }: any) => {
+// Chat Bubble Component - UPDATED with optimistic handling AND PERSONA PROFILE
+const ChatBubble = ({ message, isOwn, time, isRead, senderName, isOptimistic, profilePic }: any) => {
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}>
+      {!isOwn && profilePic && (
+        <div className="flex-shrink-0 mr-2 self-end">
+          <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white">
+            <Image
+              src={profilePic}
+              alt={senderName}
+              width={32}
+              height={32}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      )}
       <div className={`max-w-[70%] ${isOwn ? 'ml-auto' : 'mr-auto'}`}>
         {!isOwn && (
-          <div className="text-xs text-gray-500 mb-1 font-medium">{senderName}</div>
+          <div className="text-xs text-gray-500 mb-1 font-medium flex items-center gap-2">
+            {!profilePic && (
+              <div className="w-4 h-4 rounded-full bg-gray-200"></div>
+            )}
+            {senderName}
+          </div>
         )}
         <div
           className={`rounded-2xl px-4 py-3 ${
@@ -53,6 +71,56 @@ const ChatBubble = ({ message, isOwn, time, isRead, senderName, isOptimistic }: 
   );
 };
 
+const CreditsModal = ({ onClose, onBuyCredits }: any) => {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center  p-4">
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 p-1.5 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+        >
+          <X className="w-5 h-5 text-gray-600" />
+        </button>
+        
+        {/* Modal Header with Money Bag SVG */}
+        <div className="relative pt-10 pb-6 px-8 text-center bg-gradient-to-b from-amber-50 via-yellow-50 to-white">
+          {/* Money bag from assets/money.svg */}
+          <div className="w-24 h-24 mx-auto mb-4">
+            <img src="/assets/coins.svg" alt="Money bag" className="w-full h-full drop-shadow-xl animate-bounce" />
+          </div>
+          
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Don&apos;t Lose Your Connection!</h2>
+          <p className="text-gray-600">Credits are low. Top up to continue</p>
+          <p className="text-gray-600 font-medium">chatting 😊
+        
+          </p>
+         
+        </div>
+        
+        {/* Modal Content */}
+        <div className="px-8 pb-8">
+          
+          {/* Action Button */}
+          <button
+            onClick={onBuyCredits}
+            className="w-full py-4 bg-gradient-to-r from-[#ff2e2e] to-[#ff5e5e] text-white rounded-xl font-bold text-lg hover:from-[#e62525] hover:to-[#ff4a4a] hover:scale-105 transition-all shadow-lg hover:shadow-xl mb-4"
+          >
+            Get Credits Now
+          </button>
+          
+          {/* Credits Info */}
+          <div className="text-center bg-purple-50 rounded-lg p-3 border border-purple-200">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium text-gray-700">1 credits per message</span> • 
+              <span className="text-[#5e17eb] font-bold"> 50% bonus</span> on first purchase
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 export default function ChatPage() {
   const router = useRouter();
   const params = useParams();
@@ -87,6 +155,7 @@ export default function ChatPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'active'>('all');
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
   
   // Memoize active data
   const activeBot = useMemo(() => botProfiles[activeBotId], [botProfiles, activeBotId]);
@@ -95,6 +164,15 @@ export default function ChatPage() {
     conversations.find(c => c.botProfileId === activeBotId), 
     [conversations, activeBotId]
   );
+
+  // SHOW CREDITS MODAL WHEN CREDITS REACH ZERO
+  useEffect(() => {
+    if (userCredits !== null && userCredits <= 0) {
+      setShowCreditsModal(true);
+    } else {
+      setShowCreditsModal(false);
+    }
+  }, [userCredits]);
 
   useEffect(() => {
     if (userProfile?.userId && conversations.length === 0) {
@@ -105,7 +183,7 @@ export default function ChatPage() {
   // Auto-scroll when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeMessages]);
+  }, [activeMessages, isTyping]); // Added isTyping to trigger scroll when typing starts
 
   // Load conversations with caching - FIXED
   const loadConversations = useCallback(async () => {
@@ -205,13 +283,14 @@ export default function ChatPage() {
 
   // Handle buy credits
   const handleBuyCredits = () => {
+    setShowCreditsModal(false);
     router.push('/main/credits');
   };
 
   // Handle send photo - FIXED
   const handleSendPhoto = useCallback(async () => {
     if (userCredits < 10) {
-      alert('Not enough credits to send a photo!');
+      setShowCreditsModal(true);
       return;
     }
     
@@ -227,7 +306,7 @@ export default function ChatPage() {
   // Handle send gift - FIXED
   const handleSendGift = useCallback(async () => {
     if (userCredits < 15) {
-      alert('Not enough credits to send a gift!');
+      setShowCreditsModal(true);
       return;
     }
     
@@ -243,7 +322,7 @@ export default function ChatPage() {
   // Handle send virtual kiss - FIXED
   const handleSendKiss = useCallback(async () => {
     if (userCredits < 5) {
-      alert('Not enough credits to send a virtual kiss!');
+      setShowCreditsModal(true);
       return;
     }
     
@@ -296,6 +375,14 @@ export default function ChatPage() {
   return (
     <div className="min-h-screen bg-white">
       <LayoutController />
+      
+      {/* CREDITS MODAL - Shows when credits are zero */}
+      {showCreditsModal && (
+        <CreditsModal 
+          onClose={() => setShowCreditsModal(false)}
+          onBuyCredits={handleBuyCredits}
+        />
+      )}
       
       {/* Desktop Layout */}
       <div className="hidden lg:flex h-[calc(100vh-64px)] w-full justify-center">
@@ -575,17 +662,35 @@ export default function ChatPage() {
                           isRead={true}
                           senderName={message.role === 'user' ? 'You' : activeBot.username}
                           isOptimistic={message.isOptimistic}
+                          profilePic={message.role === 'user' ? undefined : activeBot.profilePic}
                         />
                       ))}
                       
-                      {/* Typing Indicator - ONLY shows when isTyping is true */}
+                      {/* TYPING INDICATOR - Shows when AI is replying */}
                       {isTyping && (
                         <div className="flex justify-start">
-                          <div className="bg-gray-100 rounded-2xl rounded-bl-none px-4 py-3">
-                            <div className="flex items-center gap-1">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white">
+                              {activeBot.profilePic ? (
+                                <Image
+                                  src={activeBot.profilePic}
+                                  alt={activeBot.username}
+                                  width={32}
+                                  height={32}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
+                                  <UserPlus className="w-4 h-4 text-gray-500" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="bg-gray-100 rounded-2xl rounded-bl-none px-4 py-3">
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></div>
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -950,8 +1055,21 @@ export default function ChatPage() {
                   {activeMessages.map((message) => (
                     <div
                       key={message.id}
-                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} ${message.role !== 'user' ? 'items-end' : ''}`}
                     >
+                      {message.role !== 'user' && activeBot.profilePic && (
+                        <div className="flex-shrink-0 mr-2">
+                          <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white">
+                            <Image
+                              src={activeBot.profilePic}
+                              alt={activeBot.username}
+                              width={32}
+                              height={32}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
                       <div 
                         className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                           message.role === 'user' 
@@ -967,6 +1085,36 @@ export default function ChatPage() {
                       </div>
                     </div>
                   ))}
+                  
+                  {/* TYPING INDICATOR FOR MOBILE */}
+                  {isTyping && (
+                    <div className="flex justify-start items-end">
+                      <div className="flex-shrink-0 mr-2">
+                        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white">
+                          {activeBot.profilePic ? (
+                            <Image
+                              src={activeBot.profilePic}
+                              alt={activeBot.username}
+                              width={32}
+                              height={32}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
+                              <UserPlus className="w-4 h-4 text-gray-500" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="bg-gray-100 rounded-2xl rounded-bl-none px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               <div ref={messagesEndRef} />
