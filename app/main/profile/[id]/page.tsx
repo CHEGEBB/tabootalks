@@ -416,7 +416,7 @@ const ProfilePage = () => {
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="space-y-3">
                 <button
-                  onClick={() => router.push(`/main/chats?user=${personaId}`)}
+                  onClick={() => router.push(`/main/chats/${personaId}`)}
                   className="w-full py-3 bg-[#5e17eb] text-white rounded-xl font-medium hover:bg-[#4a13c4] transition-colors flex items-center justify-center gap-2"
                 >
                   <MessageCircle className="w-5 h-5" />

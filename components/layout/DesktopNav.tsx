@@ -58,9 +58,9 @@ export default function DesktopNav({ activeTab, setActiveTab }: Omit<DesktopNavP
       case 'home':
         router.push('/main');
         break;
-      case 'chats':
-        router.push('/main/chats');
-        break;
+        case 'chats':
+          router.push('/main/chats/empty');
+          break;
       case 'discover':
         router.push('/main/discover');
         break;
