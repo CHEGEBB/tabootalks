@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// lib/services/conversationService.ts - STABLE VERSION
+// lib/services/conversationService.ts - FIXED VERSION
 import { 
     getConversationMessages, 
     saveMessage, 
-    getRecentMessages,
     Message as AppwriteMessage 
   } from '@/lib/appwrite/messages';
   import { 
@@ -13,13 +12,16 @@ import {
     Conversation as AppwriteConversation 
   } from '@/lib/appwrite/conversations';
   import { personaService, ParsedPersonaProfile } from './personaService';
+  import { authService } from './authService';
   
+  // ✅ FIXED: Remove 'assistant' from role type
   export interface ChatMessage {
     id: string;
-    role: 'user' | 'bot' | 'assistant';
+    role: 'user' | 'bot'; // ✅ Only 'user' or 'bot'
     content: string;
     timestamp: string;
     sender?: 'user' | 'bot';
+    userId: string;
   }
   
   export interface Conversation {
@@ -39,106 +41,162 @@ import {
   export interface UserConversations {
     conversations: Conversation[];
     botProfiles: Record<string, ParsedPersonaProfile>;
+    userId: string;
   }
   
-  // CACHE KEYS
-  const CONVERSATIONS_CACHE_KEY = 'chat_conversations_cache';
+  const CONVERSATIONS_CACHE_PREFIX = 'chat_conversations_cache_';
   const MESSAGES_CACHE_PREFIX = 'chat_messages_';
   const CACHE_TIMESTAMP_KEY = 'chat_cache_timestamp';
-  const CACHE_TTL = 30 * 60 * 1000; // 30 minutes cache TTL (longer)
+  const CACHE_TTL = 30 * 60 * 1000;
+  const LOGGED_IN_USER_KEY = 'conversation_service_user_id';
   
   class ConversationService {
     private cache: Map<string, any> = new Map();
-    private fetchPromises: Map<string, Promise<any>> = new Map(); // Track ongoing fetches
+    private fetchPromises: Map<string, Promise<any>> = new Map();
+    private loggedInUserId: string | null = null;
   
     /**
-     * Get conversations from cache or API - PREVENT DUPLICATE FETCHES
+     * 🔒 CRITICAL: Initialize service with logged-in user
      */
-    async getCachedUserConversations(userId: string): Promise<UserConversations> {
-      const cacheKey = `${CONVERSATIONS_CACHE_KEY}_${userId}`;
+    async initialize(): Promise<string | null> {
+      try {
+        console.log('🔐 Initializing ConversationService...');
+        
+        const currentUser = await authService.getCurrentUser();
+        
+        if (!currentUser || !currentUser.user || !currentUser.user.$id) {
+          console.error('❌ No logged-in user found during initialization');
+          this.loggedInUserId = null;
+          localStorage.removeItem(LOGGED_IN_USER_KEY);
+          return null;
+        }
+        
+        const userId = currentUser.user.$id;
+        this.loggedInUserId = userId;
+        localStorage.setItem(LOGGED_IN_USER_KEY, userId);
+        
+        console.log('✅ ConversationService initialized for user:', userId);
+        return userId;
+      } catch (error) {
+        console.error('❌ Failed to initialize ConversationService:', error);
+        this.loggedInUserId = null;
+        localStorage.removeItem(LOGGED_IN_USER_KEY);
+        return null;
+      }
+    }
+  
+    /**
+     * 🔒 Get currently authenticated user ID
+     */
+    private async getAuthenticatedUserId(): Promise<string> {
+      if (this.loggedInUserId) {
+        return this.loggedInUserId;
+      }
       
-      // Check if we're already fetching
+      const storedUserId = localStorage.getItem(LOGGED_IN_USER_KEY);
+      if (storedUserId) {
+        this.loggedInUserId = storedUserId;
+        return storedUserId;
+      }
+      
+      const currentUser = await authService.getCurrentUser();
+      
+      if (!currentUser || !currentUser.user || !currentUser.user.$id) {
+        throw new Error('Authentication required. Please log in.');
+      }
+      
+      const userId = currentUser.user.$id;
+      this.loggedInUserId = userId;
+      localStorage.setItem(LOGGED_IN_USER_KEY, userId);
+      
+      return userId;
+    }
+  
+    /**
+     * 🔒 VERIFY: Requested userId matches authenticated user
+     */
+    private async verifyUserAccess(requestedUserId: string): Promise<void> {
+      const authenticatedUserId = await this.getAuthenticatedUserId();
+      
+      if (authenticatedUserId !== requestedUserId) {
+        console.error(`❌ SECURITY BREACH ATTEMPT!`);
+        this.clearAllCache();
+        this.loggedInUserId = null;
+        localStorage.removeItem(LOGGED_IN_USER_KEY);
+        throw new Error('SECURITY VIOLATION: Access denied. Please log in again.');
+      }
+    }
+  
+    /**
+     * Get conversations - automatically uses authenticated user
+     */
+    async getCachedUserConversations(): Promise<UserConversations> {
+      const userId = await this.getAuthenticatedUserId();
+      const cacheKey = `${CONVERSATIONS_CACHE_PREFIX}${userId}`;
+      
       if (this.fetchPromises.has(cacheKey)) {
-        console.log('⏳ Waiting for existing fetch to complete');
         return await this.fetchPromises.get(cacheKey);
       }
       
-      // Check memory cache first
       if (this.cache.has(cacheKey)) {
-        console.log('💾 Using memory cached conversations');
-        return this.cache.get(cacheKey);
+        const cached = this.cache.get(cacheKey);
+        if (cached.userId === userId) {
+          return cached;
+        }
+        this.cache.delete(cacheKey);
       }
       
-      // Check localStorage cache
       const cached = this.getFromLocalStorage(cacheKey);
-      if (cached && this.isCacheValid(cacheKey)) {
-        console.log('💾 Using localStorage cached conversations');
+      if (cached && this.isCacheValid(cacheKey) && cached.userId === userId) {
         this.cache.set(cacheKey, cached);
         return cached;
       }
       
-      // Create fetch promise to prevent duplicate fetches
       const fetchPromise = this.fetchUserConversationsWithProfiles(userId);
       this.fetchPromises.set(cacheKey, fetchPromise);
       
       try {
         const data = await fetchPromise;
-        
-        // Cache in memory
         this.cache.set(cacheKey, data);
-        
-        // Cache in localStorage
         this.saveToLocalStorage(cacheKey, data);
         this.updateCacheTimestamp(cacheKey);
-        
         return data;
       } finally {
-        // Remove the promise from tracking
         this.fetchPromises.delete(cacheKey);
       }
     }
   
     /**
-     * Get messages from cache or API - PREVENT DUPLICATE FETCHES
+     * Get messages for conversation
      */
     async getCachedMessages(conversationId: string, forceRefresh = false): Promise<ChatMessage[]> {
-      const cacheKey = `${MESSAGES_CACHE_PREFIX}${conversationId}`;
+      const userId = await this.getAuthenticatedUserId();
+      const cacheKey = `${MESSAGES_CACHE_PREFIX}${conversationId}_${userId}`;
       
-      // Check if we're already fetching
       if (this.fetchPromises.has(cacheKey)) {
-        console.log(`⏳ Waiting for existing message fetch for ${conversationId}`);
         return await this.fetchPromises.get(cacheKey);
       }
       
-      // Don't use cache if force refresh
       if (!forceRefresh) {
-        // Check memory cache
         if (this.cache.has(cacheKey)) {
-          console.log(`💾 Using memory cached messages for ${conversationId}`);
           return this.cache.get(cacheKey);
         }
         
-        // Check localStorage
         const cached = this.getFromLocalStorage(cacheKey);
         if (cached && this.isCacheValid(cacheKey)) {
-          console.log(`💾 Using localStorage cached messages for ${conversationId}`);
           this.cache.set(cacheKey, cached);
           return cached;
         }
       }
       
-      // Create fetch promise
-      const fetchPromise = this.loadMessages(conversationId);
+      const fetchPromise = this.loadMessages(conversationId, userId);
       this.fetchPromises.set(cacheKey, fetchPromise);
       
       try {
         const messages = await fetchPromise;
-        
-        // Cache
         this.cache.set(cacheKey, messages);
         this.saveToLocalStorage(cacheKey, messages);
         this.updateCacheTimestamp(cacheKey);
-        
         return messages;
       } finally {
         this.fetchPromises.delete(cacheKey);
@@ -146,17 +204,17 @@ import {
     }
   
     /**
-     * Get or create conversation and load messages - STABLE VERSION
+     * Get or create conversation
      */
-    async getConversation(
-      userId: string, 
-      botProfileId: string, 
-      loadMessages: boolean = true
-    ) {
-      // Get conversation
+    async getConversation(botProfileId: string, loadMessages: boolean = true) {
+      const userId = await this.getAuthenticatedUserId();
+      
       const appwriteConversation = await getOrCreateConversation(userId, botProfileId);
       
-      // Get bot profile
+      if (appwriteConversation.userId !== userId) {
+        throw new Error('SECURITY VIOLATION: This conversation does not belong to you.');
+      }
+      
       let botProfile: ParsedPersonaProfile | null = null;
       try {
         botProfile = await personaService.getPersonaById(botProfileId);
@@ -164,7 +222,6 @@ import {
         console.error('Error loading bot profile:', error);
       }
   
-      // Format conversation
       const conversation: Conversation = {
         id: appwriteConversation.$id,
         conversationId: appwriteConversation.conversationId,
@@ -179,7 +236,6 @@ import {
         updatedAt: appwriteConversation.$updatedAt
       };
   
-      // Load messages from cache or API
       let messages: ChatMessage[] = [];
       if (loadMessages) {
         messages = await this.getCachedMessages(appwriteConversation.conversationId);
@@ -193,19 +249,24 @@ import {
     }
   
     /**
-     * Get all conversations for a user with bot profiles - Separate method for fetching
+     * Fetch conversations with profiles
      */
     private async fetchUserConversationsWithProfiles(userId: string): Promise<UserConversations> {
-      console.log('🌐 Fetching conversations from API');
+      await this.verifyUserAccess(userId);
+      
       const appwriteConversations = await getUserConversations(userId);
       
       const conversations: Conversation[] = [];
       const botProfiles: Record<string, ParsedPersonaProfile> = {};
       
       for (const conv of appwriteConversations) {
+        if (conv.userId !== userId) {
+          console.error(`❌ SECURITY: Skipping conversation ${conv.$id}`);
+          continue;
+        }
+        
         try {
           const botProfile = await personaService.getPersonaById(conv.botProfileId);
-          
           botProfiles[conv.botProfileId] = botProfile;
           
           conversations.push({
@@ -223,6 +284,7 @@ import {
           });
         } catch (error) {
           console.error(`Error loading profile for ${conv.botProfileId}:`, error);
+          
           conversations.push({
             id: conv.$id,
             conversationId: conv.conversationId,
@@ -240,32 +302,40 @@ import {
       
       return {
         conversations,
-        botProfiles
+        botProfiles,
+        userId
       };
     }
   
     /**
-     * Load messages for a conversation
+     * Load messages with filtering
      */
-    private async loadMessages(conversationId: string): Promise<ChatMessage[]> {
-      console.log(`🌐 Fetching messages from API for ${conversationId}`);
+    private async loadMessages(conversationId: string, userId: string): Promise<ChatMessage[]> {
+      await this.verifyUserAccess(userId);
+      
       const appwriteMessages = await getConversationMessages(conversationId, 100);
       
-      return appwriteMessages.map((msg: AppwriteMessage) => this.transformMessage(msg));
+      const filteredMessages = appwriteMessages.filter(msg => {
+        const isUserMessage = msg.userId === userId;
+        const isBotMessage = msg.role === 'bot';
+        return isUserMessage || isBotMessage;
+      });
+      
+      return filteredMessages.map((msg: AppwriteMessage) => this.transformMessage(msg, userId));
     }
   
     /**
-     * Send a message and update cache - OPTIMIZED
+     * Send message
      */
     async sendMessage(
       conversationId: string,
-      userId: string,
       botProfileId: string,
       userMessage: string,
       botResponse: string
     ) {
+      const userId = await this.getAuthenticatedUserId();
+      
       try {
-        // Save messages to Appwrite
         const savedUserMessage = await saveMessage(
           conversationId,
           userId,
@@ -284,27 +354,23 @@ import {
           1
         );
         
-        // Update conversation
         await updateConversation(conversationId, botResponse);
         
-        // Update cache immediately with new messages
-        const cacheKey = `${MESSAGES_CACHE_PREFIX}${conversationId}`;
+        const cacheKey = `${MESSAGES_CACHE_PREFIX}${conversationId}_${userId}`;
         const currentMessages = this.cache.get(cacheKey) || [];
         const newMessages = [
           ...currentMessages,
-          this.transformMessage(savedUserMessage),
-          this.transformMessage(savedBotMessage)
+          this.transformMessage(savedUserMessage, userId),
+          this.transformMessage(savedBotMessage, userId)
         ];
         
         this.cache.set(cacheKey, newMessages);
         this.saveToLocalStorage(cacheKey, newMessages);
         this.updateCacheTimestamp(cacheKey);
         
-        console.log('✅ Messages cached and saved');
-        
         return {
-          userMessage: this.transformMessage(savedUserMessage),
-          botMessage: this.transformMessage(savedBotMessage)
+          userMessage: this.transformMessage(savedUserMessage, userId),
+          botMessage: this.transformMessage(savedBotMessage, userId)
         };
       } catch (error) {
         console.error('Error sending message:', error);
@@ -313,88 +379,48 @@ import {
     }
   
     /**
-     * Update conversation in cache (without refetching everything)
+     * Clear all cache on logout
      */
-    updateConversationInCache(botProfileId: string, updates: Partial<Conversation>) {
-      const userId = this.getUserIdFromCache();
-      if (!userId) return;
+    clearAllCache() {
+      this.cache.clear();
+      this.fetchPromises.clear();
+      this.loggedInUserId = null;
       
-      const cacheKey = `${CONVERSATIONS_CACHE_KEY}_${userId}`;
-      const cachedData = this.cache.get(cacheKey) as UserConversations;
-      
-      if (cachedData) {
-        const updatedConversations = cachedData.conversations.map(conv => 
-          conv.botProfileId === botProfileId 
-            ? { ...conv, ...updates }
-            : conv
-        );
-        
-        const updatedData = {
-          ...cachedData,
-          conversations: updatedConversations
-        };
-        
-        this.cache.set(cacheKey, updatedData);
-        this.saveToLocalStorage(cacheKey, updatedData);
-        this.updateCacheTimestamp(cacheKey);
-      }
-    }
-  
-    /**
-     * Add messages to cache for a specific conversation
-     */
-    addMessagesToCache(conversationId: string, messages: ChatMessage[]) {
-      const cacheKey = `${MESSAGES_CACHE_PREFIX}${conversationId}`;
-      const currentMessages = this.cache.get(cacheKey) || [];
-      const newMessages = [...currentMessages, ...messages];
-      
-      this.cache.set(cacheKey, newMessages);
-      this.saveToLocalStorage(cacheKey, newMessages);
-      this.updateCacheTimestamp(cacheKey);
-    }
-  
-    /**
-     * Clear cache for specific items only
-     */
-    clearCache(keys?: string[]) {
-      if (keys) {
-        keys.forEach(key => {
-          this.cache.delete(key);
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.includes(CONVERSATIONS_CACHE_PREFIX) || 
+          key.includes(MESSAGES_CACHE_PREFIX) ||
+          key.includes(CACHE_TIMESTAMP_KEY) ||
+          key === LOGGED_IN_USER_KEY
+        )) {
           localStorage.removeItem(key);
-          localStorage.removeItem(`${CACHE_TIMESTAMP_KEY}_${key}`);
-        });
-      } else {
-        this.cache.clear();
+        }
       }
     }
   
     /**
-     * Check if cache is fresh (recently updated)
+     * ✅ FIXED: Transform message - normalize role to 'user' or 'bot'
      */
-    isCacheFresh(key: string, maxAgeMs: number = 10000): boolean {
-      const timestamp = localStorage.getItem(`${CACHE_TIMESTAMP_KEY}_${key}`);
-      if (!timestamp) return false;
-      
-      const age = Date.now() - parseInt(timestamp);
-      return age < maxAgeMs;
-    }
+    private transformMessage(appwriteMessage: AppwriteMessage, userId: string): ChatMessage {
+      // Normalize role: 'assistant' becomes 'bot'
+      let role: 'user' | 'bot' = 'bot';
+      if (appwriteMessage.role === 'user') {
+        role = 'user';
+      } else if (appwriteMessage.role === 'bot' || appwriteMessage.role === 'assistant') {
+        role = 'bot';
+      }
   
-    /**
-     * Transform Appwrite message to ChatMessage
-     */
-    private transformMessage(appwriteMessage: AppwriteMessage): ChatMessage {
       return {
         id: appwriteMessage.$id,
-        role: appwriteMessage.role as 'user' | 'bot',
+        role: role,
         content: appwriteMessage.content,
         timestamp: appwriteMessage.timestamp || appwriteMessage.$createdAt,
-        sender: appwriteMessage.role as 'user' | 'bot'
+        sender: role,
+        userId: appwriteMessage.userId || userId
       };
     }
   
-    /**
-     * LocalStorage helpers
-     */
     private saveToLocalStorage(key: string, data: any) {
       try {
         localStorage.setItem(key, JSON.stringify(data));
@@ -431,16 +457,6 @@ import {
       } catch (e) {
         return false;
       }
-    }
-  
-    private getUserIdFromCache(): string | null {
-      // Try to get userId from cached conversations
-      for (const [key, value] of this.cache.entries()) {
-        if (key.startsWith(CONVERSATIONS_CACHE_KEY)) {
-          return key.replace(`${CONVERSATIONS_CACHE_KEY}_`, '');
-        }
-      }
-      return null;
     }
   }
   

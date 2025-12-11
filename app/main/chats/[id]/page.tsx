@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/main/chats/[id]/page.tsx - FIXED VERSION (NO RELOADS)
+// app/main/chats/[id]/page.tsx - FIXED VERSION (NO CACHE ISSUES)
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -22,7 +22,7 @@ import LayoutController from '@/components/layout/LayoutController';
 import { useChatStore } from '@/store/chatStore'; 
 import { useChat } from '@/lib/hooks/useChat';
 
-// Chat Bubble Component - UPDATED with optimistic handling AND PERSONA PROFILE
+// Chat Bubble Component - FIXED
 const ChatBubble = ({ message, isOwn, time, isRead, senderName, isOptimistic, profilePic }: any) => {
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -73,9 +73,8 @@ const ChatBubble = ({ message, isOwn, time, isRead, senderName, isOptimistic, pr
 
 const CreditsModal = ({ onClose, onBuyCredits }: any) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center  p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-        {/* Close button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-10 p-1.5 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
@@ -83,25 +82,17 @@ const CreditsModal = ({ onClose, onBuyCredits }: any) => {
           <X className="w-5 h-5 text-gray-600" />
         </button>
         
-        {/* Modal Header with Money Bag SVG */}
         <div className="relative pt-10 pb-6 px-8 text-center bg-gradient-to-b from-amber-50 via-yellow-50 to-white">
-          {/* Money bag from assets/money.svg */}
           <div className="w-24 h-24 mx-auto mb-4">
             <img src="/assets/coins.svg" alt="Money bag" className="w-full h-full drop-shadow-xl animate-bounce" />
           </div>
           
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Don&apos;t Lose Your Connection!</h2>
           <p className="text-gray-600">Credits are low. Top up to continue</p>
-          <p className="text-gray-600 font-medium">chatting 😊
-        
-          </p>
-         
+          <p className="text-gray-600 font-medium">chatting 😊</p>
         </div>
         
-        {/* Modal Content */}
         <div className="px-8 pb-8">
-          
-          {/* Action Button */}
           <button
             onClick={onBuyCredits}
             className="w-full py-4 bg-gradient-to-r from-[#ff2e2e] to-[#ff5e5e] text-white rounded-xl font-bold text-lg hover:from-[#e62525] hover:to-[#ff4a4a] hover:scale-105 transition-all shadow-lg hover:shadow-xl mb-4"
@@ -109,7 +100,6 @@ const CreditsModal = ({ onClose, onBuyCredits }: any) => {
             Get Credits Now
           </button>
           
-          {/* Credits Info */}
           <div className="text-center bg-purple-50 rounded-lg p-3 border border-purple-200">
             <p className="text-sm text-gray-600">
               <span className="font-medium text-gray-700">1 credits per message</span> • 
@@ -121,6 +111,7 @@ const CreditsModal = ({ onClose, onBuyCredits }: any) => {
     </div>
   );
 };
+
 export default function ChatPage() {
   const router = useRouter();
   const params = useParams();
@@ -131,7 +122,7 @@ export default function ChatPage() {
   
   const activeBotId = params.id as string;
   
-  // Use global store instead of useState
+  // Use global store
   const { 
     conversations, 
     messagesByBot, 
@@ -139,7 +130,9 @@ export default function ChatPage() {
     setConversations,
     setMessages,
     addMessage,
-    updateBotProfile
+    updateBotProfile,
+    hasLoadedConversations,
+    setHasLoadedConversations
   } = useChatStore();
   
   // Use chat hook for message handling
@@ -156,6 +149,8 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'active'>('all');
   const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   // Memoize active data
   const activeBot = useMemo(() => botProfiles[activeBotId], [botProfiles, activeBotId]);
@@ -164,6 +159,23 @@ export default function ChatPage() {
     conversations.find(c => c.botProfileId === activeBotId), 
     [conversations, activeBotId]
   );
+
+  // CRITICAL FIX 1: Initialize conversation service when user loads
+  useEffect(() => {
+    const initializeService = async () => {
+      if (userProfile?.userId && !initialLoadComplete) {
+        try {
+          console.log('🔐 Initializing conversation service for user:', userProfile.userId);
+          await conversationService.initialize();
+          setInitialLoadComplete(true);
+        } catch (error) {
+          console.error('Failed to initialize conversation service:', error);
+        }
+      }
+    };
+    
+    initializeService();
+  }, [userProfile?.userId, initialLoadComplete]);
 
   // SHOW CREDITS MODAL WHEN CREDITS REACH ZERO
   useEffect(() => {
@@ -174,54 +186,134 @@ export default function ChatPage() {
     }
   }, [userCredits]);
 
+  // CRITICAL FIX 2: Load conversations ONCE when user is authenticated
   useEffect(() => {
-    if (userProfile?.userId && conversations.length === 0) {
-      loadConversations();
-    }
-  }, [userProfile?.userId]);
+    const loadConversations = async () => {
+      // Don't load if auth is still loading
+      if (authLoading || !userProfile?.userId) return;
+      
+      // Don't load if we've already loaded conversations
+      if (hasLoadedConversations) {
+        console.log('✅ Conversations already loaded, skipping');
+        return;
+      }
+      
+      setIsLoadingConversations(true);
+      
+      try {
+        console.log('📱 Loading conversations for user:', userProfile.userId);
+        
+        // CRITICAL: Use the service's method WITHOUT passing userId parameter
+        // It will automatically use the authenticated user
+        const userConversations = await conversationService.getCachedUserConversations();
+        
+        // CRITICAL FIX: Check if data belongs to current user
+        if (userConversations.userId === userProfile.userId) {
+          console.log(`✅ Loaded ${userConversations.conversations.length} conversations for user ${userProfile.userId}`);
+          
+          setConversations(userConversations.conversations || []);
+          
+          // Update bot profiles from the data
+          Object.entries(userConversations.botProfiles || {}).forEach(([id, profile]) => {
+            updateBotProfile(id, profile as ParsedPersonaProfile);
+          });
+          
+          // Load messages for active conversation if we have one
+          if (activeBotId && activeBotId !== 'empty') {
+            try {
+              console.log(`📥 Loading messages for conversation: ${activeBotId}`);
+              const messages = await conversationService.getCachedMessages(activeBotId);
+              setMessages(activeBotId, messages);
+            } catch (error) {
+              console.error('Error loading messages:', error);
+            }
+          }
+          
+          // Auto-redirect logic
+          if (activeBotId === 'empty' && userConversations.conversations?.length > 0) {
+            const firstBotId = userConversations.conversations[0].botProfileId;
+            console.log(`🔄 Redirecting to first chat: ${firstBotId}`);
+            router.replace(`/main/chats/${firstBotId}`, { scroll: false });
+          }
+        } else {
+          console.error('❌ SECURITY: Loaded conversations belong to different user!');
+          console.error(`   Expected: ${userProfile.userId}, Got: ${userConversations.userId}`);
+          
+          // Clear everything and force reload
+          conversationService.clearAllCache();
+          setConversations([]);
+          setHasLoadedConversations(false);
+        }
+        
+        setHasLoadedConversations(true);
+        
+      } catch (error) {
+        console.error('Error loading conversations:', error);
+        // If there's an authentication error, clear cache
+        if ((error as Error).message.includes('Authentication') || (error as Error).message.includes('SECURITY')) {
+          conversationService.clearAllCache();
+          setConversations([]);
+          setHasLoadedConversations(false);
+        }
+      } finally {
+        setIsLoadingConversations(false);
+      }
+    };
+    
+    loadConversations();
+  }, [
+    userProfile?.userId, 
+    activeBotId, 
+    authLoading, 
+    hasLoadedConversations, 
+    router, 
+    setConversations, 
+    updateBotProfile,
+    setMessages,
+    setHasLoadedConversations
+  ]);
+
+  // CRITICAL FIX 3: Load messages when switching to a new conversation
+  useEffect(() => {
+    const loadMessagesForActiveConversation = async () => {
+      if (!activeBotId || activeBotId === 'empty' || !userProfile?.userId || !hasLoadedConversations) {
+        return;
+      }
+      
+      // Check if we already have messages for this conversation
+      if (messagesByBot[activeBotId] && messagesByBot[activeBotId].length > 0) {
+        console.log(`💾 Using cached messages for ${activeBotId}`);
+        return;
+      }
+      
+      try {
+        console.log(`📥 Loading messages for ${activeBotId}`);
+        const messages = await conversationService.getCachedMessages(activeBotId);
+        setMessages(activeBotId, messages);
+      } catch (error) {
+        console.error(`Error loading messages for ${activeBotId}:`, error);
+      }
+    };
+    
+    loadMessagesForActiveConversation();
+  }, [activeBotId, userProfile?.userId, hasLoadedConversations, messagesByBot, setMessages]);
 
   // Auto-scroll when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeMessages, isTyping]); // Added isTyping to trigger scroll when typing starts
+  }, [activeMessages, isTyping]);
 
-  // Load conversations with caching - FIXED
-  const loadConversations = useCallback(async () => {
-    if (!userProfile?.userId) return;
-    
-    try {
-      // CHANGE: Remove true parameter - use cache!
-      const { conversations: convos, botProfiles: profiles } = 
-        await conversationService.getCachedUserConversations(userProfile.userId);
-      
-      // Set state in store
-      setConversations(convos);
-      
-      // Update bot profiles
-      Object.entries(profiles).forEach(([id, profile]) => {
-        updateBotProfile(id, profile);
-      });
-      
-      // Auto-redirect logic - NO RELOAD
-      if (activeBotId === 'empty' && convos.length > 0) {
-        const firstBotId = convos[0].botProfileId;
-        router.replace(`/main/chats/${firstBotId}`, { scroll: false });
-      }
-      
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-    }
-  }, [userProfile?.userId, activeBotId, router, setConversations, updateBotProfile]);
-
-  // Send message - FIXED WITH OPTIMISTIC UPDATES
+  // CRITICAL FIX 4: Send message - using the chat hook properly
   const handleSendMessage = useCallback(async () => {
-    if (!messageInput.trim() || !userProfile?.userId || sending || !userCredits || userCredits <= 0) return;
+    if (!messageInput.trim() || !userProfile?.userId || sending || !userCredits || userCredits <= 0) {
+      return;
+    }
     
     const userMessage = messageInput.trim();
     setMessageInput('');
     
     try {
-      // This handles everything - NO MANUAL RELOADS
+      // Use the chat hook's sendMessage function
       await chatSendMessage(userMessage);
       
       // Silently refresh credits in background
@@ -229,18 +321,40 @@ export default function ChatPage() {
       
     } catch (error: any) {
       console.error('Error sending message:', error);
-      alert('Error: ' + (error.message || 'Failed to send message'));
+      
+      // If it's a security error, clear everything
+      if (error.message.includes('SECURITY') || error.message.includes('Authentication')) {
+        conversationService.clearAllCache();
+        setConversations([]);
+        setHasLoadedConversations(false);
+        alert('Session expired. Please log in again.');
+        router.push('/login');
+      } else {
+        alert('Error: ' + (error.message || 'Failed to send message'));
+      }
     }
-  }, [messageInput, userProfile, sending, userCredits, chatSendMessage, refreshCredits]);
+  }, [
+    messageInput, 
+    userProfile, 
+    sending, 
+    userCredits, 
+    chatSendMessage, 
+    refreshCredits, 
+    setConversations,
+    setHasLoadedConversations,
+    router
+  ]);
 
-  // Switch conversation - INSTANT (NO RELOAD)
+  // Switch conversation - NO RELOAD
   const switchChat = useCallback((botId: string) => {
-    // Use shallow routing - changes URL without page reload
+    if (botId === activeBotId) return;
+    
+    console.log(`🔄 Switching to chat: ${botId}`);
     router.push(`/main/chats/${botId}`, { scroll: false });
     if (window.innerWidth < 768) {
       setShowSidebar(false);
     }
-  }, [router]);
+  }, [router, activeBotId]);
 
   // Format time
   const formatTime = useCallback((timestamp: string) => {
@@ -287,9 +401,9 @@ export default function ChatPage() {
     router.push('/main/credits');
   };
 
-  // Handle send photo - FIXED
+  // Handle send photo
   const handleSendPhoto = useCallback(async () => {
-    if (userCredits < 10) {
+    if (!userCredits || userCredits < 10) {
       setShowCreditsModal(true);
       return;
     }
@@ -297,15 +411,14 @@ export default function ChatPage() {
     const photoMessage = '📷 [Photo sent]';
     setMessageInput(photoMessage);
     
-    // Use the same send function for consistency
     setTimeout(() => {
       handleSendMessage();
     }, 100);
   }, [userCredits, handleSendMessage]);
 
-  // Handle send gift - FIXED
+  // Handle send gift
   const handleSendGift = useCallback(async () => {
-    if (userCredits < 15) {
+    if (!userCredits || userCredits < 15) {
       setShowCreditsModal(true);
       return;
     }
@@ -313,15 +426,14 @@ export default function ChatPage() {
     const giftMessage = '🎁 [Gift sent]';
     setMessageInput(giftMessage);
     
-    // Use the same send function for consistency
     setTimeout(() => {
       handleSendMessage();
     }, 100);
   }, [userCredits, handleSendMessage]);
 
-  // Handle send virtual kiss - FIXED
+  // Handle send virtual kiss
   const handleSendKiss = useCallback(async () => {
-    if (userCredits < 5) {
+    if (!userCredits || userCredits < 5) {
       setShowCreditsModal(true);
       return;
     }
@@ -329,7 +441,6 @@ export default function ChatPage() {
     const kissMessage = '😘 [Virtual kiss sent]';
     setMessageInput(kissMessage);
     
-    // Use the same send function for consistency
     setTimeout(() => {
       handleSendMessage();
     }, 100);
@@ -358,6 +469,15 @@ export default function ChatPage() {
     }
   }, [handleSendMessage]);
 
+  // CRITICAL FIX 5: Clear data on unmount to prevent mixing
+  useEffect(() => {
+    return () => {
+      // Don't clear everything, just clean up if needed
+      console.log('🧹 Cleaning up chat page');
+    };
+  }, []);
+
+  // Loading state
   if (authLoading || creditsLoading) {
     return (
       <div className="min-h-screen bg-white">
@@ -372,11 +492,35 @@ export default function ChatPage() {
     );
   }
 
+  // CRITICAL FIX 6: Check if user is authenticated
+  if (!authLoading && !userProfile?.userId) {
+    return (
+      <div className="min-h-screen bg-white">
+        <LayoutController />
+        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <XCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Authentication Required</h3>
+            <p className="text-gray-600 mb-4">Please log in to access chats</p>
+            <button
+              onClick={() => router.push('/login')}
+              className="px-6 py-3 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white rounded-lg font-medium"
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <LayoutController />
       
-      {/* CREDITS MODAL - Shows when credits are zero */}
+      {/* CREDITS MODAL */}
       {showCreditsModal && (
         <CreditsModal 
           onClose={() => setShowCreditsModal(false)}
@@ -392,10 +536,9 @@ export default function ChatPage() {
           <div className="w-[400px] flex-shrink-0 border-r border-gray-200 h-full overflow-hidden flex flex-col bg-white">
             {/* Fixed Header */}
             <div className="bg-white border-b border-gray-200 px-6 py-4">
-              {/* Top Bar with Credits */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-[#5e17eb]">{userCredits}</span>
+                  <span className="text-lg font-bold text-[#5e17eb]">{userCredits || 0}</span>
                   <button 
                     onClick={handleBuyCredits}
                     className="px-3 py-1 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white text-sm rounded-lg hover:from-[#4a13c4] hover:to-[#7238ff] transition-all shadow-sm"
@@ -453,7 +596,12 @@ export default function ChatPage() {
 
             {/* Chat List - Scrollable */}
             <div className="flex-1 overflow-y-auto bg-white">
-              {conversations.length === 0 ? (
+              {isLoadingConversations ? (
+                <div className="p-8 text-center">
+                  <div className="w-8 h-8 border-3 border-[#5e17eb] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading conversations...</p>
+                </div>
+              ) : conversations.length === 0 ? (
                 <div className="p-8 text-center">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
                     <MessageCircleCodeIcon className="w-8 h-8 text-gray-400" />
@@ -666,7 +814,7 @@ export default function ChatPage() {
                         />
                       ))}
                       
-                      {/* TYPING INDICATOR - Shows when AI is replying */}
+                      {/* TYPING INDICATOR */}
                       {isTyping && (
                         <div className="flex justify-start">
                           <div className="flex items-center gap-2">
@@ -757,9 +905,9 @@ export default function ChatPage() {
                     </button>
                     <button
                       onClick={handleSendPhoto}
-                      disabled={userCredits < 10}
+                      disabled={!userCredits || userCredits < 10}
                       className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all ${
-                        userCredits < 10
+                        !userCredits || userCredits < 10
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                       }`}
@@ -769,9 +917,9 @@ export default function ChatPage() {
                     </button>
                     <button
                       onClick={handleSendGift}
-                      disabled={userCredits < 15}
+                      disabled={!userCredits || userCredits < 15}
                       className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all ${
-                        userCredits < 15
+                        !userCredits || userCredits < 15
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                       }`}
@@ -781,9 +929,9 @@ export default function ChatPage() {
                     </button>
                     <button
                       onClick={handleSendKiss}
-                      disabled={userCredits < 5}
+                      disabled={!userCredits || userCredits < 5}
                       className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all ${
-                        userCredits < 5
+                        !userCredits || userCredits < 5
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                       }`}
@@ -827,7 +975,6 @@ export default function ChatPage() {
                 </div>
               </>
             ) : activeBotId === 'empty' ? (
-              // Empty state
               <div className="flex-1 flex flex-col items-center justify-center p-8">
                 <div className="w-24 h-24 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-6">
                   <MessageCircleCodeIcon className="w-12 h-12 text-gray-400" />
@@ -835,6 +982,11 @@ export default function ChatPage() {
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">Select a Chat</h3>
                 <p className="text-gray-600 mb-6 max-w-md text-center">
                   Choose a conversation from the sidebar to start chatting.
+                  {conversations.length === 0 && (
+                    <span className="block mt-2 text-sm text-gray-500">
+                      No conversations yet. Discover people to start chatting!
+                    </span>
+                  )}
                 </p>
                 <button
                   onClick={() => router.push('/main')}
@@ -844,7 +996,6 @@ export default function ChatPage() {
                 </button>
               </div>
             ) : (
-              // Loading state
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
                   <div className="w-12 h-12 border-3 border-[#5e17eb] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -899,9 +1050,9 @@ export default function ChatPage() {
                     </button>
                     <button 
                       onClick={handleSendGift}
-                      disabled={userCredits < 15}
+                      disabled={!userCredits || userCredits < 15}
                       className={`w-full py-3 rounded-lg font-medium transition-all ${
-                        userCredits < 15
+                        !userCredits || userCredits < 15
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-white border border-[#5e17eb] text-[#5e17eb] hover:bg-purple-50'
                       }`}
@@ -976,7 +1127,7 @@ export default function ChatPage() {
                   <div className="mt-4 pt-3 border-t border-gray-200">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Credits left:</span>
-                      <span className="font-bold text-[#5e17eb]">{userCredits}</span>
+                      <span className="font-bold text-[#5e17eb]">{userCredits || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -1173,7 +1324,7 @@ export default function ChatPage() {
             <div className="bg-white border-b border-gray-200 px-4 py-3">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-[#5e17eb] text-lg">{userCredits}</span>
+                  <span className="font-bold text-[#5e17eb] text-lg">{userCredits || 0}</span>
                   <button 
                     onClick={handleBuyCredits}
                     className="px-3 py-1 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white text-sm rounded-lg"
@@ -1228,61 +1379,82 @@ export default function ChatPage() {
 
             {/* Chat List */}
             <div className="overflow-y-auto h-[calc(100%-140px)]">
-              {filteredChats.map(conv => {
-                const botProfile = conv.botProfile || botProfiles[conv.botProfileId];
-                
-                return (
-                  <div
-                    key={conv.botProfileId}
-                    onClick={() => {
-                      switchChat(conv.botProfileId);
-                      setShowSidebar(false);
-                    }}
-                    className="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              {isLoadingConversations ? (
+                <div className="p-8 text-center">
+                  <div className="w-8 h-8 border-3 border-[#5e17eb] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading conversations...</p>
+                </div>
+              ) : filteredChats.length === 0 ? (
+                <div className="p-8 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-4">
+                    <MessageCircleCodeIcon className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No conversations yet</h3>
+                  <p className="text-gray-600 mb-4">Start chatting with someone!</p>
+                  <button
+                    onClick={() => router.push('/main')}
+                    className="px-4 py-2 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white rounded-lg font-medium"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white">
-                          {botProfile?.profilePic ? (
-                            <Image
-                              src={botProfile.profilePic}
-                              alt={botProfile.username || 'Bot'}
-                              width={48}
-                              height={48}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
-                              <UserPlus className="w-6 h-6 text-gray-500" />
+                    Discover People
+                  </button>
+                </div>
+              ) : (
+                filteredChats.map(conv => {
+                  const botProfile = conv.botProfile || botProfiles[conv.botProfileId];
+                  
+                  return (
+                    <div
+                      key={conv.botProfileId}
+                      onClick={() => {
+                        switchChat(conv.botProfileId);
+                        setShowSidebar(false);
+                      }}
+                      className="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white">
+                            {botProfile?.profilePic ? (
+                              <Image
+                                src={botProfile.profilePic}
+                                alt={botProfile.username || 'Bot'}
+                                width={48}
+                                height={48}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
+                                <UserPlus className="w-6 h-6 text-gray-500" />
+                              </div>
+                            )}
+                          </div>
+                          {conv.isActive && (
+                            <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-green-500"></div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-1">
+                              <h4 className="font-medium text-gray-900">{botProfile?.username}</h4>
+                              {botProfile?.isVerified && (
+                                <CheckCircle className="w-3 h-3 text-blue-500" />
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500">{formatDate(conv.lastMessageAt)}</span>
+                          </div>
+                          <p className="text-sm text-gray-600 truncate">{conv.lastMessage}</p>
+                          {botProfile?.location && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <MapPin className="w-3 h-3 text-gray-400" />
+                              <span className="text-xs text-gray-500">{botProfile.location}</span>
                             </div>
                           )}
                         </div>
-                        {conv.isActive && (
-                          <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-green-500"></div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-1">
-                            <h4 className="font-medium text-gray-900">{botProfile?.username}</h4>
-                            {botProfile?.isVerified && (
-                              <CheckCircle className="w-3 h-3 text-blue-500" />
-                            )}
-                          </div>
-                          <span className="text-xs text-gray-500">{formatDate(conv.lastMessageAt)}</span>
-                        </div>
-                        <p className="text-sm text-gray-600 truncate">{conv.lastMessage}</p>
-                        {botProfile?.location && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <MapPin className="w-3 h-3 text-gray-400" />
-                            <span className="text-xs text-gray-500">{botProfile.location}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         )}
