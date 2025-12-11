@@ -339,11 +339,11 @@ export default function DiscoverPage() {
     }
   };
 
-  const handleChat = (profileId: string) => {
-    // Navigate to chat with this user
-    router.push(`/main/chats?user=${profileId}`);
+  const handleChat = (personaId: string) => {
+    // Use the correct route format
+    router.push(`/main/chats/${personaId}`);
   };
-
+  
   const handleViewProfile = (profileId: string) => {
     router.push(`/main/profile/${profileId}`);
   };

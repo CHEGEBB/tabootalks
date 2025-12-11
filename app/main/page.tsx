@@ -12,6 +12,7 @@ import { useOffer } from '@/lib/hooks/useOffer';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import { CiPaperplane } from 'react-icons/ci';
 import { useCredits } from '@/lib/hooks/useCredits';
+import { useChatService } from '@/lib/hooks/useChatService';
 
 // Types for our posts
 interface Post {
@@ -645,6 +646,7 @@ export default function HomePage() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { showOffer, handleCloseOffer, isChecking } = useOffer();
+  const { openChat } = useChatService();
   
   const [posts, setPosts] = useState<Post[]>([]);
   const [suggestedPeople, setSuggestedPeople] = useState<Post[]>([]);
@@ -843,8 +845,9 @@ export default function HomePage() {
     }
   };
 
-  const handleChat = (userId: string) => {
-    router.push(`/main/chats?user=${userId}`);
+  const handleChat = (personaId: string) => {
+    // Use the correct route format
+    router.push(`/main/chats/${personaId}`);
   };
 
   const handleViewProfile = (personaId: string) => {

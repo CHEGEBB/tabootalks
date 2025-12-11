@@ -536,7 +536,7 @@ export default function PeoplePage() {
   
   const handleChat = () => {
     if (currentUser) {
-      router.push(`/main/chats?user=${currentUser.id}`);
+      router.push(`/main/chats/${currentUser.id}`);
     }
   };
 
@@ -956,7 +956,7 @@ export default function PeoplePage() {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/main/chats?user=${person.id}`);
+                          router.push(`/main/chats/${person.id}`);
                         }}
                         className="flex-1 py-2 md:py-2.5 bg-purple-600 text-white rounded-lg font-medium md:font-bold hover:bg-purple-700 transition-all duration-300 flex items-center justify-center gap-1 md:gap-2 text-sm"
                       >

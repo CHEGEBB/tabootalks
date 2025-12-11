@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './useAuth';
 import creditService from '@/lib/services/creditService';
 
@@ -17,6 +17,7 @@ export function useCredits(): UseCreditsReturn {
   const [credits, setCredits] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const fetchingRef = useRef(false); // Prevent duplicate fetches
 
   const fetchCredits = useCallback(async () => {
     if (!user?.$id) {
@@ -24,6 +25,10 @@ export function useCredits(): UseCreditsReturn {
       setIsLoading(false);
       return;
     }
+
+    // Prevent duplicate fetches
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
 
     try {
       setIsLoading(true);
@@ -37,6 +42,7 @@ export function useCredits(): UseCreditsReturn {
       setCredits(0);
     } finally {
       setIsLoading(false);
+      fetchingRef.current = false;
     }
   }, [user?.$id]);
 
@@ -60,31 +66,18 @@ export function useCredits(): UseCreditsReturn {
     
     try {
       const success = await creditService.useCredits(user.$id, amount, description, metadata);
-      if (success) {
-        await fetchCredits(); // Refresh credits after using them
-      }
+      // DON'T auto-refresh here - let the chat handle it silently
       return success;
     } catch (err) {
       console.error('Failed to use credits:', err);
       return false;
     }
-  }, [user?.$id, fetchCredits]);
+  }, [user?.$id]);
 
+  // Fetch credits ONLY on mount or when user changes
   useEffect(() => {
     fetchCredits();
-    
-    // Refresh credits every 30 seconds if user is authenticated
-    let intervalId: NodeJS.Timeout;
-    if (user?.$id) {
-      intervalId = setInterval(fetchCredits, 30000);
-    }
-    
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [fetchCredits, user?.$id]);
+  }, [user?.$id]); // Don't include fetchCredits here!
 
   return {
     credits,
