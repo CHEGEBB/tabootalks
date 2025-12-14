@@ -4,16 +4,17 @@ import { account, databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/con
 import { ID } from 'appwrite';
 import storageService from '@/lib/appwrite/storage';
 
-// Fixed UserProfile interface - consistent everywhere
+// Fixed UserProfile interface - consistent with useAuth.ts
 interface UserProfile {
-  userId?: string;  // Optional
+  $id?: string;  // Appwrite document ID
+  userId?: string;  // Optional for compatibility
   username: string;
   email: string;
-  age?: number;
+  age?: number;  // NUMBER not string
   gender?: string;
   goals?: string;  // JSON string
   bio?: string;
-  profilePic?: string;  // No | null
+  profilePic?: string | null;  // Allow null
   credits: number;
   location?: string;
   createdAt: string;
@@ -55,7 +56,7 @@ export const authService = {
   async signup(signupData: SignupData): Promise<{ user: any; profile: UserProfile }> {
     try {
       // 1. Upload profile picture if provided
-      let profilePicUrl: string | undefined = undefined;
+      let profilePicUrl: string | null = null;
       
       if (signupData.profilePic) {
         console.log('📤 Uploading profile picture...');
@@ -139,7 +140,10 @@ export const authService = {
 
       return {
         user: authUser,
-        profile: userProfile as UserProfile,
+        profile: {
+          ...userProfile,
+          $id: profileDoc.$id,
+        } as UserProfile,
       };
     } catch (error: any) {
       console.error('❌ Signup error:', error);
@@ -172,6 +176,7 @@ export const authService = {
       );
 
       const profile: UserProfile = {
+        $id: profileDoc.$id,
         userId: profileDoc.userId,
         username: profileDoc.username,
         email: profileDoc.email,
@@ -228,8 +233,8 @@ export const authService = {
 
       // Handle each field properly
       Object.entries(updates).forEach(([key, value]) => {
-        // Skip undefined and empty strings
-        if (value === undefined || value === '') {
+        // Skip undefined, empty strings, and internal fields
+        if (value === undefined || value === '' || key === '$id') {
           return;
         }
 
@@ -266,6 +271,7 @@ export const authService = {
       console.log('✅ Profile updated successfully');
       
       return {
+        $id: updatedProfile.$id,
         userId: updatedProfile.userId,
         username: updatedProfile.username,
         email: updatedProfile.email,
@@ -317,6 +323,7 @@ export const authService = {
       );
 
       const profile: UserProfile = {
+        $id: profileDoc.$id,
         userId: profileDoc.userId,
         username: profileDoc.username,
         email: profileDoc.email,
