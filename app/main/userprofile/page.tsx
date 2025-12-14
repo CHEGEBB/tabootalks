@@ -83,20 +83,21 @@ import {
   Plane as PlaneIcon
 } from 'lucide-react';
 
+
 interface UserProfile {
-  userId: string;
+  userId?: string;
   username: string;
   email: string;
+  age?: number;
   gender?: string;
-  goals?: string;
+  goals?: string;  // JSON string
   bio?: string;
-  profilePic?: string | null;
+  profilePic?: string;  // NO | null, just ?
   credits: number;
   location?: string;
   createdAt: string;
   lastActive: string;
   preferences: string;
-  age?: number;
   birthday?: string;
   martialStatus?: string;
   fieldOfWork?: string;
@@ -218,12 +219,13 @@ export default function ProfilePage() {
         goals: goalsArray,
       });
 
-      loadUserPhotos(profile);
-      calculateProfileCompletion(profile);
+     
+      loadUserPhotos(profile as UserProfile);
+      calculateProfileCompletion(profile as UserProfile);
+      
     }
   }, [profile, loading]);
 
-  // Load user's photos
   const loadUserPhotos = async (profileData: UserProfile) => {
     try {
       const photoList: UserPhoto[] = [];
@@ -1442,8 +1444,8 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
                   <span className="text-gray-600">User ID</span>
                   <span className="font-mono text-xs text-gray-500 truncate">
-                    {profileData.userId.substring(0, 8)}...
-                  </span>
+  {profileData.userId?.substring(0, 8)}...
+</span>
                 </div>
               </div>
             </div>
