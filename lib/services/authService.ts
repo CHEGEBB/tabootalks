@@ -1,37 +1,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/services/authService.ts
 import { account, databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/config';
-import { ID, OAuthProvider } from 'appwrite';
+import { ID } from 'appwrite';
 import storageService from '@/lib/appwrite/storage';
 
-// Updated UserProfile interface to match Appwrite schema
+// Fixed UserProfile interface - consistent everywhere
 interface UserProfile {
-    [x: string]: string;
-    userId: string;
-    username: string;
-    email: string;
-    age?: number;
-    gender?: string;
-    goals?: string;  // JSON string (NOT array in TypeScript)
-    bio?: string;
-    profilePic?: string | null;
-    credits: number;
-    location?: string;
-    createdAt: string;
-    lastActive: string;
-    preferences: string;  // JSON string
-    birthday?: string;
-    martialStatus?: string;
-    fieldOfWork?: string;
-    englishLevel?: string;
-    languages?: string[];  // ✅ NOW ARRAY (matches Appwrite schema)
-    interests?: string[];  // ✅ NOW ARRAY (matches Appwrite schema)
-    personalityTraits?: string[];  // ✅ NOW ARRAY (matches Appwrite schema)
-    totalChats?: number;
-    totalMatches?: number;
-    followingCount?: number;
-    isVerified?: boolean;
-    isPremium?: boolean;
+  userId?: string;  // Optional
+  username: string;
+  email: string;
+  age?: number;
+  gender?: string;
+  goals?: string;  // JSON string
+  bio?: string;
+  profilePic?: string;  // No | null
+  credits: number;
+  location?: string;
+  createdAt: string;
+  lastActive: string;
+  preferences: string;  // JSON string
+  birthday?: string;
+  martialStatus?: string;
+  fieldOfWork?: string;
+  englishLevel?: string;
+  languages?: string[];
+  interests?: string[];
+  personalityTraits?: string[];
+  totalChats?: number;
+  totalMatches?: number;
+  followingCount?: number;
+  isVerified?: boolean;
+  isPremium?: boolean;
 }
 
 interface SignupData {
@@ -56,7 +55,7 @@ export const authService = {
   async signup(signupData: SignupData): Promise<{ user: any; profile: UserProfile }> {
     try {
       // 1. Upload profile picture if provided
-      let profilePicUrl: string | null = null;
+      let profilePicUrl: string | undefined = undefined;
       
       if (signupData.profilePic) {
         console.log('📤 Uploading profile picture...');
@@ -77,31 +76,31 @@ export const authService = {
 
       console.log('✅ Auth account created:', authUser.$id);
 
-      // 3. Create user profile document - CORRECTED to match Appwrite schema
+      // 3. Create user profile document
       const userProfile = {
         userId: authUser.$id,
         username: signupData.name,
         email: signupData.email,
-        gender: signupData.gender || null,
-        goals: signupData.goals ? JSON.stringify(signupData.goals) : null,
-        bio: signupData.bio || null,
+        gender: signupData.gender || undefined,
+        goals: signupData.goals ? JSON.stringify(signupData.goals) : undefined,
+        bio: signupData.bio || undefined,
         profilePic: profilePicUrl,
         credits: 10,
-        location: null,
+        location: undefined,
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString(),
         preferences: JSON.stringify({
-            language: 'en',
-            notifications: true,
+          language: 'en',
+          notifications: true,
         }),
-        age: null,
-        birthday: null,
-        martialStatus: null,
-        fieldOfWork: null,
-        englishLevel: null,
-        languages: [],  // ✅ Empty array, not JSON string
-        interests: [],  // ✅ Empty array, not JSON string
-        personalityTraits: [],  // ✅ Empty array, not JSON string
+        age: undefined,
+        birthday: undefined,
+        martialStatus: undefined,
+        fieldOfWork: undefined,
+        englishLevel: undefined,
+        languages: [],
+        interests: [],
+        personalityTraits: [],
         totalChats: 0,
         totalMatches: 0,
         followingCount: 0,
@@ -120,8 +119,6 @@ export const authService = {
 
       // 4. Auto-login after signup
       await account.createEmailPasswordSession(signupData.email, signupData.password);
-
-
 
       // 5. Create welcome credit transaction
       await databases.createDocument(
@@ -142,7 +139,7 @@ export const authService = {
 
       return {
         user: authUser,
-        profile: userProfile as unknown as UserProfile,
+        profile: userProfile as UserProfile,
       };
     } catch (error: any) {
       console.error('❌ Signup error:', error);
@@ -156,7 +153,7 @@ export const authService = {
   },
 
   /**
-   * LOGIN - Add this function if you don't have it
+   * LOGIN
    */
   async login(loginData: LoginData): Promise<{ user: any; profile: UserProfile }> {
     try {
@@ -178,20 +175,20 @@ export const authService = {
         userId: profileDoc.userId,
         username: profileDoc.username,
         email: profileDoc.email,
-        age: profileDoc.age || undefined,
-        gender: profileDoc.gender || undefined,
-        goals: profileDoc.goals || undefined,
-        bio: profileDoc.bio || undefined,
-        profilePic: profileDoc.profilePic || null,
+        age: profileDoc.age,
+        gender: profileDoc.gender,
+        goals: profileDoc.goals,
+        bio: profileDoc.bio,
+        profilePic: profileDoc.profilePic,
         credits: profileDoc.credits || 0,
-        location: profileDoc.location || undefined,
+        location: profileDoc.location,
         createdAt: profileDoc.createdAt,
         lastActive: profileDoc.lastActive,
         preferences: profileDoc.preferences || JSON.stringify({}),
-        birthday: profileDoc.birthday || undefined,
-        martialStatus: profileDoc.martialStatus || undefined,
-        fieldOfWork: profileDoc.fieldOfWork || undefined,
-        englishLevel: profileDoc.englishLevel || undefined,
+        birthday: profileDoc.birthday,
+        martialStatus: profileDoc.martialStatus,
+        fieldOfWork: profileDoc.fieldOfWork,
+        englishLevel: profileDoc.englishLevel,
         languages: profileDoc.languages || [],
         interests: profileDoc.interests || [],
         personalityTraits: profileDoc.personalityTraits || [],
@@ -201,8 +198,6 @@ export const authService = {
         isVerified: profileDoc.isVerified || false,
         isPremium: profileDoc.isPremium || false
       };
-
-
 
       return {
         user: authUser,
@@ -220,53 +215,42 @@ export const authService = {
   },
 
   /**
-   * UPDATE PROFILE - FIXED VERSION
+   * UPDATE PROFILE - FIXED
    */
   async updateProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
     try {
       console.log('🔄 Updating profile for user:', userId);
       console.log('📝 Updates to apply:', updates);
 
-      // Prepare updates object with proper data types
       const updateData: Record<string, any> = {
         lastActive: new Date().toISOString(),
       };
 
-      // Handle specific fields conversion
+      // Handle each field properly
       Object.entries(updates).forEach(([key, value]) => {
+        // Skip undefined and empty strings
+        if (value === undefined || value === '') {
+          return;
+        }
+
         if (key === 'languages' || key === 'interests' || key === 'personalityTraits') {
-          // Ensure these are arrays for Appwrite
-          if (typeof value === 'string') {
-            try {
-              // Try to parse if it's a JSON string
-              const parsed = JSON.parse(value);
-              updateData[key] = Array.isArray(parsed) ? parsed : [];
-            } catch {
-              // If not JSON, split by comma
-              updateData[key] = value 
-                ? value.split(',').map((item: string) => item.trim()).filter(Boolean)
-                : [];
-            }
-          } else if (Array.isArray(value)) {
+          // Arrays - ensure they're arrays
+          if (Array.isArray(value)) {
             updateData[key] = value;
+          } else if (typeof value === 'string') {
+            updateData[key] = value.split(',').map(s => s.trim()).filter(Boolean);
           } else {
             updateData[key] = [];
           }
         } else if (key === 'goals') {
-          // Store goals as JSON string
-          if (Array.isArray(value)) {
-            updateData[key] = JSON.stringify(value);
-          } else if (typeof value === 'string') {
-            updateData[key] = value;
-          } else {
-            updateData[key] = null;
-          }
-        } else if (key === 'age' && value !== undefined) {
-          // Convert age to number
-          updateData[key] = parseInt(value as string) || null;
+          // Goals stored as JSON string
+          updateData[key] = Array.isArray(value) ? JSON.stringify(value) : value;
+        } else if (key === 'age') {
+          // Age as number
+          updateData[key] = typeof value === 'string' ? parseInt(value) : value;
         } else {
-          // Store other fields as-is
-          updateData[key] = value !== undefined && value !== '' ? value : null;
+          // Everything else
+          updateData[key] = value;
         }
       });
 
@@ -280,21 +264,43 @@ export const authService = {
       );
 
       console.log('✅ Profile updated successfully');
-      return updatedProfile as unknown as UserProfile;
+      
+      return {
+        userId: updatedProfile.userId,
+        username: updatedProfile.username,
+        email: updatedProfile.email,
+        age: updatedProfile.age,
+        gender: updatedProfile.gender,
+        goals: updatedProfile.goals,
+        bio: updatedProfile.bio,
+        profilePic: updatedProfile.profilePic,
+        credits: updatedProfile.credits || 0,
+        location: updatedProfile.location,
+        createdAt: updatedProfile.createdAt,
+        lastActive: updatedProfile.lastActive,
+        preferences: updatedProfile.preferences,
+        birthday: updatedProfile.birthday,
+        martialStatus: updatedProfile.martialStatus,
+        fieldOfWork: updatedProfile.fieldOfWork,
+        englishLevel: updatedProfile.englishLevel,
+        languages: updatedProfile.languages || [],
+        interests: updatedProfile.interests || [],
+        personalityTraits: updatedProfile.personalityTraits || [],
+        totalChats: updatedProfile.totalChats || 0,
+        totalMatches: updatedProfile.totalMatches || 0,
+        followingCount: updatedProfile.followingCount || 0,
+        isVerified: updatedProfile.isVerified || false,
+        isPremium: updatedProfile.isPremium || false
+      };
     } catch (error: any) {
       console.error('❌ Update profile error:', error);
       console.error('Error details:', error.response || error.message);
-      
-      if (error.code === 400) {
-        throw new Error('Invalid data format. Please check your input.');
-      }
-      
       throw new Error(error.message || 'Failed to update profile');
     }
   },
 
   /**
-   * GET CURRENT USER - Enhanced with proper type conversion
+   * GET CURRENT USER
    */
   async getCurrentUser(): Promise<{ user: any; profile: UserProfile } | null> {
     try {
@@ -310,26 +316,25 @@ export const authService = {
         authUser.$id
       );
 
-      // Convert Appwrite document to UserProfile type
       const profile: UserProfile = {
         userId: profileDoc.userId,
         username: profileDoc.username,
         email: profileDoc.email,
-        age: profileDoc.age || undefined,
-        gender: profileDoc.gender || undefined,
-        goals: profileDoc.goals || undefined,
-        bio: profileDoc.bio || undefined,
-        profilePic: profileDoc.profilePic || null,
+        age: profileDoc.age,
+        gender: profileDoc.gender,
+        goals: profileDoc.goals,
+        bio: profileDoc.bio,
+        profilePic: profileDoc.profilePic,
         credits: profileDoc.credits || 0,
-        location: profileDoc.location || undefined,
+        location: profileDoc.location,
         createdAt: profileDoc.createdAt,
         lastActive: profileDoc.lastActive,
         preferences: profileDoc.preferences || JSON.stringify({}),
-        birthday: profileDoc.birthday || undefined,
-        martialStatus: profileDoc.martialStatus || undefined,
-        fieldOfWork: profileDoc.fieldOfWork || undefined,
-        englishLevel: profileDoc.englishLevel || undefined,
-        languages: profileDoc.languages || [],  // Already array in Appwrite
+        birthday: profileDoc.birthday,
+        martialStatus: profileDoc.martialStatus,
+        fieldOfWork: profileDoc.fieldOfWork,
+        englishLevel: profileDoc.englishLevel,
+        languages: profileDoc.languages || [],
         interests: profileDoc.interests || [],
         personalityTraits: profileDoc.personalityTraits || [],
         totalChats: profileDoc.totalChats || 0,
@@ -350,33 +355,26 @@ export const authService = {
   },
 
   /**
-   * LOGOUT - WITH CONVERSATION SERVICE CLEANUP
-   * Ends current session and clears all caches
+   * LOGOUT
    */
   async logout(): Promise<void> {
     try {
-     
-
-      // 2. Delete Appwrite session
       await account.deleteSession('current');
       console.log('✅ User logged out');
     } catch (error: any) {
       console.error('❌ Logout error:', error);
-    
-      
       throw new Error(error.message || 'Failed to logout');
     }
   },
 
   /**
    * FORGOT PASSWORD
-   * Sends password recovery email
    */
   async forgotPassword(email: string): Promise<void> {
     try {
       await account.createRecovery(
         email,
-        `${window.location.origin}/reset-password` // Password reset page
+        `${window.location.origin}/reset-password`
       );
       console.log('✅ Password recovery email sent');
     } catch (error: any) {
@@ -387,7 +385,6 @@ export const authService = {
 
   /**
    * RESET PASSWORD
-   * Updates password using recovery token
    */
   async resetPassword(
     userId: string,
@@ -410,7 +407,6 @@ export const authService = {
 
   /**
    * VERIFY EMAIL
-   * Sends email verification
    */
   async sendVerificationEmail(): Promise<void> {
     try {
@@ -424,7 +420,6 @@ export const authService = {
 
   /**
    * CONFIRM EMAIL VERIFICATION
-   * Verifies email using token
    */
   async verifyEmail(userId: string, secret: string): Promise<void> {
     try {
@@ -438,17 +433,14 @@ export const authService = {
 
   /**
    * DELETE ACCOUNT
-   * Permanently deletes user account and data
    */
   async deleteAccount(userId: string): Promise<void> {
     try {
-     
-      
-      // 2. Delete user profile document
+      // Delete user profile document
       await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USERS, userId);
 
-      // 3. Delete auth account (must be done last)
-      await account.updateStatus(); // This deletes the account
+      // Delete auth account
+      await account.updateStatus();
       
       console.log('✅ Account deleted');
     } catch (error: any) {
