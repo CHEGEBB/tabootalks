@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// lib/hooks/useAuth.ts
+// lib/hooks/useAuth.ts - FIXED VERSION
 'use client';
 
 import { useState, useEffect } from 'react';
 import authService from '@/lib/services/authService';
 
-// Use the SAME interface from authService.ts
 interface UserProfile {
-  userId: string;
+  $id: string; // ✅ Changed from userId to $id
+  userId?: string; // Keep for compatibility
   username: string;
   email: string;
   age?: number;
   gender?: string;
-  goals?: string;  // JSON string
+  goals?: string;
   bio?: string;
   profilePic?: string | null;
   credits: number;
@@ -21,7 +21,7 @@ interface UserProfile {
   lastActive: string;
   preferences: string;
   birthday?: string;
-  martialStatus?: string;  // ✅ Changed to optional
+  martialStatus?: string;
   fieldOfWork?: string;
   englishLevel?: string;
   languages?: string[];
@@ -34,33 +34,61 @@ interface UserProfile {
   isPremium?: boolean;
 }
 
+interface AuthResult {
+  user: any;
+  profile: UserProfile | null;
+}
+
 export const useAuth = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const result = await authService.getCurrentUser();
+  const fetchCurrentUser = async () => {
+    try {
+      setLoading(true);
+      const result = await authService.getCurrentUser();
+      
+      if (result && result.profile) {
+        // ✅ Ensure profile has $id (Appwrite ID)
+        const profileWithId = {
+          ...result.profile,
+          $id: result.profile.$id || result.profile.userId || ''
+        };
         
-        if (result) {
-          setUser(result.user);
-          setProfile(result.profile);
-        } else {
-          setUser(null);
-          setProfile(null);
-        }
-      } catch (err: any) {
-        console.error('Failed to fetch user:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        setUser(result.user);
+        setProfile(profileWithId);
+        console.log('✅ Auth: User loaded:', profileWithId.username, 'ID:', profileWithId.$id);
+      } else {
+        setUser(null);
+        setProfile(null);
+        console.log('⚠️ Auth: No user found');
       }
-    };
+    } catch (err: any) {
+      console.error('❌ Auth error:', err);
+      setError(err.message);
+      setUser(null);
+      setProfile(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchCurrentUser();
+    
+    // Listen for auth state changes
+    const handleAuthChange = () => {
+      fetchCurrentUser();
+    };
+    
+    // Refresh auth on focus
+    window.addEventListener('focus', handleAuthChange);
+    
+    return () => {
+      window.removeEventListener('focus', handleAuthChange);
+    };
   }, []);
 
   const logout = async () => {
@@ -75,13 +103,18 @@ export const useAuth = () => {
     }
   };
 
+  const refresh = () => {
+    fetchCurrentUser();
+  };
+
   return {
     user,
     profile,
     loading,
     error,
     logout,
-    isAuthenticated: !!user,
+    refresh,
+    isAuthenticated: !!profile?.$id,
   };
 };
 

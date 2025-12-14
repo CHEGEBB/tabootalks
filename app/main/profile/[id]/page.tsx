@@ -456,27 +456,7 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Send Message */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Send a Message</h3>
-              <div className="space-y-3">
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder={`Say something nice to ${profile.username}...`}
-                  className="w-full h-24 px-4 py-3 text-sm border border-gray-300 rounded-xl focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none resize-none"
-                  rows={3}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!message.trim()}
-                  className="w-full py-3 bg-[#ff2e2e] text-white rounded-xl font-medium hover:bg-[#e62626] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-                >
-                  <Send className="w-5 h-5" />
-                  Send Message
-                </button>
-              </div>
-            </div>
+          
 
             {/* Interests */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">

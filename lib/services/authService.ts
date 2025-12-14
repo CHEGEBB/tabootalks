@@ -3,10 +3,10 @@
 import { account, databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/config';
 import { ID, OAuthProvider } from 'appwrite';
 import storageService from '@/lib/appwrite/storage';
-import { conversationService } from './conversationService'; // ✅ ADD THIS IMPORT
 
 // Updated UserProfile interface to match Appwrite schema
 interface UserProfile {
+    [x: string]: string;
     userId: string;
     username: string;
     email: string;
@@ -121,9 +121,7 @@ export const authService = {
       // 4. Auto-login after signup
       await account.createEmailPasswordSession(signupData.email, signupData.password);
 
-      // ✅ 4.5 Initialize conversation service after login
-      await conversationService.initialize();
-      console.log('✅ ConversationService initialized after signup');
+
 
       // 5. Create welcome credit transaction
       await databases.createDocument(
@@ -204,9 +202,7 @@ export const authService = {
         isPremium: profileDoc.isPremium || false
       };
 
-      // ✅ 4. Initialize conversation service after successful login
-      await conversationService.initialize();
-      console.log('✅ ConversationService initialized after login');
+
 
       return {
         user: authUser,
@@ -359,18 +355,14 @@ export const authService = {
    */
   async logout(): Promise<void> {
     try {
-      // ✅ 1. Clear conversation service cache FIRST
-      conversationService.clearAllCache();
-      console.log('✅ ConversationService cache cleared');
+     
 
       // 2. Delete Appwrite session
       await account.deleteSession('current');
       console.log('✅ User logged out');
     } catch (error: any) {
       console.error('❌ Logout error:', error);
-      
-      // Even if logout fails, clear the cache
-      conversationService.clearAllCache();
+    
       
       throw new Error(error.message || 'Failed to logout');
     }
@@ -450,8 +442,7 @@ export const authService = {
    */
   async deleteAccount(userId: string): Promise<void> {
     try {
-      // 1. Clear conversation service cache
-      conversationService.clearAllCache();
+     
       
       // 2. Delete user profile document
       await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USERS, userId);
