@@ -583,7 +583,7 @@ export default function ChatPage() {
         <div className="hidden lg:flex w-full max-w-[1400px] mx-auto">
           
           {/* Left Sidebar - Chat List (copied from chats page) */}
-          <div className="w-[400px] flex-shrink-0 border-r border-gray-200 h-full overflow-hidden flex flex-col bg-white scrollbar-thin">
+          <div className="w-[400px] flex-shrink-0 border border-gray-200 h-full overflow-hidden flex flex-col bg-white scrollbar-thin">
             {/* Fixed Header */}
             <div className="bg-white border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between mb-4">
