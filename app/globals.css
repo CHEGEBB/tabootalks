@@ -24,26 +24,29 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
-/* Custom scrollbar for light theme */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+/* Thin custom scrollbar for right sidebar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 5px;
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #5e17eb;
-  border-radius: 5px;
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #4a13c4;
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
 }
 
+/* Firefox */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb transparent;
+}
 /* Safe area for mobile bottom nav */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);

@@ -10,7 +10,6 @@ import Link from 'next/link';
 import { account } from '@/lib/appwrite/config';
 import { useRouter } from 'next/navigation';
 import { OAuthProvider } from 'appwrite';
-import { conversationService } from '@/lib/services/conversationService';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);

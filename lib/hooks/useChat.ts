@@ -1,156 +1,162 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// lib/hooks/useChat.ts
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useChatStore } from '@/store/chatStore';
+// lib/hooks/useChat.ts - FIXED VERSION
+import { useState, useCallback, useRef } from 'react';
+import { sendChatMessage } from '@/lib/chat/chatService';
+import { Message } from '@/types/message';
 
-export const useChat = (botId: string, userId: string) => {
-  const [isTyping, setIsTyping] = useState(false);
-  const [sending, setSending] = useState(false);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+interface UseChatProps {
+  userId: string;
+  botProfileId: string;
+  conversationId?: string;
+  onNewMessage?: (message: Message) => void;
+  onStreamingChunk?: (chunk: string, fullText: string) => void;
+}
+
+export const useChat = (props: UseChatProps) => {
+  const { userId, botProfileId, conversationId, onNewMessage, onStreamingChunk } = props;
   
-  // Fix: Get the entire messagesByBot object, then extract the specific bot's messages
-  // This creates a stable reference that won't cause infinite loops
-  const messagesByBot = useChatStore((state) => state.messagesByBot);
-  const messages = messagesByBot[botId] || [];
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [currentStreamText, setCurrentStreamText] = useState('');
   
-  // Typing indicator management
-  const showTypingIndicator = useCallback(() => {
-    setIsTyping(true);
-    
-    // Auto-hide after 3 seconds if no response
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-    
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false);
-    }, 3000);
-  }, []);
-  
-  const hideTypingIndicator = useCallback(() => {
-    setIsTyping(false);
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = null;
-    }
-  }, []);
-  
-  // Send message with proper flow
+  // For aborting streaming
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Send message with streaming
   const sendMessage = useCallback(async (content: string) => {
-    if (!content.trim() || sending) return;
+    if (!content.trim()) return;
     
-    setSending(true);
+    setIsLoading(true);
+    setError(null);
+    setIsStreaming(true);
+    setCurrentStreamText('');
     
-    try {
-      // 1. Add optimistic user message
-      const userMessage = {
-        id: `optimistic_${Date.now()}`,
-        role: 'user' as const,
-        content: content.trim(),
-        timestamp: new Date().toISOString(),
-        isOptimistic: true
-      };
-      
-      // Add to store
-      useChatStore.getState().addMessage(botId, userMessage);
-      
-      // 2. Show typing indicator for bot
-      showTypingIndicator();
-      
-      // 3. Send to API
-      const response = await fetch('/api/chat/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          botProfileId: botId,
-          message: content.trim()
-        })
+    // Create abort controller for cancelling
+    abortControllerRef.current = new AbortController();
+    
+    // Generate a temporary conversation ID if none exists
+    const tempConversationId = conversationId || `temp_conv_${Date.now()}`;
+    
+    // 1. Add user message optimistically
+    const userMessage: Message = {
+      $id: `temp_user_${Date.now()}`,
+      conversationId: tempConversationId,
+      userId,
+      botProfileId,
+      role: 'user',
+      content: content.trim(),
+      timestamp: new Date().toISOString(),
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    onNewMessage?.(userMessage);
+    
+    // 2. Add placeholder for bot response
+    const botPlaceholder: Message = {
+      $id: `temp_bot_${Date.now()}`,
+      conversationId: tempConversationId,
+      userId,
+      botProfileId,
+      role: 'bot',
+      content: '',
+      timestamp: new Date().toISOString(),
+    };
+    
+    setMessages(prev => [...prev, botPlaceholder]);
+    
+    // 3. Stream the response
+    const result = await sendChatMessage(
+      userId,
+      botProfileId,
+      content.trim(),
+      conversationId,
+      (chunk, fullText) => {
+        // Update streaming text
+        setCurrentStreamText(fullText);
+        
+        // Update the placeholder message with streaming text
+        setMessages(prev => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          if (updated[lastIndex]?.role === 'bot') {
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              content: fullText,
+            };
+          }
+          return updated;
+        });
+        
+        // Call chunk callback
+        onStreamingChunk?.(chunk, fullText);
+      }
+    );
+    
+    setIsLoading(false);
+    setIsStreaming(false);
+    
+    if (result.success) {
+      // Replace placeholder with final message
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastIndex = updated.length - 1;
+        if (updated[lastIndex]?.role === 'bot') {
+          updated[lastIndex] = {
+            ...updated[lastIndex],
+            $id: `msg_${Date.now()}`,
+            content: result.response || '',
+          };
+        }
+        return updated;
       });
       
-      const data = await response.json();
-      
-      if (data.success) {
-        // 4. Remove typing indicator
-        hideTypingIndicator();
-        
-        // 5. Remove optimistic messages and add real ones
-        const currentMessages = useChatStore.getState().messagesByBot[botId] || [];
-        const filteredMessages = currentMessages.filter(m => 
-          !m.isOptimistic
-        );
-        
-        // Add real messages
-        const realMessages = [
-          ...filteredMessages,
-          {
-            id: `user_${Date.now()}`,
-            role: 'user' as const,
-            content: content.trim(),
-            timestamp: new Date().toISOString()
-          },
-          {
-            id: `bot_${Date.now() + 1}`,
-            role: 'bot' as const,
-            content: data.data.botResponse,
-            timestamp: new Date().toISOString()
-          }
-        ];
-        
-        // Update store
-        useChatStore.getState().setMessages(botId, realMessages);
-        
-        // 6. Update conversation list
-        const convs = useChatStore.getState().conversations;
-        const updatedConvs = convs.map(c => 
-          c.botProfileId === botId 
-            ? { 
-                ...c, 
-                lastMessage: data.data.botResponse.substring(0, 40) + '...',
-                lastMessageAt: new Date().toISOString(),
-                messageCount: (c.messageCount || 0) + 2
-              }
-            : c
-        );
-        
-        useChatStore.getState().setConversations(updatedConvs);
-        
-        return { success: true, data: data.data };
-      } else {
-        throw new Error(data.error || 'Failed to send message');
-      }
-    } catch (error: any) {
-      console.error('Error sending message:', error);
-      hideTypingIndicator();
-      
-      // Remove optimistic message on error
-      const currentMessages = useChatStore.getState().messagesByBot[botId] || [];
-      const filteredMessages = currentMessages.filter(m => 
-        !m.isOptimistic
-      );
-      useChatStore.getState().setMessages(botId, filteredMessages);
-      
-      throw error;
-    } finally {
-      setSending(false);
+      // Return the new conversation ID if created
+      return {
+        success: true,
+        conversationId: result.conversationId,
+        creditsUsed: result.creditsUsed,
+      };
+    } else {
+      setError(result.response || 'Failed to send message');
+      // Remove the failed bot placeholder
+      setMessages(prev => prev.slice(0, -1));
+      return { success: false, error: result.response };
     }
-  }, [botId, userId, sending, showTypingIndicator, hideTypingIndicator]);
-  
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
+  }, [userId, botProfileId, conversationId, onNewMessage, onStreamingChunk]);
+
+  // Cancel streaming
+  const cancelStreaming = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIsStreaming(false);
+      setIsLoading(false);
+    }
   }, []);
-  
+
+  // Clear error
+  const clearError = useCallback(() => setError(null), []);
+
+  // Add message to chat (for loading existing messages)
+  const addMessage = useCallback((message: Message) => {
+    setMessages(prev => [...prev, message]);
+  }, []);
+
+  // Clear all messages
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+  }, []);
+
   return {
     messages,
-    isTyping,
-    sending,
     sendMessage,
-    showTypingIndicator,
-    hideTypingIndicator
+    addMessage,
+    clearMessages,
+    isLoading,
+    isStreaming,
+    currentStreamText,
+    error,
+    clearError,
+    cancelStreaming,
   };
 };
