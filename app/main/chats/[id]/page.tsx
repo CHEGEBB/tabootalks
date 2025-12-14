@@ -1063,7 +1063,7 @@ export default function ChatPage() {
               <div className="mb-6">
                 <div className={`flex items-center justify-center gap-2 px-4 py-2 rounded-full ${botProfile?.isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                   <div className={`w-2 h-2 rounded-full ${botProfile?.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                  <span className="font-medium text-sm">{botProfile?.isOnline ? 'Online Now' : 'Offline'}</span>
+                  <span className="font-medium text-sm">{botProfile?.isOnline ? 'Online Now' : 'Online'}</span>
                 </div>
               </div>
 
