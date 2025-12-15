@@ -317,21 +317,21 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onLike, onHold, chi
         </div>
       )}
       {/* LIKE overlay when swiping RIGHT */}
-{isDragging && position.x > 30 && (
-  <div className="absolute top-4 left-4 z-50">
-    <div className="bg-green-500 text-white px-6 py-3 rounded-full font-bold text-xl md:text-2xl shadow-lg animate-pulse border-2 border-white">
-      LIKE ❤️
-    </div>
-  </div>
-)}
+      {isDragging && position.x > 30 && (
+        <div className="absolute top-4 left-4 z-50">
+          <div className="bg-green-500 text-white px-6 py-3 rounded-full font-bold text-xl md:text-2xl shadow-lg animate-pulse border-2 border-white">
+            LIKE ❤️
+          </div>
+        </div>
+      )}
 
-{isDragging && position.x > 30 && (
-  <div className="absolute top-1/2 left-4 transform -translate-y-1/2 z-40">
-    <div className="text-green-500 font-bold text-xl md:text-2xl opacity-70">
-      Swipe to like →
-    </div>
-  </div>
-)}
+      {isDragging && position.x > 30 && (
+        <div className="absolute top-1/2 left-4 transform -translate-y-1/2 z-40">
+          <div className="text-green-500 font-bold text-xl md:text-2xl opacity-70">
+            Swipe to like →
+          </div>
+        </div>
+      )}
 
       {isDragging && position.x < -30 && (
         <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-40">
@@ -442,6 +442,9 @@ export default function PeoplePage() {
   const [modalImageIndex, setModalImageIndex] = useState(0);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   
+  // NEW STATE: For showing animated Chat Now button
+  const [showChatNowButton, setShowChatNowButton] = useState(false);
+  
   // State for dynamic data
   const [users, setUsers] = useState<any[]>([]);
   const [suggestedPeople, setSuggestedPeople] = useState<any[]>([]);
@@ -454,13 +457,13 @@ export default function PeoplePage() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   
- // Load users from Appwrite
-useEffect(() => {
-  if (profile) {
-    loadUsers();
-    loadSuggestedPeople();
-  }
-}, [profile]);
+  // Load users from Appwrite
+  useEffect(() => {
+    if (profile) {
+      loadUsers();
+      loadSuggestedPeople();
+    }
+  }, [profile]);
 
   const loadUsers = async () => {
     if (!profile) {
@@ -567,7 +570,14 @@ useEffect(() => {
         console.error('Error updating like count:', error);
       }
     }
-    // DO NOT change profile on like - only on X/skip
+    
+    // NEW: Show animated Chat Now button
+    setShowChatNowButton(true);
+    
+    // Hide the button after 3 seconds (TikTok-like behavior)
+    setTimeout(() => {
+      setShowChatNowButton(false);
+    }, 3000);
   };
   
   const handleReject = () => {
@@ -687,7 +697,7 @@ useEffect(() => {
             {/* MAIN IMAGE CONTAINER WITH SWIPE FUNCTIONALITY - TALLER RECTANGLE */}
             <div className={`relative z-10 bg-gray-100 rounded-lg md:rounded-xl overflow-hidden shadow transition-all duration-300 ${isAnimatingOut ? 'opacity-0 translate-x-full' : 'opacity-100'}`}>
               <div className="relative h-[600px] md:h-[750px]"> {/* Increased height */}
-              <SwipeReject onReject={handleReject} onLike={handleLike} onHold={handleHold}>
+                <SwipeReject onReject={handleReject} onLike={handleLike} onHold={handleHold}>
                   <div className="relative w-full h-full">
                     {currentUser.photos[currentPhotoIndex] && (
                       <Image
@@ -700,6 +710,19 @@ useEffect(() => {
                     )}
                   </div>
                 </SwipeReject>
+                
+                {/* ANIMATED CHAT NOW BUTTON - Appears when you click like */}
+                {showChatNowButton && (
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce-slow">
+                    <button 
+                      onClick={handleChat}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full font-bold text-xl md:text-2xl shadow-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 animate-pulse flex items-center gap-3 border-4 border-white"
+                    >
+                      <MessageCircle className="w-6 h-6 md:w-8 md:h-8" />
+                      Chat Now
+                    </button>
+                  </div>
+                )}
                 
                 {/* Photo Navigation */}
                 {currentUser.photos.length > 1 && (
@@ -887,16 +910,17 @@ useEffect(() => {
                 </div>
               </div>
             </div>
+            
             {/* SEND MESSAGE BUTTON - Below Main Image */}
-<div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-3 md:p-4">
-  <button 
-    onClick={handleChat}
-    className="w-full py-3 md:py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg md:rounded-xl font-bold text-base md:text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg"
-  >
-    <MessageCircle className="w-5 h-5 md:w-6 md:h-6" />
-    Send Message to {currentUser.name}
-  </button>
-</div>
+            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-3 md:p-4">
+              <button 
+                onClick={handleChat}
+                className="w-full py-3 md:py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg md:rounded-xl font-bold text-base md:text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg"
+              >
+                <MessageCircle className="w-5 h-5 md:w-6 md:h-6" />
+                Send Message to {currentUser.name}
+              </button>
+            </div>
 
             {/* PHOTOS CONTAINER - MODAL ONLY FOR THESE IMAGES */}
             {currentUser.photosCount > 0 && (
@@ -1207,6 +1231,21 @@ useEffect(() => {
           </div>
         </div>
       )}
+      
+      {/* Add custom styles for animation */}
+      <style jsx global>{`
+        @keyframes bounce-slow {
+          0%, 100% {
+            transform: translate(-50%, -50%) scale(1);
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.1);
+          }
+        }
+        .animate-bounce-slow {
+          animation: bounce-slow 2s infinite;
+        }
+      `}</style>
     </div>
   );
 }

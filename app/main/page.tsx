@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, MoreVertical, MapPin, Eye, Gift, Star, Sparkles, Filter, Camera, UserCheck, UserPlus, CheckCircle, ChevronLeft, ChevronRight, X, MessageCircleCodeIcon, MessageCirclePlus, Flag, Shield, AlertCircle, Check, Ban, UserX } from 'lucide-react';
+import { Heart, MessageCircle, MoreVertical, MapPin, Eye, Gift, Star, Sparkles, Filter, Camera, UserCheck, UserPlus, CheckCircle, ChevronLeft, ChevronRight, X, MessageCircleCodeIcon, MessageCirclePlus, Flag, Shield, AlertCircle, Check, Ban, UserX, Activity, Users, Zap, TrendingUp, Award, Clock, BarChart3, Target, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import LayoutController from '@/components/layout/LayoutController';
 import Offer from '@/components/features/credits/CreditOffer';
@@ -14,7 +14,6 @@ import { CiPaperplane } from 'react-icons/ci';
 import { useCredits } from '@/lib/hooks/useCredits';
 import { useChatService } from '@/lib/hooks/useChatService';
 
-// Types for our posts
 interface Post {
   id: string;
   personaId: string;
@@ -46,7 +45,6 @@ interface Post {
   personality?: string;
 }
 
-// Report Abuse Modal Component
 const ReportAbuseModal = ({ 
   isOpen, 
   onClose, 
@@ -97,10 +95,8 @@ const ReportAbuseModal = ({
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Here you would typically send the report to your backend
       console.log('Report submitted:', {
         username,
         reason: selectedReason,
@@ -109,7 +105,6 @@ const ReportAbuseModal = ({
         timestamp: new Date().toISOString()
       });
       
-      // Show success state
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
@@ -131,7 +126,6 @@ const ReportAbuseModal = ({
     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-100 rounded-lg">
@@ -162,7 +156,6 @@ const ReportAbuseModal = ({
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              {/* User Info */}
               <div className="mb-6 p-4 bg-gray-50 rounded-xl">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
@@ -175,7 +168,6 @@ const ReportAbuseModal = ({
                 </div>
               </div>
 
-              {/* Reason Selection */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-900 mb-3">
                   Please tell us what happened. The more details you provide, the better.
@@ -209,7 +201,6 @@ const ReportAbuseModal = ({
                   </div>
                 </div>
 
-                {/* Description */}
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-900 mb-2">
                     Add a detailed description *
@@ -223,7 +214,6 @@ const ReportAbuseModal = ({
                   />
                 </div>
 
-                {/* Email */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-900 mb-2">
                     Your email address *
@@ -242,7 +232,6 @@ const ReportAbuseModal = ({
                 </div>
               </div>
 
-              {/* Terms Notice */}
               <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
                 <div className="flex gap-3">
                   <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -257,7 +246,6 @@ const ReportAbuseModal = ({
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -292,7 +280,6 @@ const ReportAbuseModal = ({
   );
 };
 
-// Three Dots Dropdown Component
 const PostOptionsDropdown = ({ 
   post, 
   isOpen, 
@@ -375,11 +362,6 @@ const PostOptionsDropdown = ({
   );
 };
 
-const handleBuyCredits = () => {
-  window.location.href = '/main/credits';
-}
-
-// Skeleton loader component
 const PostSkeleton = () => (
   <div className="border border-gray-200 rounded-xl overflow-hidden bg-white animate-pulse">
     <div className="p-5">
@@ -430,7 +412,6 @@ const ProfileCardSkeleton = () => (
   </div>
 );
 
-// Helper function to calculate time ago
 const getTimeAgo = (dateString: string) => {
   const date = new Date(dateString);
   const now = new Date();
@@ -446,13 +427,11 @@ const getTimeAgo = (dateString: string) => {
   return `${Math.floor(diffDays / 7)}w ago`;
 };
 
-// Helper function to get random distance (for demo)
 const getRandomDistance = () => {
   const distances = ['2 km', '3 km', '5 km', '8 km', '12 km', '15 km'];
   return distances[Math.floor(Math.random() * distances.length)];
 };
 
-// Helper function to convert persona to post format
 const convertPersonaToPost = (persona: ParsedPersonaProfile, index: number): Post => {
   const randomOnline = Math.random() > 0.3;
   const randomFollowing = Math.random() > 0.7;
@@ -489,7 +468,6 @@ const convertPersonaToPost = (persona: ParsedPersonaProfile, index: number): Pos
   };
 };
 
-// Enhanced Image Modal Component
 const EnhancedImageModal = ({ 
   images, 
   initialIndex, 
@@ -660,13 +638,19 @@ export default function HomePage() {
   }>({ post: null, initialIndex: 0 });
   const [likingPost, setLikingPost] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'following'>('all');
-  const [currentUser] = useState({
-    name: 'David',
-    credits: 150,
-    location: 'Berlin, Germany'
+  
+  const [activityStats, setActivityStats] = useState({
+    totalLikes: 0,
+    followingCount: 0,
+    profilesViewed: 0,
+    onlineNow: 0,
+    activeChats: 0,
+    totalMessages: 0,
+    averageResponseTime: '2m',
+    longestConversation: '45m',
+    mostActiveHour: '8 PM'
   });
 
-  // New states for report functionality
   const [openDropdownPostId, setOpenDropdownPostId] = useState<string | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedPostForReport, setSelectedPostForReport] = useState<Post | null>(null);
@@ -678,6 +662,32 @@ export default function HomePage() {
   const { credits: userCredits, isLoading: creditsLoading, refreshCredits } = useCredits();
 
   const ITEMS_PER_PAGE = 6;
+
+  const calculateActivityStats = (postsData: Post[]) => {
+    const totalLikes = postsData.reduce((acc, post) => acc + post.likes, 0);
+    const followingCount = postsData.filter(p => p.isFollowing).length;
+    const profilesViewed = postsData.length;
+    const onlineNow = postsData.filter(p => p.isOnline).length;
+    
+    const totalMessages = postsData.reduce((acc, post) => acc + post.comments, 0);
+    const activeChats = postsData.filter(p => p.comments > 0).length;
+    
+    const responseTimes = ['1m', '2m', '3m', '5m', '10m'];
+    const conversationLengths = ['15m', '30m', '45m', '1h', '2h'];
+    const hours = ['2 PM', '6 PM', '8 PM', '10 PM', '12 AM'];
+    
+    setActivityStats({
+      totalLikes,
+      followingCount,
+      profilesViewed,
+      onlineNow,
+      activeChats,
+      totalMessages,
+      averageResponseTime: responseTimes[Math.floor(Math.random() * responseTimes.length)],
+      longestConversation: conversationLengths[Math.floor(Math.random() * conversationLengths.length)],
+      mostActiveHour: hours[Math.floor(Math.random() * hours.length)]
+    });
+  };
 
   useEffect(() => {
     if (!authLoading && !isChecking && !isLoadingRef.current) {
@@ -693,11 +703,14 @@ export default function HomePage() {
     loadedIdsRef.current.clear();
     
     try {
-      console.log('🎯 Loading data for user:', profile.username, 'Gender pref:', profile.gender);
+      const randomOffset = Math.floor(Math.random() * 30);
+      const randomPersonas = await personaService.smartFetchPersonas(profile, {
+        limit: ITEMS_PER_PAGE * 3,
+        offset: randomOffset
+      });
       
-      const randomPersonas = await personaService.smartFetchPersonas(profile);
-      
-      const postsData = randomPersonas.slice(0, ITEMS_PER_PAGE).map((persona, index) => {
+      const shuffledPersonas = randomPersonas.sort(() => Math.random() - 0.5);
+      const postsData = shuffledPersonas.slice(0, ITEMS_PER_PAGE).map((persona, index) => {
         const post = convertPersonaToPost(persona, index);
         loadedIdsRef.current.add(persona.$id);
         return post;
@@ -706,14 +719,16 @@ export default function HomePage() {
       setPosts(postsData);
       postsRef.current = postsData;
       
-      const suggestedPersonas = await personaService.smartFetchWithVariety(
-        profile,
-        randomPersonas.map(p => p.$id)
-      );
+      calculateActivityStats(postsData);
       
-      const suggestedData = suggestedPersonas.slice(0, 6).map((persona, index) => 
-        convertPersonaToPost(persona, index + ITEMS_PER_PAGE)
-      );
+      const suggestedPersonas = await personaService.smartFetchPersonas(profile, {
+        limit: 6,
+        offset: Math.floor(Math.random() * 20)
+      });
+      const suggestedData = suggestedPersonas
+      .filter(persona => !loadedIdsRef.current.has(persona.$id))
+      .slice(0, 6)
+      .map((persona, index) => convertPersonaToPost(persona, index + ITEMS_PER_PAGE));
       setSuggestedPeople(suggestedData);
       
       setPage(1);
@@ -762,6 +777,8 @@ export default function HomePage() {
       postsRef.current = updatedPosts;
       setPosts(updatedPosts);
       
+      calculateActivityStats(updatedPosts);
+      
       setPage(prev => prev + 1);
       
       if (updatedPosts.length >= 52) {
@@ -775,6 +792,7 @@ export default function HomePage() {
       isLoadingRef.current = false;
     }
   };
+
   useEffect(() => {
     const handleScroll = () => {
       if (
@@ -791,7 +809,6 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isLoadingMore, hasMore, page]);
 
-  // Show success toast for report
   useEffect(() => {
     if (showReportSuccessToast) {
       const timer = setTimeout(() => {
@@ -851,7 +868,6 @@ export default function HomePage() {
   };
 
   const handleChat = (personaId: string) => {
-    // Use the correct route format
     router.push(`/main/chats/${personaId}`);
   };
 
@@ -1022,7 +1038,6 @@ export default function HomePage() {
     <div className="min-h-screen bg-white text-gray-900">
       <LayoutController />
 
-      {/* Report Success Toast */}
       {showReportSuccessToast && (
         <div className="fixed top-4 right-4 z-[100]">
           <div className="bg-green-50 border border-green-200 rounded-xl shadow-lg p-4 flex items-center gap-3 animate-slide-in">
@@ -1347,46 +1362,62 @@ export default function HomePage() {
 
           <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="sticky top-24 space-y-6">
-              <div className="p-6 border border-gray-200 rounded-xl bg-white">
+              <div className="p-6 border border-gray-200 rounded-xl bg-white shadow-sm">
                 <div className="flex items-center justify-between mb-5">
-                  <h3 className="font-bold text-lg text-gray-900">Suggestions For You</h3>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-amber-500" />
+                    <h3 className="font-bold text-lg text-gray-900">Suggested People</h3>
+                  </div>
                   <button 
                     onClick={() => loadInitialData()}
-                    className="text-sm text-[#5e17eb] hover:underline font-medium transition-colors"
+                    className="text-sm text-[#5e17eb] hover:text-[#4a13c4] font-medium flex items-center gap-1 transition-colors"
                   >
+                    <RefreshCw className="w-4 h-4" />
                     Refresh
                   </button>
                 </div>
                 <div className="space-y-4">
                   {suggestedPeople.map((person, index) => (
-                    <div key={`suggestion-${person.id}-${index}`} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                    <div 
+                      key={`suggestion-${person.id}-${index}`} 
+                      className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-all duration-200 hover:shadow-sm group cursor-pointer"
+                      onClick={() => router.push(`/main/profile/${person.personaId}`)}
+                    >
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <div className="w-12 h-12 rounded-full overflow-hidden">
+                          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm">
                             <Image
                               src={person.imageUrl}
                               alt={person.username}
                               width={48}
                               height={48}
-                              className="object-cover"
+                              className="object-cover group-hover:scale-110 transition-transform duration-300"
                             />
                           </div>
                           {person.isOnline && (
-                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white group-hover:scale-110 transition-transform"></div>
                           )}
                         </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{person.username}</div>
-                          <div className="text-xs text-gray-500 flex items-center gap-1">
+                        <div className="min-w-0">
+                          <div className="font-medium text-gray-900 truncate flex items-center gap-1">
+                            {person.username}
+                            {person.isVerified && (
+                              <CheckCircle className="w-3.5 h-3.5 text-blue-500 fill-blue-100 flex-shrink-0" />
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500 flex items-center gap-1 truncate">
                             <MapPin size={10} />
                             {person.location}
                           </div>
-                          <div className="text-xs text-gray-500">{person.age} years</div>
+                          <div className="text-xs text-gray-500">{person.age} years • {person.distance}</div>
                         </div>
                       </div>
                       <button 
-                        onClick={() => handleViewProfile(person.personaId)}
-                        className="px-3 py-1.5 bg-[#5e17eb] text-white text-xs rounded-lg hover:bg-[#4a13c4] transition-all duration-200"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/main/profile/${person.personaId}`);
+                        }}
+                        className="px-3 py-1.5 bg-[#5e17eb] text-white text-xs rounded-lg hover:bg-[#4a13c4] transition-all duration-200 hover:scale-105 shadow-sm"
                       >
                         View
                       </button>
@@ -1395,15 +1426,15 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="p-6 border border-gray-200 rounded-xl bg-gradient-to-br from-[#5e17eb]/5 to-white">
+              <div className="p-6 border border-gray-200 rounded-xl bg-gradient-to-br from-[#5e17eb]/5 to-white shadow-sm">
                 <h3 className="font-bold mb-4 text-gray-900 flex items-center gap-2">
-                  <Star size={18} className="text-[#5e17eb]" />
+                  <Zap size={18} className="text-[#5e17eb]" />
                   Your Credits
                 </h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
                     <div>
-                      <div className="font-medium text-gray-600">Balance</div>
+                      <div className="font-medium text-gray-600 text-sm">Balance</div>
                       {creditsLoading ? (
                         <div className="h-10 w-24 bg-gray-200 rounded animate-pulse mt-2"></div>
                       ) : (
@@ -1412,45 +1443,138 @@ export default function HomePage() {
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-gray-500">Active</div>
-                      <div className="text-sm text-green-600 font-medium">✓ Valid</div>
+                      <div className="text-sm text-green-600 font-medium flex items-center gap-1">
+                        <CheckCircle className="w-4 h-4" />
+                        Valid
+                      </div>
                     </div>
                   </div>
                   <button 
-                    className="w-full py-3.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" 
+                    className="w-full py-3.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm" 
                     onClick={() => router.push('/main/credits')}
                     disabled={creditsLoading}
                   >
-                    {creditsLoading ? 'Loading...' : 'Buy More Credits'}
+                    {creditsLoading ? 'Loading...' : '💎 Buy More Credits'}
                   </button>
                 </div>
               </div>
 
-              <div className="p-6 border border-gray-200 rounded-xl bg-white">
-                <h3 className="font-bold mb-5 text-gray-900">Your Activity</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-[#5e17eb]">
-                      {posts.reduce((acc, post) => acc + post.likes, 0).toLocaleString()}
+              <div className="p-6 border border-gray-200 rounded-xl bg-white shadow-sm">
+                <h3 className="font-bold mb-5 text-gray-900 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-[#5e17eb]" />
+                  Your Activity
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#5e17eb] to-purple-500 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">People Online</p>
+                          <p className="text-2xl font-bold text-gray-900">{activityStats.onlineNow}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-gray-500">Active Now</div>
+                        <div className="text-xs font-medium text-green-600 flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                          Live
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">Total Likes</div>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-[#5e17eb]">
-                      {posts.filter(p => p.isFollowing).length}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="w-4 h-4 text-blue-600" />
+                        <p className="text-xs text-gray-600">Following</p>
+                      </div>
+                      <p className="text-xl font-bold text-gray-900">{activityStats.followingCount}</p>
                     </div>
-                    <div className="text-xs text-gray-500">Following</div>
+
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <BarChart3 className="w-4 h-4 text-green-600" />
+                        <p className="text-xs text-gray-600">Likes</p>
+                      </div>
+                      <p className="text-xl font-bold text-gray-900">
+                        {activityStats.totalLikes >= 1000 
+                          ? `${(activityStats.totalLikes / 1000).toFixed(1)}k`
+                          : activityStats.totalLikes}
+                      </p>
+                    </div>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-[#5e17eb]">
-                      {posts.length}
+
+                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-100">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-amber-600" />
+                        <p className="text-sm font-medium text-gray-900">Messages Sent</p>
+                      </div>
+                      <span className="text-xs font-bold text-amber-700">{activityStats.totalMessages}</span>
                     </div>
-                    <div className="text-xs text-gray-500">Profiles Viewed</div>
+                    <div className="flex items-center justify-between text-xs text-gray-600">
+                      <span>Active chats: {activityStats.activeChats}</span>
+                      <span>⚡ Fast replies</span>
+                    </div>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-[#5e17eb]">
-                      {posts.filter(p => p.isOnline).length}
+                </div>
+
+                <div className="mt-6">
+                  <h4 className="font-bold text-gray-900 mb-3 text-sm">Quick Stats</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Avg. Response</span>
+                      </div>
+                      <span className="font-medium text-gray-900">{activityStats.averageResponseTime}</span>
                     </div>
-                    <div className="text-xs text-gray-500">Online Now</div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Award className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Most Active</span>
+                      </div>
+                      <span className="font-medium text-gray-900">{activityStats.mostActiveHour}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <h4 className="font-bold text-gray-900 mb-3 text-sm">Quick Actions</h4>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => router.push('/main/people')}
+                      className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white font-medium rounded-xl hover:from-[#4a13c4] hover:to-[#7238ff] transition-all shadow-sm flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Users className="w-4 h-4" />
+                      Discover More People
+                    </button>
+                    <button
+                      onClick={() => router.push('/main/chats')}
+                      className="w-full py-3 border border-[#5e17eb] text-[#5e17eb] font-medium rounded-xl hover:bg-purple-50 transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      View All Chats
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
+                  <h5 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-sm">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    Pro Tip
+                  </h5>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Send messages during peak hours (6 PM - 10 PM) for faster responses!
+                  </p>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>Response rate: 95%</span>
+                    <span>Peak hours</span>
                   </div>
                 </div>
               </div>
@@ -1459,7 +1583,6 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* Report Abuse Modal */}
       {selectedPostForReport && (
         <ReportAbuseModal
           isOpen={showReportModal}
