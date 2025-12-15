@@ -3,7 +3,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Mail, Lock, Eye, EyeOff, User, Sparkles, Camera, Heart, ChevronRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, Sparkles, Camera, Heart, ChevronRight, ChevronLeft, LogIn } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -39,8 +39,8 @@ const SignupWizard = () => {
   const [windowWidth, setWindowWidth] = useState<number>(0);
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
-const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-const [errorMessage, setErrorMessage] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const router = useRouter();
   
   const [formData, setFormData] = useState<FormData>({
@@ -84,7 +84,7 @@ const [errorMessage, setErrorMessage] = useState<string>('');
     'https://images.unsplash.com/photo-1519058082700-08a0b56da9b4?w=500&h=500&fit=crop',
     'https://images.unsplash.com/photo-1503443207922-dff7d543fd0e?w=500&h=500&fit=crop',
     'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?w=500&h=500&fit=crop',
-    'https://images.unsplash.com/photo-1507101105822-7472b28e22ac?w=500&h=500&fit=crop',
+    'https://images.unsplash.com/phone-1507101105822-7472b28e22ac?w=500&h=500&fit=crop',
   ];
 
   // SVG illustration data
@@ -149,6 +149,13 @@ const [errorMessage, setErrorMessage] = useState<string>('');
 
   const currentIllustration = illustrationData[step] || illustrationData[0];
   const totalSteps = 8;
+
+  // NEW: Go back function
+  const handleBack = () => {
+    if (step > 0) {
+      setStep(step - 1);
+    }
+  };
 
   const handleNext = async () => {
     // If not on final step, just go to next step
@@ -218,6 +225,11 @@ const [errorMessage, setErrorMessage] = useState<string>('');
     window.location.href = '/main';
   };
 
+  // NEW: Handle login navigation
+  const handleLogin = () => {
+    router.push('/login');
+  };
+
   // Animation variants for steps
   const stepVariants: Variants = {
     hidden: { opacity: 0, scale: 0.92, y: 30 },
@@ -270,87 +282,141 @@ const [errorMessage, setErrorMessage] = useState<string>('');
       <AnimatePresence>
         {showSuccess && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop - REMOVED COLOR OVERLAY */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
             >
-              {/* Success Modal */}
+              {/* IMPROVED SUCCESS MODAL */}
               <motion.div
                 initial="hidden"
                 animate="visible"
                 variants={successVariants}
-                className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
+                className="bg-gradient-to-br from-white to-gray-50 rounded-3xl max-w-md w-full shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden border border-gray-200"
               >
-                {/* Modal Header */}
-                <div className="bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] p-6 text-center">
-                  <h2 className="text-2xl font-bold text-white">Taboo Talks</h2>
+                {/* Modal Header - IMPROVED */}
+                <div className="relative bg-[#ff2e2e] p-6 text-center overflow-hidden ">
+                  {/* Animated background elements */}
+                  <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+                  <div className="absolute bottom-0 right-0 w-40 h-40 bg-white/10 rounded-full translate-x-1/3 translate-y-1/3"></div>
+                  
+                  <div className="relative z-10">
+                   <Image
+                      src="/assets/logo.png"
+                      alt="Taboo Talks Logo"
+                      width={220}
+                      height={60}
+                      className="object-contain mx-auto mb-2"
+                      priority
+                      />
+                    <div className="flex justify-center mt-2">
+                      <div className="w-12 h-1 bg-white/50 rounded-full"></div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Modal Content */}
-                <div className="p-6">
-                  {/* Success Icon */}
-                  <div className="flex justify-center mb-4">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                      <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
+                {/* Modal Content - IMPROVED */}
+                <div className="p-8">
+                  {/* Success Icon - AWESOME VERSION */}
+                  <div className="flex justify-center mb-6">
+                    <div className="relative">
+                      {/* Outer ring */}
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.1 }}
+                        className="w-20 h-20 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg"
+                      >
+                        {/* Inner ring */}
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                          <motion.div
+                            initial={{ scale: 0, rotate: -180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ delay: 0.2, type: "spring" }}
+                          >
+                            <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          </motion.div>
+                        </div>
+                      </motion.div>
+                      
+                      {/* Floating particles */}
+                      {[...Array(3)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.3 + i * 0.1 }}
+                          className="absolute w-2 h-2 bg-yellow-400 rounded-full"
+                          style={{
+                            top: `${Math.random() * 40 + 20}%`,
+                            left: `${Math.random() * 40 + 20}%`,
+                          }}
+                        ></motion.div>
+                      ))}
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-bold text-center text-gray-900 mb-4">Well done!</h3>
+                  <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Welcome aboard! 🎉</h3>
                   
-                  <p className="text-gray-600 text-center mb-6">
+                  <p className="text-gray-600 text-center mb-2 font-medium">
+                    Your journey begins now
+                  </p>
+                  <p className="text-gray-500 text-center text-sm mb-8">
                     Before you continue, please briefly read how our platform works:
                   </p>
 
-                  {/* Platform Info */}
-                  <div className="space-y-4 mb-6">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#ff2e2e] flex items-center justify-center">
+                  {/* Platform Info - IMPROVED */}
+                  <div className="space-y-4 mb-8">
+                    <div className="flex items-start space-x-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-purple-200 transition-colors">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-[#ff2e2e] to-[#ff416c] flex items-center justify-center">
                         <span className="text-white text-xs font-bold">1</span>
                       </div>
-                      <p className="text-gray-700 text-sm">
-                        Registration and browsing are free. However, for certain functions like chats or messages, you need credits.
+                      <p className="text-gray-700 text-sm leading-relaxed">
+                        <span className="font-semibold text-gray-900">Registration and browsing are free.</span> However, for certain functions like chats or messages, you need credits.
                       </p>
                     </div>
                     
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#5e17eb] flex items-center justify-center">
+                    <div className="flex items-start space-x-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-purple-200 transition-colors">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#ff2e2e] flex items-center justify-center">
                         <span className="text-white text-xs font-bold">2</span>
                       </div>
-                      <p className="text-gray-700 text-sm">
-                        We provide a communication platform but cannot guarantee success for your conversations.
+                      <p className="text-gray-700 text-sm leading-relaxed">
+                        <span className="font-semibold text-gray-900">We provide a communication platform</span> but cannot guarantee success for your conversations.
                       </p>
                     </div>
 
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#ff2e2e] flex items-center justify-center">
+                    <div className="flex items-start space-x-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-purple-200 transition-colors">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#ff2e2e] flex items-center justify-center">
                         <span className="text-white text-xs font-bold">3</span>
                       </div>
-                      <p className="text-gray-700 text-sm">
-                        You will be connected with top users who use TabooTalks for free as long as they want.
+                      <p className="text-gray-700 text-sm leading-relaxed">
+                        <span className="font-semibold text-gray-900">Connect with top users</span> who use TabooTalks for free as long as they want.
                       </p>
                     </div>
                   </div>
 
-                  {/* Divider */}
-                  <div className="border-t border-gray-200 my-4"></div>
-
-                  {/* Continue Button */}
+                  {/* Continue Button - IMPROVED */}
                   <motion.button
                     onClick={handleContinueToHome}
-                    whileHover={{ scale: 1.02 }}
+                    whileHover={{ scale: 1.03, boxShadow: "0 10px 25px -5px rgba(94, 23, 235, 0.4)" }}
                     whileTap={{ scale: 0.98 }}
-                    className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-3 rounded-full shadow-lg hover:shadow-xl transition-all"
+                    className="w-full bg-[#5e17eb] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all relative overflow-hidden group"
                   >
-                    Continue
+                    {/* Shine effect */}
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                    
+                    <span className="relative flex items-center justify-center space-x-2">
+                      <span>Let&apos;s Get Started</span>
+                      <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </span>
                   </motion.button>
 
-                  <p className="text-xs text-gray-500 text-center mt-4">
-                    By continuing, you agree to our Terms and Privacy Policy
+                  <p className="text-xs text-gray-400 text-center mt-4 pt-4 border-t border-gray-100">
+                    By continuing, you agree to our <a href="#" className="text-[#5e17eb] font-medium hover:underline">Terms</a> and <a href="#" className="text-[#5e17eb] font-medium hover:underline">Privacy Policy</a>
                   </p>
                 </div>
               </motion.div>
@@ -583,7 +649,7 @@ const [errorMessage, setErrorMessage] = useState<string>('');
                   />
                 </div>
                 
-                {/* Progress Bar */}
+                {/* Progress Bar - FIXED FOR GOOGLE TRANSLATE ISSUE */}
                 <div className="px-6 pb-2">
                   <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                     <motion.div
@@ -593,8 +659,14 @@ const [errorMessage, setErrorMessage] = useState<string>('');
                       transition={{ duration: 0.3 }}
                     />
                   </div>
-                  <p className="text-sm text-gray-500 text-center mt-2 font-medium">
-                    {step + 1}/{totalSteps} Questions
+                  {/* FIX: Using separate spans to prevent Google Translate from breaking the format */}
+                  <p className="text-sm text-gray-500 text-center mt-2 font-medium notranslate">
+                    <span className="step-counter">
+                      <span className="current-step">{step + 1}</span>
+                      <span className="separator">/</span>
+                      <span className="total-steps">{totalSteps}</span>
+                    </span>
+                    <span className="translatable-text"> Questions</span>
                   </p>
                 </div>
 
@@ -608,6 +680,20 @@ const [errorMessage, setErrorMessage] = useState<string>('');
                       exit="exit"
                       variants={stepVariants}
                     >
+                      {/* NEW: Back button for all steps except first */}
+                      {step > 0 && (
+                        <motion.button
+                          onClick={handleBack}
+                          className="flex items-center text-gray-500 hover:text-gray-700 mb-4 group"
+                          whileHover={{ x: -2 }}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                        >
+                          <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-0.5 transition-transform" />
+                          <span className="text-sm font-medium">Back</span>
+                        </motion.button>
+                      )}
+
                       {/* Step 0: Welcome */}
                       {step === 0 && (
                         <motion.div 
@@ -662,6 +748,20 @@ const [errorMessage, setErrorMessage] = useState<string>('');
                             <span>Let&apos;s go!</span>
                             <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
                           </motion.button>
+
+                          {/* NEW: Already have an account login link */}
+                          <div className="mt-6 pt-4 border-t border-gray-100">
+                            <p className="text-gray-600 text-sm">
+                              Already have an account?{' '}
+                              <button
+                                onClick={handleLogin}
+                                className="text-[#ff2e2e] font-semibold hover:underline inline-flex items-center"
+                              >
+                                Login here
+                                <LogIn className="w-3 h-3 ml-1" />
+                              </button>
+                            </p>
+                          </div>
                         </motion.div>
                       )}
 
@@ -952,14 +1052,14 @@ const [errorMessage, setErrorMessage] = useState<string>('');
                           
                           <p className="text-xs text-gray-400 text-center mb-4">Reset password anytime</p>
                           <motion.button
-  onClick={handleNext}
-  disabled={!formData.password || formData.password.length < 6 || isSubmitting}
-  className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-  whileHover={{ scale: formData.password && formData.password.length >= 6 && !isSubmitting ? 1.02 : 1 }}
-  whileTap={{ scale: formData.password && formData.password.length >= 6 && !isSubmitting ? 0.98 : 1 }}
->
-  {isSubmitting ? 'Creating Account...' : 'Complete Signup'}
-</motion.button>
+                            onClick={handleNext}
+                            disabled={!formData.password || formData.password.length < 6 || isSubmitting}
+                            className="w-full bg-[#ff2e2e] text-white font-bold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            whileHover={{ scale: formData.password && formData.password.length >= 6 && !isSubmitting ? 1.02 : 1 }}
+                            whileTap={{ scale: formData.password && formData.password.length >= 6 && !isSubmitting ? 0.98 : 1 }}
+                          >
+                            {isSubmitting ? 'Creating Account...' : 'Complete Signup'}
+                          </motion.button>
                         </motion.div>
                       )}
                     </motion.div>
@@ -1067,7 +1167,10 @@ const [errorMessage, setErrorMessage] = useState<string>('');
                 {/* Step indicator */}
                 <div className="absolute top-3 right-3">
                   <div className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm shadow-sm">
-                    <span className="text-xs font-medium text-gray-700">Step {step + 1}/{totalSteps}</span>
+                    {/* FIXED FOR GOOGLE TRANSLATE */}
+                    <span className="text-xs font-medium text-gray-700 notranslate">
+                      Step <span className="step-num">{step + 1}</span>/<span className="total-steps">{totalSteps}</span>
+                    </span>
                   </div>
                 </div>
               </motion.div>
