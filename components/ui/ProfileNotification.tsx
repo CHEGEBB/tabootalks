@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowRight, ChevronDown, Bell, User, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
+import personaService, { ParsedPersonaProfile, UserProfile } from '@/lib/services/personaService';
 
 // Placeholder image for fallback
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop';
@@ -31,6 +31,7 @@ interface ProfileNotificationProps {
   maxInterval?: number;
   notificationDuration?: number;
   position?: 'top-center' | 'top-right' | 'top-left';
+  currentUser?: UserProfile | null;
 }
 
 interface CurrentNotification {
@@ -44,7 +45,8 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
   minInterval = 180000,
   maxInterval = 360000,
   notificationDuration = 10000,
-  position = 'top-center'
+  position = 'top-center',
+  currentUser = null
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [currentNotification, setCurrentNotification] = useState<CurrentNotification | null>(null);
@@ -65,25 +67,50 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
     isVisibleRef.current = isVisible;
   }, [isVisible]);
 
-  // Fetch random profiles from Appwrite
+  // Fetch random profiles based on user preferences
   const fetchRandomProfiles = async () => {
     try {
       console.log('🔍 Fetching random profiles for notifications...');
       
-      const randomProfiles = await personaService.getRandomPersonas(10);
-      
-      const validProfiles = randomProfiles.filter(profile => 
+      if (!currentUser) {
+        console.log('⚠️ No current user found, fetching generic random profiles');
+        const randomProfiles = await personaService.getRandomPersonas(20);
+        const validProfiles = randomProfiles.filter(profile => 
+          profile.profilePic && profile.username
+        );
+        console.log(`✅ Fetched ${validProfiles.length} valid profiles`);
+        setProfiles(validProfiles);
+        return validProfiles;
+      }
+
+      console.log('👤 Using user preferences for notifications:', {
+        username: currentUser.username,
+        genderPreference: currentUser.gender
+      });
+
+      // Use smartFetchPersonas to respect user's gender preferences
+      const filteredProfiles = await personaService.smartFetchPersonas(currentUser, {
+        limit: 20
+      });
+
+      // Filter out profiles without required data
+      const validProfiles = filteredProfiles.filter(profile => 
         profile.profilePic && profile.username
       );
+
+      console.log(`✅ Fetched ${validProfiles.length} valid profiles based on user preferences`);
       
-      console.log(`✅ Fetched ${validProfiles.length} valid profiles for notifications`);
       setProfiles(validProfiles);
-      
       return validProfiles;
       
     } catch (error) {
       console.error('❌ Error fetching profiles for notifications:', error);
-      return [];
+      const randomProfiles = await personaService.getRandomPersonas(10);
+      const validProfiles = randomProfiles.filter(profile => 
+        profile.profilePic && profile.username
+      );
+      setProfiles(validProfiles);
+      return validProfiles;
     }
   };
 
@@ -110,12 +137,10 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
   // Show notification
   const showNotification = async () => {
     if (isVisibleRef.current || hasClickedRef.current || hasSeenRef.current) {
-      // If already visible or user engaged recently, reschedule
       scheduleNextNotification();
       return;
     }
 
-    // Get profiles (fetch if we don't have any)
     let profilesToUse = profiles;
     if (!profilesToUse || profilesToUse.length === 0) {
       profilesToUse = await fetchRandomProfiles();
@@ -127,7 +152,6 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
       return;
     }
 
-    // Pick random profile
     const randomProfile = profilesToUse[Math.floor(Math.random() * profilesToUse.length)];
     
     if (!randomProfile.username || !randomProfile.profilePic) {
@@ -148,13 +172,10 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
     setImageError(false);
     setIsVisible(true);
     setProgress(100);
-    hasSeenRef.current = true; // Mark as seen
-    hasClickedRef.current = false; // Reset click tracking
+    hasSeenRef.current = true;
+    hasClickedRef.current = false;
 
-    // Start progress bar countdown
     startProgressCountdown();
-
-    // Schedule next notification after current one disappears
     scheduleNextNotification();
   };
 
@@ -171,7 +192,7 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
         if (prev <= 0) {
           setIsVisible(false);
           setCurrentNotification(null);
-          hasSeenRef.current = false; // Reset seen flag
+          hasSeenRef.current = false;
           return 100;
         }
         return prev - decrement;
@@ -197,7 +218,6 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
   useEffect(() => {
     if (!autoShow) return;
 
-    // Fetch profiles and show first notification after 3 seconds
     const init = async () => {
       await fetchRandomProfiles();
       
@@ -208,13 +228,12 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
 
     init();
 
-    // Cleanup function
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (progressRef.current) clearInterval(progressRef.current);
       if (nextNotificationRef.current) clearTimeout(nextNotificationRef.current);
     };
-  }, [autoShow]);
+  }, [autoShow, currentUser]);
 
   // Pause progress bar on hover
   useEffect(() => {
@@ -236,32 +255,27 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
   const handleViewProfile = () => {
     if (!currentNotification) return;
     
-    // Mark that user clicked
     hasClickedRef.current = true;
     hasSeenRef.current = false;
     
-    // Clear any scheduled notifications
     if (nextNotificationRef.current) {
       clearTimeout(nextNotificationRef.current);
     }
     
-    // Navigate to actual profile page with persona ID
     router.push(`/main/profile/${currentNotification.profile.$id}`);
     setIsVisible(false);
     setCurrentNotification(null);
     
-    // Don't show another notification for at least 7 minutes after click
     setTimeout(() => {
       hasClickedRef.current = false;
       scheduleNextNotification();
-    }, 420000); // 7 minutes
+    }, 420000);
   };
 
   const handleClose = () => {
     setIsVisible(false);
     setCurrentNotification(null);
     hasSeenRef.current = false;
-    // When manually closed, wait before next notification
     scheduleNextNotification();
   };
 
