@@ -653,7 +653,7 @@ const SignupWizard = () => {
                 <div className="px-6 pb-2">
                   <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                     <motion.div
-                      className="h-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb]"
+                      className="h-full bg-[#5e17eb]"
                       initial={{ width: 0 }}
                       animate={{ width: `${((step + 1) / totalSteps) * 100}%` }}
                       transition={{ duration: 0.3 }}
@@ -689,8 +689,8 @@ const SignupWizard = () => {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                         >
-                          <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-0.5 transition-transform" />
-                          <span className="text-sm font-medium">Back</span>
+                          <ChevronLeft className="bg-red-400 text-white w-6 h-6 rounded-full mr-1 group-hover:-translate-x-0.5 transition-transform" />
+                          <span className="text-sm -mt-1/2 font-medium">Back</span>
                         </motion.button>
                       )}
 
