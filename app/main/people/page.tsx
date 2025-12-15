@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import LayoutController from '@/components/layout/LayoutController';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 // Get icon for interest
 const getInterestIcon = (interest: string) => {
@@ -428,6 +429,7 @@ const DEFAULT_AVATAR = '/default-avatar.png';
 
 export default function PeoplePage() {
   const router = useRouter();
+  const { profile } = useAuth();
   const [currentUserIndex, setCurrentUserIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [likedUsers, setLikedUsers] = useState<string[]>([]);
@@ -452,18 +454,27 @@ export default function PeoplePage() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Load users from Appwrite
-  useEffect(() => {
+ // Load users from Appwrite
+useEffect(() => {
+  if (profile) {
     loadUsers();
     loadSuggestedPeople();
-  }, []);
+  }
+}, [profile]);
 
   const loadUsers = async () => {
+    if (!profile) {
+      console.log('⚠️ No user profile available yet');
+      return;
+    }
+    
     setIsLoading(true);
     try {
-      // Fetch personas from Appwrite
-      const personas = await personaService.getAllPersonas({
-        limit: 55,
+      console.log('🎯 Loading users for:', profile.username, 'Gender pref:', profile.gender);
+      
+      // ✅ Use smartFetchPersonas with user profile
+      const personas = await personaService.smartFetchPersonas(profile, {
+        limit: 255,
         offset: 0
       });
       
@@ -481,8 +492,13 @@ export default function PeoplePage() {
   };
 
   const loadSuggestedPeople = async () => {
+    if (!profile) return;
+    
     try {
-      const randomPersonas = await personaService.getRandomPersonas(6);
+      console.log('🔍 Loading suggested people for:', profile.username);
+      
+      // ✅ Use smartFetchWithVariety with user profile
+      const randomPersonas = await personaService.smartFetchWithVariety(profile, [], { limit: 6 });
       const suggestedData = randomPersonas.map(convertPersonaToSuggestedPerson);
       setSuggestedPeople(suggestedData);
     } catch (error) {

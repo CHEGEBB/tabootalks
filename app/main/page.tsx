@@ -644,7 +644,7 @@ const EnhancedImageModal = ({
 
 export default function HomePage() {
   const router = useRouter();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, profile } = useAuth();
   const { showOffer, handleCloseOffer, isChecking } = useOffer();
   const { openChat } = useChatService();
   
@@ -683,19 +683,21 @@ export default function HomePage() {
     if (!authLoading && !isChecking && !isLoadingRef.current) {
       loadInitialData();
     }
-  }, [authLoading, isChecking]);
+  }, [authLoading, isChecking, profile]);
 
   const loadInitialData = async () => {
-    if (isLoadingRef.current) return;
+    if (isLoadingRef.current || !profile) return;
     
     isLoadingRef.current = true;
     setIsLoading(true);
     loadedIdsRef.current.clear();
     
     try {
-      const randomPersonas = await personaService.getRandomPersonas(ITEMS_PER_PAGE);
+      console.log('🎯 Loading data for user:', profile.username, 'Gender pref:', profile.gender);
       
-      const postsData = randomPersonas.map((persona, index) => {
+      const randomPersonas = await personaService.smartFetchPersonas(profile);
+      
+      const postsData = randomPersonas.slice(0, ITEMS_PER_PAGE).map((persona, index) => {
         const post = convertPersonaToPost(persona, index);
         loadedIdsRef.current.add(persona.$id);
         return post;
@@ -704,8 +706,12 @@ export default function HomePage() {
       setPosts(postsData);
       postsRef.current = postsData;
       
-      const suggestedPersonas = await personaService.getRandomPersonas(6, randomPersonas.map(p => p.$id));
-      const suggestedData = suggestedPersonas.map((persona, index) => 
+      const suggestedPersonas = await personaService.smartFetchWithVariety(
+        profile,
+        randomPersonas.map(p => p.$id)
+      );
+      
+      const suggestedData = suggestedPersonas.slice(0, 6).map((persona, index) => 
         convertPersonaToPost(persona, index + ITEMS_PER_PAGE)
       );
       setSuggestedPeople(suggestedData);
@@ -721,17 +727,17 @@ export default function HomePage() {
   };
 
   const loadMorePosts = async () => {
-    if (isLoadingMore || !hasMore || isLoadingRef.current) return;
+    if (isLoadingMore || !hasMore || isLoadingRef.current || !profile) return;
     
     isLoadingRef.current = true;
     setIsLoadingMore(true);
     
     try {
       const offset = page * ITEMS_PER_PAGE;
-      const newPersonas = await personaService.getAllPersonas({
+      
+      const newPersonas = await personaService.smartFetchPersonas(profile, {
         limit: ITEMS_PER_PAGE,
-        offset: offset,
-        gender: 'female'
+        offset: offset
       });
       
       if (newPersonas.length === 0) {
@@ -769,7 +775,6 @@ export default function HomePage() {
       isLoadingRef.current = false;
     }
   };
-
   useEffect(() => {
     const handleScroll = () => {
       if (
