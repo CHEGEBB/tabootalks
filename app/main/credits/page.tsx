@@ -1,7 +1,7 @@
 // app/main/credits/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LayoutController from '@/components/layout/LayoutController';
 import Image from 'next/image';
 import { 
@@ -27,8 +27,15 @@ import {
   Clock,
   Zap,
   Star,
-  TrendingUp
+  TrendingUp,
+  Sun,
+  Moon
 } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/useAuth';
+import creditService from '@/lib/services/creditService';
+import { ID } from 'appwrite';
+import { databases } from '@/lib/appwrite/config';
+import { DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/config';
 
 // Mock data for credit packages
 const CREDIT_PACKAGES = [
@@ -82,7 +89,7 @@ const SERVICE_PRICING = [
   },
   {
     name: 'Chat per minute',
-    price: '2 credits',
+    price: '1 credits',
     icon: <MessageSquare className="w-4 h-4 text-purple-600" />
   },
   {
@@ -139,6 +146,7 @@ const ACTIVITY_ITEMS = [
 ];
 
 export default function CreditsPage() {
+  const { user, profile, loading: authLoading } = useAuth();
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(CREDIT_PACKAGES[1]);
@@ -156,6 +164,81 @@ export default function CreditsPage() {
   });
   const [processing, setProcessing] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [loadingCredits, setLoadingCredits] = useState(true);
+  const [greeting, setGreeting] = useState('');
+  const [greetingIcon, setGreetingIcon] = useState<React.ReactNode>(<Sun className="w-5 h-5 text-yellow-500" />);
+
+  // Get greeting based on time of day
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      setGreeting('Good Morning');
+      setGreetingIcon(<Sun className="w-5 h-5 text-yellow-500" />);
+    } else if (hour >= 12 && hour < 17) {
+      setGreeting('Good Afternoon');
+      setGreetingIcon(<Sun className="w-5 h-5 text-orange-500" />);
+    } else if (hour >= 17 && hour < 21) {
+      setGreeting('Good Evening');
+      setGreetingIcon(<Sun className="w-5 h-5 text-orange-400" />);
+    } else {
+      setGreeting('Good Night');
+      setGreetingIcon(<Moon className="w-5 h-5 text-blue-400" />);
+    }
+  }, []);
+
+  // Fetch user credits from Appwrite
+  useEffect(() => {
+    const fetchUserCredits = async () => {
+      if (!user?.$id) return;
+      
+      setLoadingCredits(true);
+      try {
+        // Get current balance from user profile
+        const currentBalance = await creditService.getCurrentBalance(user.$id);
+        
+        // Get recent transactions to calculate purchased vs complimentary
+        const recentTransactions = await creditService.getRecentTransactions(user.$id, 50);
+        
+        let purchased = 0;
+        let complimentary = 0;
+        
+        recentTransactions.forEach(tx => {
+          if (tx.amount > 0) {
+            if (tx.type === 'BONUS' || tx.description.includes('Welcome') || tx.description.includes('FREE')) {
+              complimentary += tx.amount;
+            } else {
+              purchased += tx.amount;
+            }
+          }
+        });
+
+        // Ensure complimentary doesn't exceed current balance
+        complimentary = Math.min(complimentary, currentBalance);
+        
+        setUserCredits({
+          complimentary,
+          purchased,
+          total: currentBalance
+        });
+      } catch (error) {
+        console.error('Error fetching user credits:', error);
+        // Fallback to profile credits if available
+        if (profile?.credits) {
+          setUserCredits({
+            complimentary: profile.credits > 0 ? 10 : 0,
+            purchased: profile.credits > 10 ? profile.credits - 10 : 0,
+            total: profile.credits || 0
+          });
+        }
+      } finally {
+        setLoadingCredits(false);
+      }
+    };
+
+    if (user?.$id) {
+      fetchUserCredits();
+    }
+  }, [user?.$id, profile?.credits]);
 
   const handlePurchase = (pkg: typeof CREDIT_PACKAGES[0]) => {
     setSelectedPackage(pkg);
@@ -167,29 +250,68 @@ export default function CreditsPage() {
     setShowCardModal(true);
   };
 
-  const handleCardSubmit = () => {
+  const handleCardSubmit = async () => {
+    if (!user?.$id) {
+      alert('Please login to purchase credits');
+      return;
+    }
+
     setProcessing(true);
-    // Simulate payment processing
-    setTimeout(() => {
-      setProcessing(false);
-      setShowCardModal(false);
-      setPurchaseSuccess(true);
+    
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Update user credits
+      // Add credits to user account in Appwrite
+      const newBalance = await creditService.updateCredits(
+        user.$id,
+        selectedPackage.credits,
+        'PURCHASE',
+        `Purchased ${selectedPackage.name} (${selectedPackage.credits} credits)`,
+        { packageId: selectedPackage.id, price: selectedPackage.price }
+      );
+
+      // Update local state
       setUserCredits(prev => ({
         ...prev,
         purchased: prev.purchased + selectedPackage.credits,
-        total: prev.total + selectedPackage.credits
+        total: newBalance
       }));
+
+      // Show success message
+      setPurchaseSuccess(true);
+      setShowCardModal(false);
       
       // Auto-hide success message
       setTimeout(() => setPurchaseSuccess(false), 3000);
-    }, 2000);
+    } catch (error) {
+      console.error('Error processing purchase:', error);
+      alert('Failed to process purchase. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const toggleFaq = (index: number) => {
     setExpandedFaq(expandedFaq === index ? null : index);
   };
+
+  // Loading state
+  if (authLoading || loadingCredits) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <LayoutController />
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading your credits...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -210,20 +332,36 @@ export default function CreditsPage() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         
-        {/* Header */}
+        {/* Header with Greeting Card */}
         <div className="mb-10">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">TabooTalks Credits</h1>
-              <p className="text-gray-600 mt-2">Unlock premium features and connect with amazing people</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-sm text-gray-600">Your Balance</div>
-                <div className="text-2xl font-bold text-purple-600">{userCredits.total} Credits</div>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <CreditCard className="w-6 h-6 text-purple-600" />
+          {/* Greeting Card with Background Image */}
+          <div className="relative rounded-xl overflow-hidden mb-6 shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 to-blue-900/80 z-0"></div>
+            <div 
+              className="absolute inset-0 z-0 opacity-20 bg-cover bg-center"
+              style={{
+                backgroundImage: 'url("https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80")'
+              }}
+            ></div>
+            
+            <div className="relative z-10 p-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    {greetingIcon}
+                    <span className="text-2xl font-bold text-white">
+                      {greeting}, {profile?.username || 'User'}!
+                    </span>
+                  </div>
+                  <p className="text-purple-100 text-lg">
+                    Manage your credits and unlock premium features
+                  </p>
+                </div>
+                
+                <div className="text-right">
+                  <div className="text-sm text-purple-200">Your Balance</div>
+                  <div className="text-3xl font-bold text-white">{userCredits.total} Credits</div>
+                </div>
               </div>
             </div>
           </div>
@@ -580,7 +718,7 @@ export default function CreditsPage() {
         </div>
       )}
 
-      {/* Card Payment Modal - FIXED ICONS */}
+      {/* Card Payment Modal */}
       {showCardModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6">
@@ -615,7 +753,7 @@ export default function CreditsPage() {
               )}
             </div>
             
-            {/* Card Form - ALL ICONS VISIBLE */}
+            {/* Card Form */}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
