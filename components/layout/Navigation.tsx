@@ -104,23 +104,29 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
   }, []);
 
   const scrollToSection = (sectionId: string) => {
-    if (sectionId === 'home') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      const element = document.getElementById(sectionId);
-      if (element) {
-        const offset = 80;
-        const elementPosition = element.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: 'smooth'
-        });
-      }
-    }
+    // Close mobile menu first
     setMobileMenuOpen(false);
-    setActiveSection(sectionId);
+    
+    // Small delay to allow menu to close before scrolling
+    setTimeout(() => {
+      if (sectionId === 'home') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setActiveSection('home');
+      } else {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const offset = 80;
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+          setActiveSection(sectionId);
+        }
+      }
+    }, 100);
   };
 
   const handleGetStarted = () => {
@@ -212,7 +218,6 @@ const Navigation: React.FC<NavigationProps> = ({ onGetStarted }) => {
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 onClick={() => {
                   scrollToSection('home');
-                  setActiveSection('home');
                 }}
               >
                 <Image
