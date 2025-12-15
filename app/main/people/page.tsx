@@ -843,6 +843,16 @@ export default function PeoplePage() {
                 </div>
               </div>
             </div>
+            {/* SEND MESSAGE BUTTON - Below Main Image */}
+<div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-3 md:p-4">
+  <button 
+    onClick={handleChat}
+    className="w-full py-3 md:py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg md:rounded-xl font-bold text-base md:text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg"
+  >
+    <MessageCircle className="w-5 h-5 md:w-6 md:h-6" />
+    Send Message to {currentUser.name}
+  </button>
+</div>
 
             {/* PHOTOS CONTAINER - MODAL ONLY FOR THESE IMAGES */}
             {currentUser.photosCount > 0 && (
