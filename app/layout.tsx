@@ -75,7 +75,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
         
-        {/* Hide Google Translate UI */}
+        {/* Hide Google Translate UI and ALL hover effects */}
         <style 
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
@@ -109,6 +109,85 @@ export default function RootLayout({
               /* Hide the Google Translate iframe */
               iframe.skiptranslate {
                 visibility: hidden !important;
+              }
+              
+              /* COMPLETELY DISABLE ALL HOVER EFFECTS AND TOOLTIPS */
+              .goog-tooltip {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+              }
+              
+              .goog-tooltip:hover {
+                display: none !important;
+              }
+              
+              /* Remove ALL highlight and shadow effects */
+              .goog-text-highlight {
+                background-color: transparent !important;
+                box-shadow: none !important;
+                background: none !important;
+                border: none !important;
+              }
+              
+              /* Disable the translation popup bubble */
+              div[id^="goog-gt-"] {
+                display: none !important;
+                visibility: hidden !important;
+              }
+              
+              /* Remove ALL styling from translated font elements */
+              font[style],
+              font {
+                background-color: transparent !important;
+                background: none !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+                border: none !important;
+                outline: none !important;
+              }
+              
+              /* Disable pointer events only on tooltip elements */
+              .goog-tooltip,
+              .goog-tooltip *,
+              div[id^="goog-gt-"],
+              div[id^="goog-gt-"] * {
+                pointer-events: none !important;
+              }
+              
+              /* Re-enable pointer events for interactive elements */
+              body, body *, button, a, input, select, textarea {
+                pointer-events: auto !important;
+              }
+              
+              /* CRITICAL: Remove ALL hover effects on translated text */
+              .translated-ltr font:hover,
+              .translated-rtl font:hover,
+              font:hover {
+                background-color: transparent !important;
+                background: none !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+                cursor: inherit !important;
+                border: none !important;
+                outline: none !important;
+              }
+              
+              /* Disable hover on ALL Google Translate elements */
+              [class*="goog-"]:hover,
+              [id*="goog-"]:hover {
+                background: none !important;
+                box-shadow: none !important;
+                border: none !important;
+              }
+              
+              /* Force remove any inline styles that create shadows/highlights */
+              span[style*="background"],
+              font[style*="background"],
+              span[style*="box-shadow"],
+              font[style*="box-shadow"] {
+                background: transparent !important;
+                box-shadow: none !important;
               }
             `
           }} 
