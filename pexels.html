@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pexels Image Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .range-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+            display: block;
+        }
+
+        .status.complete {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .image-card {
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .image-card.valid {
+            border-color: #4caf50;
+        }
+
+        .image-card.invalid {
+            opacity: 0.4;
+            border-color: #f44336;
+        }
+
+        .image-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 100%;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .image-wrapper img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-info {
+            padding: 12px;
+        }
+
+        .image-number {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .image-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .image-status.valid {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .image-status.invalid {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        .copy-btn {
+            width: 100%;
+            padding: 8px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .copy-btn.copied {
+            background: #4caf50;
+        }
+
+        .summary {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .summary.show {
+            display: block;
+        }
+
+        .summary h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .summary-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .copy-all-btn {
+            margin-left: 10px;
+            padding: 14px 24px;
+            background: #4caf50;
+        }
+
+        .copy-all-btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Pexels Image Checker</h1>
+        <p class="subtitle">Quickly find valid image variations from the same model</p>
+
+        <div class="input-section">
+            <label for="urlInput">Paste a Pexels Image URL:</label>
+            <input 
+                type="text" 
+                id="urlInput" 
+                placeholder="https://images.pexels.com/photos/30767574/pexels-photo-30767574.jpeg"
+                value="">
+            
+            <div class="range-inputs">
+                <div>
+                    <label for="rangeStart">Check Range (numbers before):</label>
+                    <input type="number" id="rangeStart" value="10" min="1" max="50">
+                </div>
+                <div>
+                    <label for="rangeEnd">Check Range (numbers after):</label>
+                    <input type="number" id="rangeEnd" value="10" min="1" max="50">
+                </div>
+            </div>
+
+            <button onclick="checkImages()">🔍 Check Images</button>
+            <button class="copy-all-btn" onclick="copyAllValid()" style="display:none;" id="copyAllBtn">📋 Copy All Valid URLs</button>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="summary" id="summary">
+            <h3>Results Summary</h3>
+            <div class="summary-stats">
+                <div class="stat">
+                    <div class="stat-number" id="validCount">0</div>
+                    <div class="stat-label">Valid Images</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="invalidCount">0</div>
+                    <div class="stat-label">Invalid</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="totalCount">0</div>
+                    <div class="stat-label">Total Checked</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        let validUrls = [];
+
+        function extractImageNumber(url) {
+            const match = url.match(/\/photos\/(\d+)\//);
+            return match ? parseInt(match[1]) : null;
+        }
+
+        function generateUrl(baseUrl, newNumber) {
+            return baseUrl.replace(/\/photos\/\d+\//, `/photos/${newNumber}/`)
+                         .replace(/pexels-photo-\d+\./, `pexels-photo-${newNumber}.`);
+        }
+
+        async function checkImages() {
+            const urlInput = document.getElementById('urlInput').value.trim();
+            const rangeStart = parseInt(document.getElementById('rangeStart').value);
+            const rangeEnd = parseInt(document.getElementById('rangeEnd').value);
+            const resultsDiv = document.getElementById('results');
+            const statusDiv = document.getElementById('status');
+            const summaryDiv = document.getElementById('summary');
+            
+            if (!urlInput) {
+                alert('Please paste a Pexels URL!');
+                return;
+            }
+
+            const baseNumber = extractImageNumber(urlInput);
+            if (!baseNumber) {
+                alert('Could not extract image number from URL. Make sure it\'s a valid Pexels URL.');
+                return;
+            }
+
+            resultsDiv.innerHTML = '';
+            validUrls = [];
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '🔄 Checking images...';
+            summaryDiv.classList.remove('show');
+            document.getElementById('copyAllBtn').style.display = 'none';
+
+            const numbersToCheck = [];
+            for (let i = baseNumber - rangeStart; i <= baseNumber + rangeEnd; i++) {
+                if (i > 0) {
+                    numbersToCheck.push(i);
+                }
+            }
+
+            let validCount = 0;
+            let invalidCount = 0;
+
+            for (const num of numbersToCheck) {
+                const testUrl = generateUrl(urlInput, num);
+                const card = createImageCard(num, testUrl);
+                resultsDiv.appendChild(card);
+
+                const isValid = await checkImageExists(testUrl);
+                updateImageCard(card, testUrl, isValid);
+
+                if (isValid) {
+                    validCount++;
+                    validUrls.push(testUrl);
+                } else {
+                    invalidCount++;
+                }
+
+                document.getElementById('validCount').textContent = validCount;
+                document.getElementById('invalidCount').textContent = invalidCount;
+                document.getElementById('totalCount').textContent = validCount + invalidCount;
+            }
+
+            statusDiv.className = 'status complete';
+            statusDiv.textContent = `✅ Complete! Found ${validCount} valid images out of ${numbersToCheck.length} checked`;
+            summaryDiv.classList.add('show');
+            
+            if (validCount > 0) {
+                document.getElementById('copyAllBtn').style.display = 'inline-block';
+            }
+        }
+
+        function createImageCard(number, url) {
+            const card = document.createElement('div');
+            card.className = 'image-card';
+            card.innerHTML = `
+                <div class="image-wrapper">
+                    <img src="" alt="Loading..." style="display:none;">
+                </div>
+                <div class="image-info">
+                    <div class="image-number">Photo #${number}</div>
+                    <span class="image-status">Checking...</span>
+                    <button class="copy-btn" style="display:none;">📋 Copy URL</button>
+                </div>
+            `;
+            return card;
+        }
+
+        async function checkImageExists(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                const timeout = setTimeout(() => {
+                    resolve(false);
+                }, 5000);
+
+                img.onload = () => {
+                    clearTimeout(timeout);
+                    resolve(true);
+                };
+
+                img.onerror = () => {
+                    clearTimeout(timeout);
+                    resolve(false);
+                };
+
+                img.src = url;
+            });
+        }
+
+        function updateImageCard(card, url, isValid) {
+            const img = card.querySelector('img');
+            const status = card.querySelector('.image-status');
+            const copyBtn = card.querySelector('.copy-btn');
+
+            if (isValid) {
+                card.classList.add('valid');
+                img.src = url;
+                img.style.display = 'block';
+                status.className = 'image-status valid';
+                status.textContent = '✓ Valid';
+                copyBtn.style.display = 'block';
+                copyBtn.onclick = () => copyToClipboard(url, copyBtn);
+            } else {
+                card.classList.add('invalid');
+                status.className = 'image-status invalid';
+                status.textContent = '✗ Not Found';
+            }
+        }
+
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        function copyAllValid() {
+            if (validUrls.length === 0) {
+                alert('No valid URLs to copy!');
+                return;
+            }
+
+            const allUrls = validUrls.join('\n');
+            navigator.clipboard.writeText(allUrls).then(() => {
+                const btn = document.getElementById('copyAllBtn');
+                const originalText = btn.textContent;
+                btn.textContent = `✓ Copied ${validUrls.length} URLs!`;
+                btn.style.background = '#4caf50';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                }, 3000);
+            });
+        }
+
+        // Allow Enter key to trigger search
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkImages();
+            }
+        });
+    </script>
+</body>
+</html>
