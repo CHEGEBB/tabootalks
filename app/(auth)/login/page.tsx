@@ -608,7 +608,7 @@ const LoginPage = () => {
                   whileHover={{ scale: 1.05 }} 
                   whileTap={{ scale: 0.95 }} 
                   onClick={handleContinueToHome} 
-                  className="w-full bg-amber-200-[#ff2e2e] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all shadow-md text-lg"
+                  className="w-full bg-red-500 text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all shadow-md text-lg"
                 >
                   Continue to Home
                 </motion.button>
