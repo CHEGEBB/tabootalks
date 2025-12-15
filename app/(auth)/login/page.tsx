@@ -313,7 +313,7 @@ const LoginPage = () => {
               whileHover={{ scale: 1.02 }} 
               whileTap={{ scale: 0.98 }} 
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed relative"
+              className="w-full bg-[#5e17eb] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed relative"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -446,7 +446,13 @@ const LoginPage = () => {
           >
             <div className="mb-8">
               <div className="h-14 mx-auto flex items-center justify-center">
-                <h1 className="text-5xl font-bold bg-gradient-to-r from-[#ff2e2e] to-[#5e17eb] bg-clip-text text-transparent">TabooTalks</h1>
+                <Image
+                  src="/assets/logo.png" 
+                  alt="TabooTalks Logo" 
+                  width={220} 
+                  height={90} 
+                  className="object-contain"
+                  />
               </div>
             </div>
             <h2 className="text-5xl font-bold text-white mb-4 leading-tight drop-shadow-2xl">Welcome back to<br />amazing conversations</h2>
