@@ -136,11 +136,11 @@ const convertPersonaToSuggestedPerson = (persona: ParsedPersonaProfile, index: n
 // Swipe-to-reject component
 interface SwipeRejectProps {
   onReject: () => void;
+  onLike?: () => void; // Add this
   onHold: (isHolding: boolean) => void;
   children: React.ReactNode;
 }
-
-const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children }) => {
+const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onLike, onHold, children }) => {
   const [isHolding, setIsHolding] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -194,6 +194,12 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
         onReject();
         setPosition({ x: 0, y: 0 });
       }, 300);
+    } else if (position.x > 100) {
+      setPosition({ x: window.innerWidth, y: 0 });
+      setTimeout(() => {
+        if (onLike) onLike(); // Call the like function
+        setPosition({ x: 0, y: 0 });
+      }, 300);
     } else {
       setPosition({ x: 0, y: 0 });
     }
@@ -242,6 +248,12 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
       setPosition({ x: -window.innerWidth, y: 0 });
       setTimeout(() => {
         onReject();
+        setPosition({ x: 0, y: 0 });
+      }, 300);
+    } else if (position.x > 100) {
+      setPosition({ x: window.innerWidth, y: 0 });
+      setTimeout(() => {
+        if (onLike) onLike(); // Call the like function
         setPosition({ x: 0, y: 0 });
       }, 300);
     } else {
@@ -303,6 +315,22 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onHold, children })
           </div>
         </div>
       )}
+      {/* LIKE overlay when swiping RIGHT */}
+{isDragging && position.x > 30 && (
+  <div className="absolute top-4 left-4 z-50">
+    <div className="bg-green-500 text-white px-6 py-3 rounded-full font-bold text-xl md:text-2xl shadow-lg animate-pulse border-2 border-white">
+      LIKE ❤️
+    </div>
+  </div>
+)}
+
+{isDragging && position.x > 30 && (
+  <div className="absolute top-1/2 left-4 transform -translate-y-1/2 z-40">
+    <div className="text-green-500 font-bold text-xl md:text-2xl opacity-70">
+      Swipe to like →
+    </div>
+  </div>
+)}
 
       {isDragging && position.x < -30 && (
         <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-40">
@@ -643,7 +671,7 @@ export default function PeoplePage() {
             {/* MAIN IMAGE CONTAINER WITH SWIPE FUNCTIONALITY - TALLER RECTANGLE */}
             <div className={`relative z-10 bg-gray-100 rounded-lg md:rounded-xl overflow-hidden shadow transition-all duration-300 ${isAnimatingOut ? 'opacity-0 translate-x-full' : 'opacity-100'}`}>
               <div className="relative h-[600px] md:h-[750px]"> {/* Increased height */}
-                <SwipeReject onReject={handleReject} onHold={handleHold}>
+              <SwipeReject onReject={handleReject} onLike={handleLike} onHold={handleHold}>
                   <div className="relative w-full h-full">
                     {currentUser.photos[currentPhotoIndex] && (
                       <Image
