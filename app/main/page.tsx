@@ -924,8 +924,8 @@ export default function HomePage() {
     }
   };
 
-  const handleGift = () => {
-    console.log('Send gift');
+  const handleGift = (personaId: string) => {
+      router.push(`/main/virtual-gifts/${personaId}`);
   };
 
   const openImageModal = (post: Post, index: number = 0) => {
@@ -1269,7 +1269,8 @@ export default function HomePage() {
                           </button>
 
                           <button 
-                            onClick={handleGift}
+                            onClick={() => handleGift(post.personaId)}
+
                             className="p-2 sm:p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300 hover:scale-110"
                           >
                             <Gift className="w-5 h-5 sm:w-[22px] sm:h-[22px]" />

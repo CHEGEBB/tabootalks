@@ -115,7 +115,7 @@ const ProfilePage = () => {
   };
 
   const handleSendGift = () => {
-    alert(`Send a gift to ${profile?.username}. This would open gift selection modal.`);
+   router.push(`/main/virtual-gifts/${profile?.$id}`)
   };
 
   const openImageModal = (imageUrl: string, index: number) => {
@@ -455,8 +455,6 @@ const ProfilePage = () => {
                 </div>
               </div>
             </div>
-
-          
 
             {/* Interests */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
