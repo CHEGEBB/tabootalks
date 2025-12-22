@@ -131,6 +131,8 @@ export default function ChatPage() {
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const mobileInputContainerRef = useRef<HTMLDivElement>(null);
 
+
+const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGiftMessage | null>(null);
   
   // Initialize Appwrite
   const client = new Client()
@@ -162,7 +164,6 @@ export default function ChatPage() {
     try {
       console.log('Loading gifts for conversation:', conversationId);
       
-      // Get current user ID
       const currentUser = await account.get();
       const userId = currentUser.$id;
       
@@ -178,24 +179,7 @@ export default function ChatPage() {
       
       console.log(`Found ${giftsResponse.documents.length} gifts in collection`);
       
-      // Load Lottie animations for animated gifts
       const gifts = giftsResponse.documents as unknown as AppwriteGiftDocument[];
-      const animations: Record<string, any> = { ...lottieAnimations };
-      
-      for (const gift of gifts) {
-        if (gift.isAnimated && gift.animationUrl && !animations[gift.$id]) {
-          try {
-            const animationData = await loadLottieAnimation(gift.animationUrl);
-            if (animationData) {
-              animations[gift.$id] = animationData;
-            }
-          } catch (error) {
-            console.error(`Failed to load animation for gift ${gift.$id}:`, error);
-          }
-        }
-      }
-      
-      setLottieAnimations(animations);
       return gifts;
     } catch (error: any) {
       console.error('Error loading gifts from collection:', error);
@@ -679,19 +663,7 @@ export default function ChatPage() {
     router.push('/main/people');
   };
 
-  // Add this function in your ChatPage component
-const loadLottieAnimation = async (animationUrl?: string): Promise<any> => {
-  if (!animationUrl) return null;
-  
-  try {
-    const response = await fetch(animationUrl);
-    const animationData = await response.json();
-    return animationData;
-  } catch (error) {
-    console.error('Error loading Lottie animation:', error);
-    return null;
-  }
-};
+
 
   const handleEmojiSelect = useCallback((emojiObject: any) => {
     setInputMessage(prev => prev + emojiObject.emoji);
@@ -723,28 +695,16 @@ const loadLottieAnimation = async (animationUrl?: string): Promise<any> => {
 
   // Function to render gift messages
   const renderGiftMessage = (giftData: ChatGiftMessage, index: number, isMobile = false) => {
-    const giftDoc = giftsFromGiftsCollection.find(g => g.giftName === giftData.giftName && g.$createdAt === giftData.timestamp);
-    const animationData = giftDoc ? lottieAnimations[giftDoc.$id] : null;
-    
     return (
       <div key={`gift-${index}`} className="flex justify-end">
         <div className={`${isMobile ? 'max-w-[85%] p-3' : 'max-w-[75%] p-4'} rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200`}>
           <div className={`flex items-start gap-${isMobile ? '2' : '3'}`}>
             {/* Gift Preview */}
             <div 
-              onClick={() => giftData.isAnimated && animationData && setShowGiftAnimationOverlay(giftData)}
+              onClick={() => giftData.isAnimated && setShowGiftAnimationOverlay(giftData)}
               className={`${isMobile ? 'w-10 h-10 p-1' : 'w-12 h-12 p-2'} rounded-lg overflow-hidden bg-white flex-shrink-0 cursor-pointer hover:scale-105 transition-transform`}
             >
-              {giftData.isAnimated && animationData ? (
-                <div className="w-full h-full">
-                  <Lottie
-                    animationData={animationData}
-                    loop={true}
-                    autoplay={true}
-                    className="w-full h-full"
-                  />
-                </div>
-              ) : giftData.giftImage ? (
+              {giftData.giftImage ? (
                 <Image
                   src={giftData.giftImage}
                   alt={giftData.giftName}
@@ -773,21 +733,7 @@ const loadLottieAnimation = async (animationUrl?: string): Promise<any> => {
               </div>
             </div>
           </div>
-          
-          {giftData.isAnimated && (
-            <button
-              onClick={() => {
-                if (animationData) {
-                  setAnimationData(animationData);
-                  setShowGiftAnimationOverlay(giftData);
-                }
-              }}
-              className="mt-2 text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
-            >
-              <Sparkles className="w-3 h-3" />
-              {animationData ? 'Play Animation' : 'Loading Animation...'}
-            </button>
-          )}
+     
         </div>
       </div>
     );
@@ -797,7 +743,6 @@ const loadLottieAnimation = async (animationUrl?: string): Promise<any> => {
   const handleGiftAnimationClose = () => {
     setShowGiftAnimation(null);
     setShowGiftAnimationOverlay(null);
-    setAnimationData(null);
   };
   // Combine and sort all messages and gifts chronologically
   const getAllChatItems = () => {
@@ -1774,7 +1719,7 @@ const loadLottieAnimation = async (animationUrl?: string): Promise<any> => {
                 An animated gift has been delivered to {botProfile?.username}!
               </p>
               {showGiftAnimation.message && (
-                <p className="text-gray-700 mt-2 italic">"{showGiftAnimation.message}"</p>
+                <p className="text-gray-700 mt-2 italic">&ldquo;{showGiftAnimation.message}&rdquo;</p>
               )}
             </div>
             <div className="text-center">
@@ -1803,20 +1748,19 @@ const loadLottieAnimation = async (animationUrl?: string): Promise<any> => {
         </div>
         
         <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 mb-6">
-          <div className="w-64 h-64 mx-auto">
-            {animationData ? (
-              <Lottie
-                animationData={animationData}
-                loop={true}
-                autoplay={true}
-                className="w-full h-full"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            )}
-          </div>
+        <div className="w-64 h-64 mx-auto">
+        {showGiftAnimationOverlay.giftImage ? (
+          <Image
+            src={showGiftAnimationOverlay.giftImage}
+            alt={showGiftAnimationOverlay.giftName}
+            width={256}
+            height={256}
+            className="object-contain w-full h-full"
+          />
+        ) : (
+          <Gift className="w-32 h-32 text-purple-400 mx-auto" />
+        )}
+      </div>
         </div>
         
         <div className="text-center">
@@ -1825,7 +1769,7 @@ const loadLottieAnimation = async (animationUrl?: string): Promise<any> => {
             You sent this animated gift to {botProfile?.username}
           </p>
           {showGiftAnimationOverlay.message && (
-            <p className="text-gray-700 text-lg italic mb-6">"{showGiftAnimationOverlay.message}"</p>
+            <p className="text-gray-700 text-lg italic mb-6">&ldquo;{showGiftAnimationOverlay.message}&rdquo;</p>
           )}
           <div className="flex items-center justify-center gap-3">
             <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-3 rounded-xl border border-amber-200">
