@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { databases } from '@/lib/appwrite/config';
-import { DATABASE_ID, COLLECTIONS, FUNCTION_ENDPOINTS } from '@/lib/appwrite/config';
+import { DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/config';
 import { Query, ID } from 'appwrite';
 import creditService from './creditService';
-import personaService from './personaService';
+import personaService, { ParsedPersonaProfile } from './personaService';
 
 export interface GiftItem {
   id: number;
@@ -250,16 +250,54 @@ class GiftService {
         hasAnimationUrl: !!gift.animationUrl
       });
 
-      // ============ TRIGGER AI RESPONSE ============
-      // Use server-side API route instead of direct function call
-      if (conversationId) {
-        this.triggerAIResponseForGift({
-          senderId,
-          recipientId,
-          conversationId,
-          gift,
-          message
-        });
+      // ============ CRITICAL: TRIGGER AI RESPONSE FROM BACKEND ============
+      // This ensures the backend handles the AI response, NOT the frontend
+      console.log('🤖 GIFT_SERVICE: Triggering AI response for gift');
+      
+      try {
+        // Call the backend function to trigger AI response
+        const FUNCTION_URL = process.env.NEXT_PUBLIC_APPWRITE_FUNCTION_AI_CHATBOT;
+        if (FUNCTION_URL && conversationId) {
+          console.log('🤖 Calling AI function for gift response');
+          
+          // Use setTimeout to make this non-blocking
+          setTimeout(async () => {
+            try {
+              const aiResponse = await fetch(FUNCTION_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: senderId,
+                  botProfileId: recipientId,
+                  conversationId: conversationId,
+                  message: '', // Empty message for gift response
+                  isGiftResponse: true,
+                  giftData: {
+                    giftId: gift.id,
+                    giftName: gift.name,
+                    message: message,
+                    category: gift.category,
+                    isAnimated: gift.isAnimated,
+                    animationUrl: gift.animationUrl,
+                    price: gift.price
+                  }
+                })
+              });
+              
+              if (!aiResponse.ok) {
+                console.error('🤖 Failed to trigger AI response:', aiResponse.status);
+              } else {
+                console.log('🤖 AI response triggered successfully');
+              }
+            } catch (aiError) {
+              console.error('🤖 Error triggering AI response:', aiError);
+            }
+          }, 1000); // 1 second delay to ensure gift is saved first
+        } else {
+          console.warn('⚠️ Cannot trigger AI response: Missing FUNCTION_URL or conversationId');
+        }
+      } catch (aiTriggerError) {
+        console.error('🤖 Error setting up AI trigger:', aiTriggerError);
       }
 
       return { 
@@ -277,130 +315,6 @@ class GiftService {
         newBalance: currentBalance,
         error: error.message || 'Failed to send gift' 
       };
-    }
-  }
-
-  private async triggerAIResponseForGift(params: {
-    senderId: string;
-    recipientId: string;
-    conversationId: string;
-    gift: GiftItem;
-    message?: string;
-  }): Promise<void> {
-    const { senderId, recipientId, conversationId, gift, message } = params;
-    
-    console.log('🤖 GIFT_SERVICE: Triggering AI response for gift');
-    
-    // Use setTimeout to make this non-blocking
-    setTimeout(async () => {
-      try {
-        // Option 1: Call your Appwrite Function directly (CORS might block this)
-        const FUNCTION_URL = FUNCTION_ENDPOINTS.CHAT_SEND;
-        
-        console.log('🤖 Calling AI function:', FUNCTION_URL);
-        
-        const response = await fetch(FUNCTION_URL, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            // Add CORS headers
-            'Accept': '*/*',
-            'Origin': window.location.origin
-          },
-          // Remove body from preflight by keeping it simple
-          body: JSON.stringify({
-            userId: senderId,
-            botProfileId: recipientId,
-            conversationId: conversationId,
-            message: '', // Empty message for gift response
-            isGiftResponse: true,
-            giftData: {
-              giftId: gift.id,
-              giftName: gift.name,
-              message: message,
-              category: gift.category,
-              isAnimated: gift.isAnimated,
-              animationUrl: gift.animationUrl,
-              price: gift.price
-            }
-          }),
-          // Add mode to handle CORS
-          mode: 'cors',
-          credentials: 'omit'
-        });
-        
-        console.log('🤖 AI Response Status:', response.status, response.statusText);
-        
-        if (!response.ok) {
-          console.error('🤖 Failed to trigger AI response:', {
-            status: response.status,
-            statusText: response.statusText
-          });
-          
-          // Try alternative approach: call a Next.js API route instead
-          await this.fallbackTriggerAIResponse(params);
-        } else {
-          console.log('🤖 AI response triggered successfully');
-          
-          // Try to read the response to see if it's valid
-          try {
-            const text = await response.text();
-            console.log('🤖 AI response content (first 500 chars):', text.substring(0, 500));
-          } catch (e) {
-            // Ignore if we can't read the response
-          }
-        }
-      } catch (aiError) {
-        console.error('🤖 Error triggering AI response:', aiError);
-        
-        // Fallback to API route
-        await this.fallbackTriggerAIResponse(params);
-      }
-    }, 1500); // 1.5 second delay to ensure gift is saved first
-  }
-
-  private async fallbackTriggerAIResponse(params: {
-    senderId: string;
-    recipientId: string;
-    conversationId: string;
-    gift: GiftItem;
-    message?: string;
-  }): Promise<void> {
-    const { senderId, recipientId, conversationId, gift, message } = params;
-    
-    console.log('🤖 GIFT_SERVICE: Trying fallback API route method');
-    
-    try {
-      // Call a Next.js API route that will proxy the request to Appwrite
-      const response = await fetch('/api/trigger-ai-response', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: senderId,
-          botProfileId: recipientId,
-          conversationId: conversationId,
-          isGiftResponse: true,
-          giftData: {
-            giftId: gift.id,
-            giftName: gift.name,
-            message: message,
-            category: gift.category,
-            isAnimated: gift.isAnimated,
-            animationUrl: gift.animationUrl,
-            price: gift.price
-          }
-        })
-      });
-      
-      if (response.ok) {
-        console.log('🤖 Fallback AI trigger successful via API route');
-      } else {
-        console.error('🤖 Fallback AI trigger failed:', response.status);
-      }
-    } catch (fallbackError) {
-      console.error('🤖 Fallback AI trigger also failed:', fallbackError);
     }
   }
 
