@@ -250,54 +250,89 @@ class GiftService {
         hasAnimationUrl: !!gift.animationUrl
       });
 
-      // ============ CRITICAL: TRIGGER AI RESPONSE FROM BACKEND ============
-      // This ensures the backend handles the AI response, NOT the frontend
+      // ============ CRITICAL FIX: IMMEDIATE AI RESPONSE TRIGGER ============
+      // Don't use setTimeout - trigger immediately and await it
       console.log('🤖 GIFT_SERVICE: Triggering AI response for gift');
       
-      try {
-        // Call the backend function to trigger AI response
-        const FUNCTION_URL = process.env.NEXT_PUBLIC_APPWRITE_FUNCTION_AI_CHATBOT;
-        if (FUNCTION_URL && conversationId) {
-          console.log('🤖 Calling AI function for gift response');
+      if (conversationId) {
+        try {
+          const FUNCTION_URL = process.env.NEXT_PUBLIC_APPWRITE_FUNCTION_AI_CHATBOT;
           
-          // Use setTimeout to make this non-blocking
-          setTimeout(async () => {
-            try {
-              const aiResponse = await fetch(FUNCTION_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  userId: senderId,
-                  botProfileId: recipientId,
-                  conversationId: conversationId,
-                  message: '', // Empty message for gift response
-                  isGiftResponse: true,
-                  giftData: {
-                    giftId: gift.id,
-                    giftName: gift.name,
-                    message: message,
-                    category: gift.category,
-                    isAnimated: gift.isAnimated,
-                    animationUrl: gift.animationUrl,
-                    price: gift.price
-                  }
-                })
+          if (!FUNCTION_URL) {
+            console.error('🤖 FUNCTION_URL not configured in environment');
+          } else {
+            console.log('🤖 Calling AI function at:', FUNCTION_URL);
+            console.log('🤖 Gift data:', {
+              giftId: gift.id,
+              giftName: gift.name,
+              message: message,
+              category: gift.category,
+              isAnimated: gift.isAnimated,
+              price: gift.price
+            });
+            
+            // TRIGGER AI IMMEDIATELY - Don't use setTimeout
+            const aiResponse = await fetch(FUNCTION_URL, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream'
+              },
+              body: JSON.stringify({
+                userId: senderId,
+                botProfileId: recipientId,
+                conversationId: conversationId,
+                message: '', // Empty message for gift response
+                isGiftResponse: true,
+                giftData: {
+                  giftId: gift.id,
+                  giftName: gift.name,
+                  message: message || '',
+                  category: gift.category,
+                  isAnimated: gift.isAnimated,
+                  animationUrl: gift.animationUrl || '',
+                  price: gift.price
+                }
+              })
+            });
+            
+            console.log('🤖 AI Response Status:', aiResponse.status, aiResponse.statusText);
+            
+            if (!aiResponse.ok) {
+              const errorText = await aiResponse.text();
+              console.error('🤖 Failed to trigger AI response:', {
+                status: aiResponse.status,
+                statusText: aiResponse.statusText,
+                error: errorText
               });
+            } else {
+              console.log('🤖 ✅ AI response triggered successfully!');
               
-              if (!aiResponse.ok) {
-                console.error('🤖 Failed to trigger AI response:', aiResponse.status);
-              } else {
-                console.log('🤖 AI response triggered successfully');
+              // Read the stream to ensure the request completes
+              try {
+                const reader = aiResponse.body?.getReader();
+                if (reader) {
+                  let chunks = 0;
+                  while (true) {
+                    const { done } = await reader.read();
+                    if (done) break;
+                    chunks++;
+                  }
+                  console.log('🤖 ✅ AI stream completed:', chunks, 'chunks received');
+                }
+              } catch (streamError) {
+                console.warn('🤖 Stream reading ended:', streamError);
               }
-            } catch (aiError) {
-              console.error('🤖 Error triggering AI response:', aiError);
             }
-          }, 1000); // 1 second delay to ensure gift is saved first
-        } else {
-          console.warn('⚠️ Cannot trigger AI response: Missing FUNCTION_URL or conversationId');
+          }
+        } catch (aiError: any) {
+          console.error('🤖 ❌ Error triggering AI response:', {
+            message: aiError.message,
+            stack: aiError.stack
+          });
         }
-      } catch (aiTriggerError) {
-        console.error('🤖 Error setting up AI trigger:', aiTriggerError);
+      } else {
+        console.warn('⚠️ Cannot trigger AI response: Missing conversationId');
       }
 
       return { 
