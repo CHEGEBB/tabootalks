@@ -70,6 +70,12 @@ class GiftService {
       const animatedGifts = await animatedResponse.json();
       
       this.giftsCache = [...staticGifts, ...animatedGifts];
+      console.log('✅ Loaded all gifts:', this.giftsCache.length, 'total gifts');
+      
+      // Log magical gifts specifically
+      const magicalGifts = this.giftsCache.filter(g => g.category === 'magical');
+      console.log('✨ Magical gifts loaded:', magicalGifts.length, 'gifts', magicalGifts.map(g => g.name));
+      
       return this.giftsCache;
     } catch (error) {
       console.error('Error loading gifts:', error);
@@ -89,32 +95,44 @@ class GiftService {
       return gifts.filter(g => g.popularityScore > 200)
                  .sort((a, b) => b.popularityScore - a.popularityScore);
     }
-    return gifts.filter(g => g.category === category);
+    const categoryGifts = gifts.filter(g => g.category === category);
+    console.log(`📦 Category '${category}' has ${categoryGifts.length} gifts`);
+    return categoryGifts;
   }
 
   async getFeaturedGifts(): Promise<GiftItem[]> {
     const gifts = await this.loadAllGifts();
-    return gifts
+    // Increased from 8 to 12 to show more featured gifts
+    const featured = gifts
       .sort((a, b) => b.popularityScore - a.popularityScore)
-      .slice(0, 8);
+      .slice(0, 12);
+    console.log('⭐ Featured gifts:', featured.length, 'gifts');
+    return featured;
   }
 
   async getGiftsGroupedByCategory(): Promise<Record<string, GiftItem[]>> {
     const gifts = await this.loadAllGifts();
     const grouped: Record<string, GiftItem[]> = {};
     
+    // Get top 12 featured gifts (increased from 8)
     const featuredGifts = gifts
       .sort((a, b) => b.popularityScore - a.popularityScore)
-      .slice(0, 8);
+      .slice(0, 12);
     grouped['featured'] = featuredGifts;
+    console.log('⭐ Featured section:', featuredGifts.length, 'gifts');
     
+    // Group ALL gifts by category (don't exclude featured from their categories)
+    // This ensures magical category gets ALL its 13 gifts
     gifts.forEach(gift => {
-      if (!featuredGifts.find(f => f.id === gift.id)) {
-        if (!grouped[gift.category]) {
-          grouped[gift.category] = [];
-        }
-        grouped[gift.category].push(gift);
+      if (!grouped[gift.category]) {
+        grouped[gift.category] = [];
       }
+      grouped[gift.category].push(gift);
+    });
+    
+    // Log each category count
+    Object.entries(grouped).forEach(([cat, items]) => {
+      console.log(`📦 ${cat}: ${items.length} gifts`);
     });
     
     return grouped;
