@@ -317,7 +317,7 @@
       "price": 220,
       "isAnimated": false,
       "imageUrl": "/gifts/perfume_set.png",
-      "popularityScore": 176
+      "popularityScore": 376
     },
     {
       "id": 33,
@@ -538,5 +538,135 @@
       "isAnimated":false,
       "imageUrl":"/cards/night.png",
       "popularityScore":225
+    },
+    {
+      "id": 80,
+      "name": "Treasure Compass",
+      "description": "Points to your heart's deepest desire",
+      "category": "magical",
+      "price": 195,
+      "isAnimated": false,
+      "imageUrl": "/magical/compass.png",
+      "popularityScore": 320
+    },
+    {
+      "id": 81,
+      "name": "Cupid's Arrow Set",
+      "description": "Makes anyone fall instantly in love",
+      "category": "magical",
+      "price": 185,
+      "isAnimated": false,
+      "imageUrl": "/magical/cupidarrow.png",
+      "popularityScore": 315
+    },
+    {
+      "id": 82,
+      "name": "Dragon Egg in Nest",
+      "description": "Hatches your own loyal dragon companion",
+      "category": "magical",
+      "price": 290,
+      "isAnimated": false,
+      "imageUrl": "/magical/dragonegg.png",
+      "popularityScore": 350
+    },
+    {
+      "id": 83,
+      "name": "Phoenix Feather Quill",
+      "description": "Writes words that come true",
+      "category": "magical",
+      "price": 175,
+      "isAnimated": false,
+      "imageUrl": "/magical/feathers.png",
+      "popularityScore": 305
+    },
+    {
+      "id": 84,
+      "name": "Time Turner Hourglass",
+      "description": "Rewind or fast-forward time itself",
+      "category": "magical",
+      "price": 220,
+      "isAnimated": false,
+      "imageUrl": "/magical/hourglass.png",
+      "popularityScore": 330
+    },
+    {
+      "id": 85,
+      "name": "Celestial Star Lantern",
+      "description": "Lights the path to your destiny",
+      "category": "magical",
+      "price": 165,
+      "isAnimated": false,
+      "imageUrl": "/magical/lantern.png",
+      "popularityScore": 295
+    },
+    {
+      "id": 86,
+      "name": "Celestial Moon Necklace",
+      "description": "Grants wishes under moonlight",
+      "category": "magical",
+      "price": 210,
+      "isAnimated": false,
+      "imageUrl": "/magical/moonnecklace.png",
+      "popularityScore": 325
+    },
+    {
+      "id": 87,
+      "name": "Enchanted Music Box",
+      "description": "Plays melodies that heal the heart",
+      "category": "magical",
+      "price": 240,
+      "isAnimated": false,
+      "imageUrl": "/magical/musicbox.png",
+      "popularityScore": 340
+    },
+    {
+      "id": 88,
+      "name": "Mermaid's Pearl Shell",
+      "description": "Reveals hidden ocean treasures",
+      "category": "magical",
+      "price": 205,
+      "isAnimated": false,
+      "imageUrl": "/magical/pearl.png",
+      "popularityScore": 310
+    },
+    {
+      "id": 89,
+      "name": "Enchanted Rose Under Glass",
+      "description": "Love preserved forever, never fades",
+      "category": "magical",
+      "price": 225,
+      "isAnimated": false,
+      "imageUrl": "/magical/roseinglass.png",
+      "popularityScore": 345
+    },
+    {
+      "id": 90,
+      "name": "Crystal Snowglobe",
+      "description": "Summons winter magic and wonder",
+      "category": "magical",
+      "price": 180,
+      "isAnimated": false,
+      "imageUrl": "/magical/snowglobe.png",
+      "popularityScore": 300
+    },
+    {
+      "id": 91,
+      "name": "Magic Spell Book",
+      "description": "Contains spells for any situation",
+      "category": "magical",
+      "price": 250,
+      "isAnimated": false,
+      "imageUrl": "/magical/spellbook.png",
+      "popularityScore": 335
+    },
+    {
+      "id": 92,
+      "name": "Wishing Well Miniature",
+      "description": "Throws coins, makes wishes come true",
+      "category": "magical",
+      "price": 190,
+      "isAnimated": false,
+      "imageUrl": "/magical/wishwell.png",
+      "popularityScore": 315
     }
   ]
