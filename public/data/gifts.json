@@ -1,0 +1,542 @@
+[
+    {
+      "id": 1,
+      "name": "Scarlet Rose Bouquet",
+      "description": "A dozen deep crimson roses, fresh with morning dew",
+      "category": "romantic",
+      "price": 120,
+      "isAnimated": false,
+      "imageUrl": "/gifts/rose_bouquet.png",
+      "popularityScore": 95
+    },
+    {
+      "id": 2,
+      "name": "Golden Heart Locket",
+      "description": "Vintage locket that opens to reveal a secret compartment",
+      "category": "romantic",
+      "price": 180,
+      "isAnimated": false,
+      "imageUrl": "/gifts/heart_locket.png",
+      "popularityScore": 240
+    },
+    {
+      "id": 3,
+      "name": "Sealed Love Letter",
+      "description": "Wax-sealed parchment with handwritten confession",
+      "category": "romantic",
+      "price": 90,
+      "isAnimated": false,
+      "imageUrl": "/gifts/love_letter.png",
+      "popularityScore": 89
+    },
+    {
+      "id": 4,
+      "name": "Velvet Chocolate Box",
+      "description": "Assorted luxury chocolates in velvet-lined box",
+      "category": "romantic",
+      "price": 85,
+      "isAnimated": false,
+      "imageUrl": "/gifts/chocolate_box.png",
+      "popularityScore": 210
+    },
+    {
+      "id": 5,
+      "name": "Sunset Couple Silhouette",
+      "description": "Silhouette of couple embracing at sunset",
+      "category": "romantic",
+      "price": 110,
+      "isAnimated": false,
+      "imageUrl": "/gifts/couple_silhouette.png",
+      "popularityScore": 156
+    },
+    {
+      "id": 6,
+      "name": "Crystal Perfume Bottle",
+      "description": "Elegant crystal bottle with floral fragrance",
+      "category": "romantic",
+      "price": 195,
+      "isAnimated": false,
+      "imageUrl": "/gifts/perfume_bottle.png",
+      "popularityScore": 178
+    },
+    {
+      "id": 7,
+      "name": "Platinum Promise Ring",
+      "description": "Simple platinum band with engraved date",
+      "category": "romantic",
+      "price": 320,
+      "isAnimated": false,
+      "imageUrl": "/gifts/diamond_ring.png",
+      "popularityScore": 280
+    },
+    {
+      "id": 8,
+      "name": "Romantic Candlelight Dinner",
+      "description": "Intimate dinner setup with candles and wine",
+      "category": "romantic",
+      "price": 150,
+      "isAnimated": false,
+      "imageUrl": "/gifts/candlelight_dinner.png",
+      "popularityScore": 167
+    },
+    {
+      "id": 9,
+      "name": "Floating Heart Balloons",
+      "description": "Cluster of heart-shaped helium balloons",
+      "category": "romantic",
+      "price": 95,
+      "isAnimated": false,
+      "imageUrl": "/gifts/floating_hearts.png",
+      "popularityScore": 134
+    },
+    {
+      "id": 10,
+      "name": "Cuddly Teddy Bear",
+      "description": "Soft teddy bear holding a satin heart",
+      "category": "romantic",
+      "price": 75,
+      "isAnimated": false,
+      "imageUrl": "/gifts/teddy_bear.png",
+      "popularityScore": 189
+    },
+    {
+      "id": 11,
+      "name": "Lovebird Cage",
+      "description": "Ornate cage with pair of singing lovebirds",
+      "category": "romantic",
+      "price": 130,
+      "isAnimated": false,
+      "imageUrl": "/gifts/love_birds.png",
+      "popularityScore": 112
+    },
+    {
+      "id": 12,
+      "name": "Enchanted Love Potion",
+      "description": "Glowing potion bottle with magical essence",
+      "category": "romantic",
+      "price": 145,
+      "isAnimated": false,
+      "imageUrl": "/gifts/love_potion.png",
+      "popularityScore": 123
+    },
+    {
+      "id": 13,
+      "name": "Eternal Knot Pendant",
+      "description": "Celtic knot symbolizing eternal connection",
+      "category": "romantic",
+      "price": 165,
+      "isAnimated": false,
+      "imageUrl": "/gifts/eternity_knot.png",
+      "popularityScore": 98
+    },
+    {
+      "id": 14,
+      "name": "Picnic Romance Basket",
+      "description": "Wicker basket with wine, cheese, and blanket",
+      "category": "romantic",
+      "price": 125,
+      "isAnimated": false,
+      "imageUrl": "/gifts/picnic_basket.png",
+      "popularityScore": 145
+    },
+    {
+      "id": 15,
+      "name": "Ballroom Dance Couple",
+      "description": "Elegant couple in formal dance embrace",
+      "category": "romantic",
+      "price": 140,
+      "isAnimated": false,
+      "imageUrl": "/gifts/couple_dancing.png",
+      "popularityScore": 167
+    },
+    {
+      "id": 16,
+      "name": "Theatrical Drama Masks",
+      "description": "Comedy and tragedy masks for theater lovers",
+      "category": "hobby",
+      "price": 115,
+      "isAnimated": false,
+      "imageUrl": "/gifts/theater_masks.png",
+      "popularityScore": 132
+    },
+    {
+      "id": 17,
+      "name": "Vintage Film Reel",
+      "description": "Classic movie reel with film strip",
+      "category": "hobby",
+      "price": 135,
+      "isAnimated": false,
+      "imageUrl": "/gifts/film_reel.png",
+      "popularityScore": 154
+    },
+    {
+      "id": 18,
+      "name": "Mountain Adventure Bike",
+      "description": "Professional mountain bike for trails",
+      "category": "hobby",
+      "price": 310,
+      "isAnimated": false,
+      "imageUrl": "/gifts/mountain_bike.png",
+      "popularityScore": 189
+    },
+    {
+      "id": 19,
+      "name": "Artist's Color Palette",
+      "description": "Wooden palette with vibrant oil paints",
+      "category": "hobby",
+      "price": 95,
+      "isAnimated": false,
+      "imageUrl": "/gifts/artist_paint.png",
+      "popularityScore": 123
+    },
+    {
+      "id": 20,
+      "name": "Acoustic Serenade Guitar",
+      "description": "Mahogany acoustic guitar for love songs",
+      "category": "hobby",
+      "price": 280,
+      "isAnimated": false,
+      "imageUrl": "/gifts/acoustic_guitar.png",
+      "popularityScore": 176
+    },
+    {
+      "id": 21,
+      "name": "Gourmet Chef's Kitchen",
+      "description": "Professional kitchen utensils set",
+      "category": "hobby",
+      "price": 220,
+      "isAnimated": false,
+      "imageUrl": "/gifts/chef_kitchen.png",
+      "popularityScore": 145
+    },
+    {
+      "id": 22,
+      "name": "Bookworm's Library",
+      "description": "Stack of classic leather-bound books",
+      "category": "hobby",
+      "price": 130,
+      "isAnimated": false,
+      "imageUrl": "/gifts/stack_books.png",
+      "popularityScore": 167
+    },
+    {
+      "id": 23,
+      "name": "Garden Bloom Tools",
+      "description": "Floral gardening tools with watering can",
+      "category": "hobby",
+      "price": 110,
+      "isAnimated": false,
+      "imageUrl": "/gifts/gardening_tools.png",
+      "popularityScore": 134
+    },
+    {
+      "id": 24,
+      "name": "Pro Gaming Controller",
+      "description": "Ergonomic gaming controller with lights",
+      "category": "hobby",
+      "price": 195,
+      "isAnimated": false,
+      "imageUrl": "/gifts/gaming_controller.png",
+      "popularityScore": 210
+    },
+    {
+      "id": 25,
+      "name": "Vintage Wine Collection",
+      "description": "Aged wine bottle with crystal glasses",
+      "category": "hobby",
+      "price": 185,
+      "isAnimated": false,
+      "imageUrl": "/gifts/wine_bottle.png",
+      "popularityScore": 178
+    },
+    {
+      "id": 26,
+      "name": "Silver Cufflink Set",
+      "description": "Elegant silver cufflinks for formal wear",
+      "category": "fashion",
+      "price": 145,
+      "isAnimated": false,
+      "imageUrl": "/gifts/cufflinks_elegant.png",
+      "popularityScore": 123
+    },
+    {
+      "id": 27,
+      "name": "Designer Spark Lighter",
+      "description": "Luxury metal lighter with engraving",
+      "category": "fashion",
+      "price": 85,
+      "isAnimated": false,
+      "imageUrl": "/gifts/designer_lighter.png",
+      "popularityScore": 98
+    },
+    {
+      "id": 28,
+      "name": "Festive Reindeer Sweater",
+      "description": "Cozy Christmas sweater with reindeer pattern",
+      "category": "fashion",
+      "price": 120,
+      "isAnimated": false,
+      "imageUrl": "/gifts/christmas_sweater.png",
+      "popularityScore": 187
+    },
+    {
+      "id": 29,
+      "name": "Luxury Designer Handbag",
+      "description": "Elegant leather handbag with gold hardware",
+      "category": "fashion",
+      "price": 420,
+      "isAnimated": false,
+      "imageUrl": "/gifts/luxury_handbag.png",
+      "popularityScore": 245
+    },
+    {
+      "id": 30,
+      "name": "Sunglasses Collection",
+      "description": "Set of three trendy sunglasses styles",
+      "category": "fashion",
+      "price": 165,
+      "isAnimated": false,
+      "imageUrl": "/gifts/glasses.png",
+      "popularityScore": 154
+    },
+    {
+      "id": 31,
+      "name": "Wristwatch Chronograph Set",
+      "description": "Collection of three luxury wristwatches",
+      "category": "fashion",
+      "price": 380,
+      "isAnimated": false,
+      "imageUrl": "/gifts/wrist_watch.png",
+      "popularityScore": 210
+    },
+    {
+      "id": 32,
+      "name": "Perfume Trio Set",
+      "description": "Three distinct fragrance bottles",
+      "category": "fashion",
+      "price": 220,
+      "isAnimated": false,
+      "imageUrl": "/gifts/perfume_set.png",
+      "popularityScore": 176
+    },
+    {
+      "id": 33,
+      "name": "Professional Makeup Kit",
+      "description": "Complete makeup collection with brushes",
+      "category": "fashion",
+      "price": 195,
+      "isAnimated": false,
+      "imageUrl": "/gifts/makeup_kit.png",
+      "popularityScore": 189
+    },
+    {
+      "id": 34,
+      "name": "Designer Heel Collection",
+      "description": "Set of three elegant high heels",
+      "category": "fashion",
+      "price": 310,
+      "isAnimated": false,
+      "imageUrl": "/gifts/shoe.png",
+      "popularityScore": 167
+    },
+    {
+      "id": 35,
+      "name": "Wildflower Bouquet",
+      "description": "Colorful mix of seasonal wildflowers",
+      "category": "flowers",
+      "price": 95,
+      "isAnimated": false,
+      "imageUrl": "/gifts/flower1.png",
+      "popularityScore": 134
+    },
+    {
+      "id": 36,
+      "name": "Lily & Orchid Arrangement",
+      "description": "Elegant white lilies with purple orchids",
+      "category": "flowers",
+      "price": 125,
+      "isAnimated": false,
+      "imageUrl": "/gifts/flower2.png",
+      "popularityScore": 145
+    },
+    {
+      "id": 37,
+      "name": "Sunflower Sunshine Bundle",
+      "description": "Bright sunflowers with green accents",
+      "category": "flowers",
+      "price": 110,
+      "isAnimated": false,
+      "imageUrl": "/gifts/flower3.png",
+      "popularityScore": 123
+    },
+    {
+      "id": 38,
+      "name": "Tropical Paradise Bouquet",
+      "description": "Exotic tropical flowers and leaves",
+      "category": "flowers",
+      "price": 145,
+      "isAnimated": false,
+      "imageUrl": "/gifts/flower4.png",
+      "popularityScore": 156
+    },
+    {
+      "id": 39,
+      "name": "Pink Blossom Branch",
+      "description": "Cherry blossom branches in full bloom",
+      "category": "flowers",
+      "price": 130,
+      "isAnimated": false,
+      "imageUrl": "/gifts/flower5.png",
+      "popularityScore": 167
+    },
+    {
+      "id": 40,
+      "name": "Simple Daisy Posy",
+      "description": "Sweet daisy bouquet with baby's breath",
+      "category": "flowers",
+      "price": 75,
+      "isAnimated": false,
+      "imageUrl": "/gifts/flower6.png",
+      "popularityScore": 112
+    },
+    {
+      "id": 41,
+      "name": "Rose & Baby's Breath",
+      "description": "Classic red roses with delicate filler",
+      "category": "flowers",
+      "price": 135,
+      "isAnimated": false,
+      "imageUrl": "/gifts/flower7.png",
+      "popularityScore": 178
+    },
+    {
+      "id": 42,
+      "name": "Lavender Field Bouquet",
+      "description": "Fragrant lavender with purple accents",
+      "category": "flowers",
+      "price": 120,
+      "isAnimated": false,
+      "imageUrl": "/gifts/flower8.png",
+      "popularityScore": 154
+    },
+    {
+      "id": 43,
+      "name": "Celebration Champagne",
+      "description": "Sparkling champagne for special moments",
+      "category": "celebration",
+      "price": 145,
+      "isAnimated": false,
+      "imageUrl": "/gifts/champagne_bottle.png",
+      "popularityScore": 189
+    },
+    {
+      "id": 44,
+      "name": "Cozy Fireplace Glow",
+      "description": "Warm fireplace for intimate evenings",
+      "category": "celebration",
+      "price": 130,
+      "isAnimated": false,
+      "imageUrl": "/gifts/cozy_fire.png",
+      "popularityScore": 167
+    },
+    {
+      "id": 45,
+      "name": "Birthday Celebration Cake",
+      "description": "Layered birthday cake with candles",
+      "category": "celebration",
+      "price": 125,
+      "isAnimated": false,
+      "imageUrl": "/gifts/cake.png",
+      "popularityScore": 210
+    },
+    {
+      "id": 46,
+      "name": "Valentine Heart Treasure Box",
+      "description": "Heart-shaped box with romantic surprises",
+      "category": "celebration",
+      "price": 115,
+      "isAnimated": false,
+      "imageUrl": "/gifts/valentine_box.png",
+      "popularityScore": 245
+    },
+    {
+      "id": 47,
+      "name": "Good Luck Postcard",
+      "description": "Postcard wishing good fortune and success",
+      "category": "postcard",
+      "price": 80,
+      "isAnimated": false,
+      "imageUrl": "/cards/luck.png",
+      "popularityScore": 280
+    },
+    {
+      "id": 48,
+      "name": "Birthday Wishes Postcard",
+      "description": "Colorful postcard with birthday greetings",
+      "category": "postcard",
+      "price": 80,
+      "isAnimated": false,
+      "imageUrl": "/cards/birthday.png",
+      "popularityScore": 240
+    },
+    {
+      "id": 49,
+      "name": "Get Well Soon Postcard",
+      "description": "Cheerful postcard wishing a speedy recovery",
+      "category": "postcard",
+      "price": 80,
+      "isAnimated": false,
+      "imageUrl": "/cards/well.png",
+      "popularityScore": 200
+    },
+    {
+      "id": 50,
+      "name": "Great day",
+      "description": "Postcard wishing someone a great day",
+      "category": "postcard",
+      "price": 80,
+      "isAnimated": false,
+      "imageUrl": "/cards/greatday.png",
+      "popularityScore": 220
+    },
+    {
+      "id": 51,
+      "name": "You are beautiful",
+      "description": "Postcard complimenting someone's beauty",
+      "category": "postcard",
+      "price": 80,
+      "isAnimated": false,
+      "imageUrl": "/cards/beautiful.png",
+      "popularityScore": 260
+    },
+    {
+      "id":52,
+      "name":"Miss you",
+      "description":"Postcard expressing that you miss someone",
+      "category":"postcard",
+      "price":80,
+      "isAnimated":false,
+      "imageUrl":"/cards/missyou.png",
+      "popularityScore":230
+    }
+    ,{
+      "id":53,
+      "name":"Good morning",
+      "description":"Postcard wishing someone a good morning",
+      "category":"postcard",
+      "price":80,
+      "isAnimated":false,
+      "imageUrl":"/cards/morning.png",
+      "popularityScore":210
+    }
+    ,{
+      "id":54,
+      "name":"Good night",
+      "description":"Postcard wishing someone a good night",
+      "category":"postcard",
+      "price":80,
+      "isAnimated":false,
+      "imageUrl":"/cards/night.png",
+      "popularityScore":225
+    }
+  ]

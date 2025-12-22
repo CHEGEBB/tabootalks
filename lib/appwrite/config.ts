@@ -26,7 +26,8 @@ export const COLLECTIONS = {
   FOLLOWS: process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_FOLLOWS!,
   POSTS: process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_POSTS!,
   PERSONAS: process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_PERSONAS!,
-  TRANSACTIONS: 'transactions'
+  TRANSACTIONS: 'transactions',
+  GIFTS: 'gifts',
 };
 
 // Export Storage Bucket IDs

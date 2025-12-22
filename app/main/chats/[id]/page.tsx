@@ -15,6 +15,8 @@ import {
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import LayoutController from '@/components/layout/LayoutController';
 import dynamic from 'next/dynamic';
+import giftHandlerService, { ChatGiftMessage } from '@/lib/services/giftHandlerService';
+
 
 // Dynamically import emoji picker to avoid SSR issues
 const EmojiPicker = dynamic(
@@ -29,6 +31,25 @@ interface Message {
   content: string;
   timestamp: string;
   conversationId: string;
+  isGift?: boolean;
+  giftData?: string;
+  giftId?: string;
+  giftName?: string;
+  giftPrice?: number;
+  giftImage?: string;
+}
+export interface ChatGiftMessage {
+  type: 'gift';
+  giftId: number;
+  giftName: string;
+  giftImage?: string;
+  message?: string;
+  isAnimated: boolean;
+  animationUrl?: string;
+  price: number;
+  category?: string;
+  timestamp: string;
+  documentId?: string; // Add this line
 }
 
 interface Conversation {
@@ -52,6 +73,26 @@ interface User {
   profilePic?: string;
 }
 
+interface AppwriteGiftDocument {
+  $id: string;
+  senderId: string;
+  recipientId: string;
+  recipientName: string;
+  giftId: string;
+  giftName: string;
+  giftPrice: number;
+  giftImage?: string;
+  message?: string;
+  sentAt: string;
+  isAnimated: boolean;
+  animationUrl?: string;
+  category?: string;
+  status: string;
+  conversationId?: string;
+  $createdAt: string;
+  $updatedAt: string;
+}
+
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
@@ -73,9 +114,14 @@ export default function ChatPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [typingIndicator, setTypingIndicator] = useState(false);
   
+  // Gift states
+  const [giftsInChat, setGiftsInChat] = useState<ChatGiftMessage[]>([]);
+  const [giftsFromGiftsCollection, setGiftsFromGiftsCollection] = useState<AppwriteGiftDocument[]>([]);
+  const [showGiftAnimation, setShowGiftAnimation] = useState<ChatGiftMessage | null>(null);
+  const [newGiftNotification, setNewGiftNotification] = useState<ChatGiftMessage | null>(null);
+  
   // Chat list sidebar states
   const [conversations, setConversations] = useState<ConversationWithBot[]>([]);
-  const [suggestedBots, setSuggestedBots] = useState<ParsedPersonaProfile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'active'>('all');
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
@@ -84,6 +130,7 @@ export default function ChatPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const mobileInputContainerRef = useRef<HTMLDivElement>(null);
+
   
   // Initialize Appwrite
   const client = new Client()
@@ -110,6 +157,93 @@ export default function ChatPage() {
     }
   };
 
+  // Load gifts from gifts collection
+  const loadGiftsFromGiftsCollection = async (conversationId: string) => {
+    try {
+      console.log('Loading gifts for conversation:', conversationId);
+      
+      // Get current user ID
+      const currentUser = await account.get();
+      const userId = currentUser.$id;
+      
+      const giftsResponse = await databases.listDocuments(
+        DATABASE_ID,
+        'gifts',
+        [
+          Query.equal('conversationId', conversationId),
+          Query.orderAsc('sentAt'),
+          Query.limit(50)
+        ]
+      );
+      
+      console.log(`Found ${giftsResponse.documents.length} gifts in collection`);
+      
+      // Load Lottie animations for animated gifts
+      const gifts = giftsResponse.documents as unknown as AppwriteGiftDocument[];
+      const animations: Record<string, any> = { ...lottieAnimations };
+      
+      for (const gift of gifts) {
+        if (gift.isAnimated && gift.animationUrl && !animations[gift.$id]) {
+          try {
+            const animationData = await loadLottieAnimation(gift.animationUrl);
+            if (animationData) {
+              animations[gift.$id] = animationData;
+            }
+          } catch (error) {
+            console.error(`Failed to load animation for gift ${gift.$id}:`, error);
+          }
+        }
+      }
+      
+      setLottieAnimations(animations);
+      return gifts;
+    } catch (error: any) {
+      console.error('Error loading gifts from collection:', error);
+      return [];
+    }
+  };
+  
+  // Convert Appwrite gift document to ChatGiftMessage
+  const convertToChatGiftMessage = (giftDoc: AppwriteGiftDocument): ChatGiftMessage => {
+    return {
+      type: 'gift',
+      giftId: parseInt(giftDoc.giftId),
+      giftName: giftDoc.giftName,
+      giftImage: giftDoc.giftImage,
+      message: giftDoc.message,
+      isAnimated: giftDoc.isAnimated,
+      animationUrl: giftDoc.animationUrl,
+      price: giftDoc.giftPrice,
+      category: giftDoc.category,
+      timestamp: giftDoc.sentAt || giftDoc.$createdAt,
+      documentId: giftDoc.$id // Add documentId to reference animation
+    };
+  };convertToChatGiftMessage
+
+  // Listen for new gifts
+  useEffect(() => {
+    if (!actualConversationId) return;
+    
+    const checkForNewGifts = async () => {
+      try {
+        const giftsFromGiftsColl = await loadGiftsFromGiftsCollection(actualConversationId);
+        
+        // Convert gifts from gifts collection to ChatGiftMessage format
+        const convertedGifts = giftsFromGiftsColl.map(convertToChatGiftMessage);
+        
+        setGiftsInChat(convertedGifts);
+        setGiftsFromGiftsCollection(giftsFromGiftsColl);
+      } catch (error) {
+        console.error('Error checking for new gifts:', error);
+      }
+    };
+    
+    // Check every 10 seconds for new gifts
+    const interval = setInterval(checkForNewGifts, 10000);
+    
+    return () => clearInterval(interval);
+  }, [actualConversationId]);
+
   // Close emoji picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -122,6 +256,34 @@ export default function ChatPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handleCreditsUpdated = () => {
+      console.log('Chat page: Credits updated event received');
+      if (currentUser?.$id) {
+        const refreshUser = async () => {
+          try {
+            const accountData = await account.get();
+            const userData = await databases.getDocument(
+              DATABASE_ID,
+              'users',
+              accountData.$id
+            );
+            setCurrentUser(userData as any);
+            console.log('Chat page: Refreshed user credits:', userData.credits);
+          } catch (error) {
+            console.error('Error refreshing user:', error);
+          }
+        };
+        refreshUser();
+      }
+    };
+
+    window.addEventListener('credits-updated', handleCreditsUpdated);
+    return () => {
+      window.removeEventListener('credits-updated', handleCreditsUpdated);
+    };
+  }, [currentUser?.$id]);
+
   // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,7 +291,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, streamingText]);
+  }, [messages, streamingText, giftsInChat]);
 
   // Load everything on mount
   useEffect(() => {
@@ -169,7 +331,6 @@ export default function ChatPage() {
           conversationId
         );
         
-        // Verify this conversation belongs to current user
         if (convData.userId !== accountData.$id) {
           setError('You do not have permission to access this conversation.');
           return;
@@ -181,17 +342,14 @@ export default function ChatPage() {
         convExists = true;
 
       } catch (convErr: any) {
-        // Conversation doesn't exist - this might be a botProfileId
         convExists = false;
       }
 
       // 3. Use personaService to load bot profile
       try {
         const botData = await personaService.getPersonaById(botId);
-        
         setBotProfile(botData);
 
-        // If conversation doesn't exist, this is a new conversation
         if (!convExists) {
           setIsNewConversation(true);
           setActualConversationId('');
@@ -203,9 +361,10 @@ export default function ChatPage() {
         return;
       }
 
-      // 4. If conversation exists, load messages
+      // 4. If conversation exists, load messages AND gifts
       if (convExists) {
         try {
+          // Load messages
           const messagesData = await databases.listDocuments(
             DATABASE_ID,
             'messages',
@@ -216,11 +375,26 @@ export default function ChatPage() {
             ]
           );
           setMessages(messagesData.documents as any);
+          
+          // Load gifts from gifts collection
+          const giftsFromGiftsColl = await loadGiftsFromGiftsCollection(conversationId);
+          
+          // Convert gifts from gifts collection to ChatGiftMessage format
+          const convertedGifts = giftsFromGiftsColl.map(convertToChatGiftMessage);
+          
+          setGiftsInChat(convertedGifts);
+          setGiftsFromGiftsCollection(giftsFromGiftsColl);
+          
         } catch (msgErr) {
+          console.error('Error loading messages/gifts:', msgErr);
           setMessages([]);
+          setGiftsInChat([]);
+          setGiftsFromGiftsCollection([]);
         }
       } else {
         setMessages([]);
+        setGiftsInChat([]);
+        setGiftsFromGiftsCollection([]);
       }
 
     } catch (err: any) {
@@ -241,10 +415,8 @@ export default function ChatPage() {
     try {
       setIsLoadingConversations(true);
       
-      // Get current user
       const accountData = await account.get();
       
-      // Get user's conversations
       const conversationsData = await databases.listDocuments(
         DATABASE_ID,
         'conversations',
@@ -255,7 +427,6 @@ export default function ChatPage() {
         ]
       );
 
-      // Load bot profiles for existing conversations using personaService
       const conversationsWithBots = await Promise.all(
         conversationsData.documents.map(async (conv) => {
           try {
@@ -265,7 +436,7 @@ export default function ChatPage() {
               ...conv,
               bot: {
                 ...botData,
-                isOnline: Math.random() > 0.3 // Simulate online status for now
+                isOnline: Math.random() > 0.3
               }
             };
           } catch (err: any) {
@@ -320,7 +491,7 @@ export default function ChatPage() {
     setError('');
     setStreamingText('');
     setTypingIndicator(true);
-    setShowEmojiPicker(false); // Close emoji picker when sending
+    setShowEmojiPicker(false);
 
     // Optimistic update
     const tempUserMessage: Message = {
@@ -357,52 +528,62 @@ export default function ChatPage() {
       }
 
       // Handle SSE stream
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullBotResponse = '';
-      let newConvId = actualConversationId;
+     // Handle SSE stream
+     const reader = response.body?.getReader();
+     const decoder = new TextDecoder();
+     let fullBotResponse = '';
+     let newConvId = actualConversationId;
+     let buffer = ''; // Buffer for incomplete lines
 
-      if (!reader) {
-        throw new Error('No response stream');
-      }
+     if (!reader) {
+       throw new Error('No response stream');
+     }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+     try {
+       while (true) {
+         const { done, value } = await reader.read();
+         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+         // Append new chunk to buffer
+         buffer += decoder.decode(value, { stream: true });
+         
+         // Split by newlines but keep the last incomplete line in buffer
+         const lines = buffer.split('\n');
+         buffer = lines.pop() || ''; // Keep the last (possibly incomplete) line
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const jsonStr = line.substring(6);
-              const data = JSON.parse(jsonStr);
+         for (const line of lines) {
+           if (line.trim().startsWith('data: ')) {
+              try {
+                const jsonStr = line.substring(6);
+                const data = JSON.parse(jsonStr);
 
-              if (data.chunk) {
-                fullBotResponse += data.chunk;
-                setStreamingText(fullBotResponse);
+                if (data.chunk) {
+                  fullBotResponse += data.chunk;
+                  setStreamingText(fullBotResponse);
+                }
+
+                if (data.conversationId && !actualConversationId) {
+                  newConvId = data.conversationId;
+                  setActualConversationId(data.conversationId);
+                  setIsNewConversation(false);
+                  
+                  window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
+                }
+
+                if (data.done && data.creditsUsed) {
+                  setCurrentUser(prev => prev ? {
+                    ...prev,
+                    credits: prev.credits - data.creditsUsed
+                  } : null);
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e);
               }
-
-              if (data.conversationId && !actualConversationId) {
-                newConvId = data.conversationId;
-                setActualConversationId(data.conversationId);
-                setIsNewConversation(false);
-                
-                window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
-              }
-
-              if (data.done && data.creditsUsed) {
-                setCurrentUser(prev => prev ? {
-                  ...prev,
-                  credits: prev.credits - data.creditsUsed
-                } : null);
-              }
-            } catch (e) {
-              // Silently handle parse errors
             }
           }
         }
+      } catch (streamError) {
+        console.error('Error reading SSE stream:', streamError);
       }
 
       // Clear streaming
@@ -447,13 +628,14 @@ export default function ChatPage() {
       setMessages(prev => prev.filter(m => m.$id !== tempUserMessage.$id));
       setTypingIndicator(false);
       
-      // Show user-friendly error
       if (err.message.includes('credits')) {
         setError('Insufficient credits to send message');
       } else if (err.message.includes('404')) {
         setError('Chat function not found. Please try again later.');
       } else if (err.message.includes('failed to fetch')) {
         setError('Network error. Please check your connection.');
+      } else if (err.message.includes('500')) {
+        setError('Server error. Please try again.');
       } else {
         setError('Failed to send message. Please try again.');
       }
@@ -497,10 +679,23 @@ export default function ChatPage() {
     router.push('/main/people');
   };
 
+  // Add this function in your ChatPage component
+const loadLottieAnimation = async (animationUrl?: string): Promise<any> => {
+  if (!animationUrl) return null;
+  
+  try {
+    const response = await fetch(animationUrl);
+    const animationData = await response.json();
+    return animationData;
+  } catch (error) {
+    console.error('Error loading Lottie animation:', error);
+    return null;
+  }
+};
+
   const handleEmojiSelect = useCallback((emojiObject: any) => {
     setInputMessage(prev => prev + emojiObject.emoji);
     setShowEmojiPicker(false);
-    // Focus input after a small delay to ensure it works
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
@@ -508,7 +703,6 @@ export default function ChatPage() {
 
   const startNewChat = async (botId: string) => {
     try {
-      // Navigate directly to the bot for new chat
       router.push(`/main/chats/${botId}`);
     } catch (err: any) {
       console.error('❌ Error starting chat:', err);
@@ -526,6 +720,121 @@ export default function ChatPage() {
     
     return matchesSearch;
   });
+
+  // Function to render gift messages
+  const renderGiftMessage = (giftData: ChatGiftMessage, index: number, isMobile = false) => {
+    const giftDoc = giftsFromGiftsCollection.find(g => g.giftName === giftData.giftName && g.$createdAt === giftData.timestamp);
+    const animationData = giftDoc ? lottieAnimations[giftDoc.$id] : null;
+    
+    return (
+      <div key={`gift-${index}`} className="flex justify-end">
+        <div className={`${isMobile ? 'max-w-[85%] p-3' : 'max-w-[75%] p-4'} rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200`}>
+          <div className={`flex items-start gap-${isMobile ? '2' : '3'}`}>
+            {/* Gift Preview */}
+            <div 
+              onClick={() => giftData.isAnimated && animationData && setShowGiftAnimationOverlay(giftData)}
+              className={`${isMobile ? 'w-10 h-10 p-1' : 'w-12 h-12 p-2'} rounded-lg overflow-hidden bg-white flex-shrink-0 cursor-pointer hover:scale-105 transition-transform`}
+            >
+              {giftData.isAnimated && animationData ? (
+                <div className="w-full h-full">
+                  <Lottie
+                    animationData={animationData}
+                    loop={true}
+                    autoplay={true}
+                    className="w-full h-full"
+                  />
+                </div>
+              ) : giftData.giftImage ? (
+                <Image
+                  src={giftData.giftImage}
+                  alt={giftData.giftName}
+                  width={isMobile ? 40 : 48}
+                  height={isMobile ? 40 : 48}
+                  className="object-contain w-full h-full"
+                />
+              ) : (
+                <Gift className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-amber-500 mx-auto`} />
+              )}
+            </div>
+            
+            <div className="flex-1">
+              <div className={`flex items-center gap-${isMobile ? '1' : '2'} mb-1`}>
+                <span className={`font-bold text-gray-900 ${isMobile ? 'text-sm' : ''}`}>🎁 Gift Sent!</span>
+                <span className={`${isMobile ? 'text-xs px-1 py-0.5' : 'text-xs px-2 py-0.5'} bg-amber-100 text-amber-800 rounded-full`}>
+                  {giftData.price} credits
+                </span>
+              </div>
+              <p className={`font-semibold text-gray-800 mb-1 ${isMobile ? 'text-sm' : ''}`}>{giftData.giftName}</p>
+              {giftData.message && (
+                <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm'} italic mb-${isMobile ? '1' : '2'}`}>"{giftData.message}"</p>
+              )}
+              <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500`}>
+                {formatTime(giftData.timestamp)}
+              </div>
+            </div>
+          </div>
+          
+          {giftData.isAnimated && (
+            <button
+              onClick={() => {
+                if (animationData) {
+                  setAnimationData(animationData);
+                  setShowGiftAnimationOverlay(giftData);
+                }
+              }}
+              className="mt-2 text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
+            >
+              <Sparkles className="w-3 h-3" />
+              {animationData ? 'Play Animation' : 'Loading Animation...'}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Function to handle gift animation close
+  const handleGiftAnimationClose = () => {
+    setShowGiftAnimation(null);
+    setShowGiftAnimationOverlay(null);
+    setAnimationData(null);
+  };
+  // Combine and sort all messages and gifts chronologically
+  const getAllChatItems = () => {
+    const allItems: Array<{
+      type: 'message' | 'gift';
+      data: Message | ChatGiftMessage;
+      timestamp: string;
+      index: number;
+    }> = [];
+    
+    // Add messages
+    messages.forEach((msg, index) => {
+      if (!msg.isGift && !giftHandlerService.parseGiftMessage(msg)) {
+        allItems.push({
+          type: 'message',
+          data: msg,
+          timestamp: msg.timestamp,
+          index
+        });
+      }
+    });
+    
+    // Add gifts
+    giftsInChat.forEach((gift, index) => {
+      allItems.push({
+        type: 'gift',
+        data: gift,
+        timestamp: gift.timestamp,
+        index
+      });
+    });
+    
+    // Sort chronologically
+    allItems.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    
+    return allItems;
+  };
 
   // Loading state
   if (isLoading) {
@@ -582,7 +891,7 @@ export default function ChatPage() {
         {/* Desktop: 3-Column Layout */}
         <div className="hidden lg:flex w-full max-w-[1400px] mx-auto">
           
-          {/* Left Sidebar - Chat List (copied from chats page) */}
+          {/* Left Sidebar - Chat List */}
           <div className="w-[400px] flex-shrink-0 border border-gray-200 h-full overflow-hidden flex flex-col bg-white scrollbar-thin">
             {/* Fixed Header */}
             <div className="bg-white border-b border-gray-200 px-6 py-4">
@@ -882,7 +1191,7 @@ export default function ChatPage() {
               )}
 
               <div className="space-y-4 max-w-3xl mx-auto">
-                {messages.length === 0 && !streamingText && botProfile && (
+                {messages.length === 0 && giftsInChat.length === 0 && !streamingText && botProfile && (
                   <div className="text-center py-12">
                     <div className="w-24 h-24 mx-auto mb-6 rounded-full overflow-hidden border-4 border-white shadow-xl">
                       <Image
@@ -903,27 +1212,36 @@ export default function ChatPage() {
                   </div>
                 )}
 
-                {messages.map((msg) => (
-                  <div
-                    key={msg.$id}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[75%] rounded-2xl p-4 ${
-                        msg.role === 'user'
-                          ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
-                          : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
-                      }`}
-                    >
-                      <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                      <div className={`flex items-center justify-end mt-2 text-xs ${
-                        msg.role === 'user' ? 'text-white/80' : 'text-gray-500'
-                      }`}>
-                        {formatTime(msg.timestamp)}
+                {/* Render all items chronologically */}
+                {getAllChatItems().map((item, index) => {
+                  if (item.type === 'message') {
+                    const msg = item.data as Message;
+                    return (
+                      <div
+                        key={`msg-${index}-${msg.$id}`}
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[75%] rounded-2xl p-4 ${
+                            msg.role === 'user'
+                              ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
+                              : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
+                          }`}
+                        >
+                          <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+                          <div className={`flex items-center justify-end mt-2 text-xs ${
+                            msg.role === 'user' ? 'text-white/80' : 'text-gray-500'
+                          }`}>
+                            {formatTime(msg.timestamp)}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  } else {
+                    const gift = item.data as ChatGiftMessage;
+                    return renderGiftMessage(gift, index);
+                  }
+                })}
 
                 {(typingIndicator || isSending) && !streamingText && (
                   <div className="flex justify-start">
@@ -980,10 +1298,10 @@ export default function ChatPage() {
                   >
                     <Smile className="w-4 h-4" />
                   </button>
-                  <button className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm">
-                    <ImageIcon className="w-4 h-4" />
-                  </button>
-                  <button className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm">
+                  <button 
+                    onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
+                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm"
+                  >
                     <Gift className="w-4 h-4" />
                   </button>
                   <button 
@@ -1036,7 +1354,7 @@ export default function ChatPage() {
             </div>
           </div>
 
-          {/* Right Sidebar - Profile Info (Always Visible) */}
+          {/* Right Sidebar - Profile Info */}
           <div className="w-[320px] flex-shrink-0 border-l border-gray-200 bg-white overflow-y-auto scrollbar-thin">
             <div className="p-6">
               <div className="mb-6">
@@ -1130,7 +1448,10 @@ export default function ChatPage() {
               </div>
 
               <div className="space-y-3">
-                <button className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all text-sm">
+                <button 
+                  onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
+                  className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all text-sm"
+                >
                   <Gift className="w-4 h-4 inline mr-2" />
                   Send Virtual Gift
                 </button>
@@ -1159,7 +1480,7 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Mobile Layout - Optimized for Touch */}
+        {/* Mobile Layout */}
         <div className="lg:hidden flex flex-col h-screen w-full">
           {/* Mobile Header */}
           <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
@@ -1231,7 +1552,7 @@ export default function ChatPage() {
             </div>
           )}
 
-          {/* Messages Area - Takes remaining space */}
+          {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-4 pb-24 bg-gradient-to-b from-white to-gray-50">
             {isNewConversation && (
               <div className="text-center mb-6">
@@ -1255,7 +1576,7 @@ export default function ChatPage() {
             )}
 
             <div className="space-y-3">
-              {messages.length === 0 && !streamingText && botProfile && (
+              {messages.length === 0 && giftsInChat.length === 0 && !streamingText && botProfile && (
                 <div className="text-center py-8">
                   <div className="w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white shadow-xl">
                     <Image
@@ -1276,25 +1597,34 @@ export default function ChatPage() {
                 </div>
               )}
 
-              {messages.map((msg) => (
-                <div
-                  key={msg.$id}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl p-3 ${
-                      msg.role === 'user'
-                        ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
-                        : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                    <div className={`text-xs mt-1 ${msg.role === 'user' ? 'text-white/80' : 'text-gray-500'}`}>
-                      {formatTime(msg.timestamp)}
+              {/* Render all items chronologically for mobile */}
+              {getAllChatItems().map((item, index) => {
+                if (item.type === 'message') {
+                  const msg = item.data as Message;
+                  return (
+                    <div
+                      key={`msg-mobile-${index}-${msg.$id}`}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[85%] rounded-2xl p-3 ${
+                          msg.role === 'user'
+                            ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
+                            : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+                        <div className={`text-xs mt-1 ${msg.role === 'user' ? 'text-white/80' : 'text-gray-500'}`}>
+                          {formatTime(msg.timestamp)}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                } else {
+                  const gift = item.data as ChatGiftMessage;
+                  return renderGiftMessage(gift, index, true);
+                }
+              })}
 
               {(typingIndicator || isSending) && !streamingText && (
                 <div className="flex justify-start">
@@ -1365,10 +1695,10 @@ export default function ChatPage() {
                 >
                   <Smile className="w-5 h-5" />
                 </button>
-                <button className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation">
-                  <ImageIcon className="w-5 h-5" />
-                </button>
-                <button className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation">
+                <button 
+                  onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
+                  className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation"
+                >
                   <Gift className="w-5 h-5" />
                 </button>
               </div>
@@ -1383,7 +1713,7 @@ export default function ChatPage() {
                   placeholder={`Message ${botProfile?.username}...`}
                   className="flex-1 px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-base touch-manipulation"
                   disabled={isSending}
-                  style={{ fontSize: '16px' }} // Prevents iOS zoom
+                  style={{ fontSize: '16px' }}
                 />
                 <button
                   onClick={sendMessage}
@@ -1411,6 +1741,113 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+
+      {/* Gift Animation Modal */}
+      {showGiftAnimation && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 animate-in slide-in-from-bottom">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-gray-900 text-lg">🎁 Gift Animation</h3>
+              <button 
+                onClick={handleGiftAnimationClose}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="text-center mb-6">
+              <div className="w-48 h-48 mx-auto mb-4 rounded-xl overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                {showGiftAnimation.giftImage ? (
+                  <Image
+                    src={showGiftAnimation.giftImage}
+                    alt={showGiftAnimation.giftName}
+                    width={192}
+                    height={192}
+                    className="object-contain w-full h-full p-4"
+                  />
+                ) : (
+                  <Gift className="w-24 h-24 text-purple-400" />
+                )}
+              </div>
+              <h4 className="font-bold text-xl text-gray-900 mb-2">{showGiftAnimation.giftName}</h4>
+              <p className="text-gray-600">
+                An animated gift has been delivered to {botProfile?.username}!
+              </p>
+              {showGiftAnimation.message && (
+                <p className="text-gray-700 mt-2 italic">"{showGiftAnimation.message}"</p>
+              )}
+            </div>
+            <div className="text-center">
+              <button
+                onClick={handleGiftAnimationClose}
+                className="px-6 py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all"
+              >
+                Continue Chatting
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+{showGiftAnimationOverlay && (
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+    <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-bold text-gray-900 text-2xl">🎁 Animated Gift</h3>
+          <button 
+            onClick={() => setShowGiftAnimationOverlay(null)}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 mb-6">
+          <div className="w-64 h-64 mx-auto">
+            {animationData ? (
+              <Lottie
+                animationData={animationData}
+                loop={true}
+                autoplay={true}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="text-center">
+          <h4 className="font-bold text-xl text-gray-900 mb-2">{showGiftAnimationOverlay.giftName}</h4>
+          <p className="text-gray-600 mb-4">
+            You sent this animated gift to {botProfile?.username}
+          </p>
+          {showGiftAnimationOverlay.message && (
+            <p className="text-gray-700 text-lg italic mb-6">"{showGiftAnimationOverlay.message}"</p>
+          )}
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-3 rounded-xl border border-amber-200">
+              <Crown className="w-5 h-5 text-amber-500" />
+              <span className="text-xl font-bold text-gray-900">{showGiftAnimationOverlay.price}</span>
+              <span className="text-gray-600">credits</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => setShowGiftAnimationOverlay(null)}
+            className="px-8 py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all"
+          >
+            Continue Chatting
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
