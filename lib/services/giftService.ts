@@ -126,7 +126,13 @@ class GiftService {
     giftId: number,
     message?: string,
     conversationId?: string
-  ): Promise<{ success: boolean; newBalance: number; giftTransactionId?: string; error?: string }> {
+  ): Promise<{ 
+    success: boolean; 
+    newBalance: number; 
+    giftTransactionId?: string; 
+    error?: string;
+    shouldTriggerAIResponse?: boolean;
+  }> {
     try {
       console.log('🔵 GIFT_SERVICE: Starting sendGift', {
         senderId,
@@ -244,10 +250,61 @@ class GiftService {
         hasAnimationUrl: !!gift.animationUrl
       });
 
+      // ============ CRITICAL: TRIGGER AI RESPONSE FROM BACKEND ============
+      // This ensures the backend handles the AI response, NOT the frontend
+      console.log('🤖 GIFT_SERVICE: Triggering AI response for gift');
+      
+      try {
+        // Call the backend function to trigger AI response
+        const FUNCTION_URL = process.env.NEXT_PUBLIC_APPWRITE_FUNCTION_AI_CHATBOT;
+        if (FUNCTION_URL && conversationId) {
+          console.log('🤖 Calling AI function for gift response');
+          
+          // Use setTimeout to make this non-blocking
+          setTimeout(async () => {
+            try {
+              const aiResponse = await fetch(FUNCTION_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: senderId,
+                  botProfileId: recipientId,
+                  conversationId: conversationId,
+                  message: '', // Empty message for gift response
+                  isGiftResponse: true,
+                  giftData: {
+                    giftId: gift.id,
+                    giftName: gift.name,
+                    message: message,
+                    category: gift.category,
+                    isAnimated: gift.isAnimated,
+                    animationUrl: gift.animationUrl,
+                    price: gift.price
+                  }
+                })
+              });
+              
+              if (!aiResponse.ok) {
+                console.error('🤖 Failed to trigger AI response:', aiResponse.status);
+              } else {
+                console.log('🤖 AI response triggered successfully');
+              }
+            } catch (aiError) {
+              console.error('🤖 Error triggering AI response:', aiError);
+            }
+          }, 1000); // 1 second delay to ensure gift is saved first
+        } else {
+          console.warn('⚠️ Cannot trigger AI response: Missing FUNCTION_URL or conversationId');
+        }
+      } catch (aiTriggerError) {
+        console.error('🤖 Error setting up AI trigger:', aiTriggerError);
+      }
+
       return { 
         success: true, 
         newBalance,
-        giftTransactionId: savedTransaction?.$id 
+        giftTransactionId: savedTransaction?.$id,
+        shouldTriggerAIResponse: true
       };
         
     } catch (error: any) {
@@ -277,7 +334,7 @@ class GiftService {
           senderId: transaction.senderId,
           recipientId: transaction.recipientId,
           recipientName: transaction.recipientName,
-          giftId: transaction.giftId.toString(), // Store as string
+          giftId: transaction.giftId.toString(),
           giftName: transaction.giftName,
           giftPrice: transaction.giftPrice,
           giftImage: transaction.giftImage || '',
@@ -316,17 +373,6 @@ class GiftService {
       };
     } catch (error: any) {
       console.error('🔴 GIFT_SERVICE: Error saving gift transaction:', error);
-      console.error('🔴 GIFT_SERVICE: Error details:', error.message);
-      console.error('🔴 GIFT_SERVICE: Data that caused error:', {
-        senderId: transaction.senderId,
-        recipientId: transaction.recipientId,
-        giftId: transaction.giftId,
-        giftIdAsString: transaction.giftId.toString(),
-        giftName: transaction.giftName,
-        giftPrice: transaction.giftPrice,
-        isAnimated: transaction.isAnimated,
-        animationUrl: transaction.animationUrl
-      });
       return null;
     }
   }

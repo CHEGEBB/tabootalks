@@ -10,13 +10,15 @@ import {
   CheckCircle, Volume2, VolumeX, MapPin, Clock, Sparkles, ChevronRight, 
   Image as ImageIcon, Users, Home, MoreVertical, Search, Eye, MessageCircle,
   RefreshCw, Plus, UserPlus, TrendingUp, Activity, Award, Clock4,
-  Target, BarChart3, CreditCard, Phone, Video, Star, Camera, X
+  Target, BarChart3, CreditCard, Phone, Video, Star, Camera, X,
+  LucideSpeaker,
+  MessageCircleHeart
 } from 'lucide-react';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import LayoutController from '@/components/layout/LayoutController';
 import dynamic from 'next/dynamic';
 import giftHandlerService, { ChatGiftMessage as ImportedChatGiftMessage } from '@/lib/services/giftHandlerService';
-
+import giftService from '@/lib/services/giftService';
 
 // Dynamically import emoji picker to avoid SSR issues
 const EmojiPicker = dynamic(
@@ -49,7 +51,7 @@ export interface ChatGiftMessage {
   price: number;
   category?: string;
   timestamp: string;
-  documentId?: string; // Add this line
+  documentId?: string;
 }
 
 interface Conversation {
@@ -127,13 +129,17 @@ export default function ChatPage() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'active'>('all');
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   
+  // Sticker state
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
+  const [stickers, setStickers] = useState<any[]>([]);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const mobileInputContainerRef = useRef<HTMLDivElement>(null);
+  const stickerPickerRef = useRef<HTMLDivElement>(null);
 
-
-const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGiftMessage | null>(null);
+  const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGiftMessage | null>(null);
   
   // Initialize Appwrite
   const client = new Client()
@@ -146,6 +152,30 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
   
   const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
   const FUNCTION_URL = process.env.NEXT_PUBLIC_APPWRITE_FUNCTION_AI_CHATBOT!;
+
+  // Load stickers
+  useEffect(() => {
+    const loadStickers = async () => {
+      try {
+        const response = await fetch('/data/stickers.json');
+        const data = await response.json();
+        setStickers(data);
+      } catch (error) {
+        console.error('Error loading stickers:', error);
+        // Fallback stickers
+        setStickers([
+          { id: 1, name: 'Smile', emoji: '😊', category: 'happy' },
+          { id: 2, name: 'Heart', emoji: '❤️', category: 'love' },
+          { id: 3, name: 'Laugh', emoji: '😂', category: 'happy' },
+          { id: 4, name: 'Fire', emoji: '🔥', category: 'cool' },
+          { id: 5, name: 'Star', emoji: '⭐', category: 'cool' },
+          { id: 6, name: 'Wink', emoji: '😉', category: 'flirty' },
+        ]);
+      }
+    };
+    
+    loadStickers();
+  }, []);
 
   const getProfileImageUrl = (fileId?: string) => {
     if (!fileId) return null;
@@ -160,7 +190,7 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
     }
   };
 
-  // Load gifts from gifts collection
+  // Load gifts from gifts collection (ONLY for display, NOT for triggering responses)
   const loadGiftsFromGiftsCollection = async (conversationId: string) => {
     try {
       console.log('Loading gifts for conversation:', conversationId);
@@ -201,71 +231,195 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
       price: giftDoc.giftPrice,
       category: giftDoc.category,
       timestamp: giftDoc.sentAt || giftDoc.$createdAt,
-      documentId: giftDoc.$id // Add documentId to reference animation
+      documentId: giftDoc.$id
     };
-  };convertToChatGiftMessage
+  };
 
-  useEffect(() => {
-    if (!actualConversationId) return;
-    
-    let previousGiftCount = giftsInChat.length;
-    
-    const checkForNewGifts = async () => {
-      try {
-        const giftsFromGiftsColl = await loadGiftsFromGiftsCollection(actualConversationId);
-        
-        // Convert gifts from gifts collection to ChatGiftMessage format
-        const convertedGifts = giftsFromGiftsColl.map(convertToChatGiftMessage);
-        
-        // Check if there's a new gift that hasn't been responded to
-        if (convertedGifts.length > previousGiftCount) {
-          const newGift = convertedGifts[convertedGifts.length - 1];
-          const giftDoc = giftsFromGiftsColl.find(g => g.giftId === newGift.giftId.toString());
-          
-          // Create a unique identifier for this gift
-          const giftId = `${newGift.giftId}_${newGift.timestamp}`;
-          
-          // Only trigger AI response if we haven't responded to this gift yet
-          if (!respondedGifts.has(giftId) && botProfile && currentUser) {
-            console.log('🎁 Triggering AI response for new gift:', newGift.giftName);
-            
-            // Mark this gift as responded to
-            setRespondedGifts(prev => new Set([...prev, giftId]));
-            
-            // Trigger AI response
-            await sendGiftResponseToAI(newGift, giftDoc?.message);
-          }
-          
-          previousGiftCount = convertedGifts.length;
-        }
-        
-        setGiftsInChat(convertedGifts);
-        setGiftsFromGiftsCollection(giftsFromGiftsColl);
-      } catch (error) {
-        console.error('Error checking for new gifts:', error);
-      }
-    };
-    
-    // Initial check
-    checkForNewGifts();
-    
-    // Check every 5 seconds for new gifts (increase interval to reduce duplicate triggers)
-    const interval = setInterval(checkForNewGifts, 8000);
-    
-    return () => clearInterval(interval);
-  }, [actualConversationId, botProfile, currentUser, respondedGifts]); 
+  // ============ REMOVED: Gift response polling ============
+  // The backend will handle all gift responses automatically
 
-  // Close emoji picker when clicking outside
+  // Close emoji/sticker picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
         setShowEmojiPicker(false);
+      }
+      if (stickerPickerRef.current && !stickerPickerRef.current.contains(event.target as Node)) {
+        setShowStickerPicker(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Handle sticker click
+  const handleStickerClick = (sticker: any) => {
+    console.log('Sticker clicked:', sticker);
+    
+    // Auto-send sticker as a message
+    if (currentUser && botProfile) {
+      const stickerMessage = sticker.emoji || sticker.name;
+      
+      // Create optimistic sticker message
+      const tempMessage: Message = {
+        $id: `sticker_${Date.now()}`,
+        role: 'user',
+        content: stickerMessage,
+        timestamp: new Date().toISOString(),
+        conversationId: actualConversationId || 'pending'
+      };
+      
+      setMessages(prev => [...prev, tempMessage]);
+      setShowStickerPicker(false);
+      
+      // Send sticker as regular message
+      sendStickerAsMessage(stickerMessage);
+    }
+  };
+
+  // Send sticker as regular message
+  const sendStickerAsMessage = async (stickerContent: string) => {
+    if (!currentUser || !botProfile) return;
+    
+    setIsSending(true);
+    setError('');
+    setStreamingText('');
+    setTypingIndicator(true);
+
+    try {
+      if (!FUNCTION_URL) {
+        throw new Error('Chat function is not configured');
+      }
+
+      const response = await fetch(FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: currentUser.$id,
+          botProfileId: botProfile.$id,
+          message: stickerContent,
+          conversationId: actualConversationId || undefined,
+          isNewConversation: isNewConversation,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      // Handle SSE stream
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullBotResponse = '';
+      let newConvId = actualConversationId;
+      let buffer = '';
+
+      if (!reader) {
+        throw new Error('No response stream');
+      }
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim().startsWith('data: ')) {
+              try {
+                const jsonStr = line.substring(6);
+                const data = JSON.parse(jsonStr);
+
+                if (data.chunk) {
+                  fullBotResponse += data.chunk;
+                  setStreamingText(fullBotResponse);
+                }
+
+                if (data.conversationId && !actualConversationId) {
+                  newConvId = data.conversationId;
+                  setActualConversationId(data.conversationId);
+                  setIsNewConversation(false);
+                  
+                  window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
+                }
+
+                if (data.done && data.creditsUsed) {
+                  setCurrentUser(prev => prev ? {
+                    ...prev,
+                    credits: prev.credits - data.creditsUsed
+                  } : null);
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e);
+              }
+            }
+          }
+        }
+      } catch (streamError) {
+        console.error('Error reading SSE stream:', streamError);
+      }
+
+      // Clear streaming
+      setStreamingText('');
+      setTypingIndicator(false);
+      
+      // Reload messages
+      setTimeout(async () => {
+        try {
+          const finalConvId = newConvId || actualConversationId;
+          if (!finalConvId) return;
+
+          const messagesData = await databases.listDocuments(
+            DATABASE_ID,
+            'messages',
+            [
+              Query.equal('conversationId', finalConvId),
+              Query.orderAsc('timestamp'),
+              Query.limit(100)
+            ]
+          );
+          setMessages(messagesData.documents as any);
+
+          if (newConvId) {
+            const convData = await databases.getDocument(
+              DATABASE_ID,
+              'conversations',
+              finalConvId
+            );
+            setConversation(convData as any);
+          }
+
+        } catch (err) {
+          console.error('❌ Error reloading messages:', err);
+        }
+      }, 500);
+
+    } catch (err: any) {
+      console.error('❌ Send sticker error:', err);
+      setTypingIndicator(false);
+      
+      if (err.message.includes('credits')) {
+        setError('Insufficient credits to send sticker');
+      } else if (err.message.includes('404')) {
+        setError('Chat function not found. Please try again later.');
+      } else if (err.message.includes('failed to fetch')) {
+        setError('Network error. Please check your connection.');
+      } else if (err.message.includes('500')) {
+        setError('Server error. Please try again.');
+      } else {
+        setError('Failed to send sticker. Please try again.');
+      }
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   useEffect(() => {
     const handleCreditsUpdated = () => {
@@ -387,7 +541,7 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
           );
           setMessages(messagesData.documents as any);
           
-          // Load gifts from gifts collection
+          // Load gifts from gifts collection (ONLY for display)
           const giftsFromGiftsColl = await loadGiftsFromGiftsCollection(conversationId);
           
           // Convert gifts from gifts collection to ChatGiftMessage format
@@ -481,120 +635,10 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
       setIsLoadingConversations(false);
     }
   };
-  // Function to trigger AI response to gifts
-  const sendGiftResponseToAI = async (giftMessage: ChatGiftMessage, personalMessage?: string) => {
-    try {
-      console.log('🎁 Sending single AI response to gift:', giftMessage.giftName);
-      
-      // Prevent multiple concurrent responses
-      if (isSending || typingIndicator) {
-        console.log('⚠️ Already responding, skipping duplicate...');
-        return;
-      }
-      
-      setTypingIndicator(true);
-      setStreamingText('');
-  
-      const response = await fetch(FUNCTION_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: currentUser?.$id,
-          botProfileId: botProfile?.$id,
-          conversationId: actualConversationId,
-          message: '', // Empty message since it's a gift response
-          isGiftResponse: true,
-          giftData: {
-            giftName: giftMessage.giftName,
-            message: personalMessage,
-            category: giftMessage.category,
-            isAnimated: giftMessage.isAnimated,
-            animationUrl: giftMessage.animationUrl,
-            price: giftMessage.price
-          }
-        }),
-      });
-  
-      if (!response.ok) {
-        console.error('Failed to get AI gift response');
-        setTypingIndicator(false);
-        return;
-      }
-  
-      // Handle SSE stream
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullBotResponse = '';
-      let buffer = '';
-  
-      if (!reader) {
-        throw new Error('No response stream');
-      }
-  
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-  
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-  
-          for (const line of lines) {
-            if (line.trim().startsWith('data: ')) {
-              try {
-                const jsonStr = line.substring(6);
-                const data = JSON.parse(jsonStr);
-  
-                if (data.chunk) {
-                  fullBotResponse += data.chunk;
-                  setStreamingText(fullBotResponse);
-                }
-  
-                if (data.done) {
-                  console.log('✅ AI gift response complete:', fullBotResponse);
-                }
-              } catch (e) {
-                console.error('Error parsing SSE data:', e);
-              }
-            }
-          }
-        }
-      } catch (streamError) {
-        console.error('Error reading SSE stream:', streamError);
-      }
-  
-      // Clear streaming
-      setStreamingText('');
-      setTypingIndicator(false);
-      
-      // Reload messages after a brief delay
-      setTimeout(async () => {
-        try {
-          if (!actualConversationId) return;
-  
-          const messagesData = await databases.listDocuments(
-            DATABASE_ID,
-            'messages',
-            [
-              Query.equal('conversationId', actualConversationId),
-              Query.orderAsc('timestamp'),
-              Query.limit(100)
-            ]
-          );
-          setMessages(messagesData.documents as any);
-        } catch (err) {
-          console.error('❌ Error reloading messages after gift response:', err);
-        }
-      }, 1000); // Increased delay to ensure database is updated
-  
-    } catch (error) {
-      console.error('❌ Error getting AI gift response:', error);
-      setTypingIndicator(false);
-    }
-  };
+
+  // ============ REMOVED: sendGiftResponseToAI function ============
+  // The backend handles gift responses automatically through giftService
+
   const sendMessage = async () => {
     if (!inputMessage.trim() || !currentUser) {
       return;
@@ -616,6 +660,7 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
     setStreamingText('');
     setTypingIndicator(true);
     setShowEmojiPicker(false);
+    setShowStickerPicker(false);
 
     // Optimistic update
     const tempUserMessage: Message = {
@@ -652,31 +697,30 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
       }
 
       // Handle SSE stream
-     // Handle SSE stream
-     const reader = response.body?.getReader();
-     const decoder = new TextDecoder();
-     let fullBotResponse = '';
-     let newConvId = actualConversationId;
-     let buffer = ''; // Buffer for incomplete lines
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullBotResponse = '';
+      let newConvId = actualConversationId;
+      let buffer = ''; // Buffer for incomplete lines
 
-     if (!reader) {
-       throw new Error('No response stream');
-     }
+      if (!reader) {
+        throw new Error('No response stream');
+      }
 
-     try {
-       while (true) {
-         const { done, value } = await reader.read();
-         if (done) break;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-         // Append new chunk to buffer
-         buffer += decoder.decode(value, { stream: true });
-         
-         // Split by newlines but keep the last incomplete line in buffer
-         const lines = buffer.split('\n');
-         buffer = lines.pop() || ''; // Keep the last (possibly incomplete) line
+          // Append new chunk to buffer
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Split by newlines but keep the last incomplete line in buffer
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep the last (possibly incomplete) line
 
-         for (const line of lines) {
-           if (line.trim().startsWith('data: ')) {
+          for (const line of lines) {
+            if (line.trim().startsWith('data: ')) {
               try {
                 const jsonStr = line.substring(6);
                 const data = JSON.parse(jsonStr);
@@ -803,8 +847,6 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
     router.push('/main/people');
   };
 
-
-
   const handleEmojiSelect = useCallback((emojiObject: any) => {
     setInputMessage(prev => prev + emojiObject.emoji);
     setShowEmojiPicker(false);
@@ -873,7 +915,6 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
               </div>
             </div>
           </div>
-     
         </div>
       </div>
     );
@@ -884,6 +925,7 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
     setShowGiftAnimation(null);
     setShowGiftAnimationOverlay(null);
   };
+
   // Combine and sort all messages and gifts chronologically
   const getAllChatItems = () => {
     const allItems: Array<{
@@ -1257,7 +1299,7 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
               {isNewConversation && (
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center gap-3 bg-gradient-to-r from-[#5e17eb]/10 to-purple-500/10 px-6 py-4 rounded-2xl border border-[#5e17eb]/20">
-                    <Sparkles className="w-6 h-6 text-amber-500" />
+                    <MessageCircleHeart className="w-6 h-6 text-amber-500" />
                     <div className="text-left">
                       <h3 className="font-bold text-gray-900">Start a new conversation</h3>
                       <p className="text-sm text-gray-600">Send your first message to {botProfile?.username}!</p>
@@ -1356,6 +1398,31 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Sticker Picker */}
+            {/* Sticker Picker */}
+{showStickerPicker && (
+  <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 shadow-xl rounded-lg bg-white border border-gray-200" 
+       ref={stickerPickerRef}
+       style={{ width: '400px', maxHeight: '400px', overflowY: 'auto' }}>
+    <div className="p-4">
+      <h3 className="font-semibold text-gray-900 mb-3">Stickers</h3>
+      <div className="grid grid-cols-4 gap-2">
+        {stickers.map((sticker) => (
+          <button
+            key={sticker.id}
+            onClick={() => handleStickerClick(sticker)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-2xl flex items-center justify-center"
+            title={sticker.name}
+          >
+            {sticker.emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+            {/* Emoji Picker */}
             {/* Emoji Picker */}
             {showEmojiPicker && (
               <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 shadow-xl rounded-lg" ref={emojiPickerRef}>
@@ -1374,14 +1441,20 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
             )}
 
             {/* Input Area */}
-            <div className="border-t border-gray-200 bg-white p-4">
-              <div className="max-w-3xl mx-auto">
+            <div className="border-t border-gray-200 bg-white p-4 relative" style={{ zIndex: 10 }}>
+            <div className="max-w-3xl mx-auto">
                 <div className="flex items-center gap-2 mb-3">
                   <button 
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm relative"
                   >
                     <Smile className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => setShowStickerPicker(!showStickerPicker)}
+                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm"
+                  >
+                    <ImageIcon className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
@@ -1741,6 +1814,37 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
 
           {/* Input Area - Fixed at bottom */}
           <div className="border-t border-gray-200 bg-white pb-20" ref={mobileInputContainerRef}>
+            {/* Sticker Picker - Fixed overlay */}
+            {showStickerPicker && (
+              <div className="fixed inset-x-0 bottom-0 z-50 bg-white shadow-2xl border-t border-gray-300" 
+                   style={{ height: '50vh' }} 
+                   ref={stickerPickerRef}>
+                <div className="flex justify-between items-center p-3 border-b border-gray-200 bg-gray-50">
+                  <h3 className="font-medium text-gray-700">Select Sticker</h3>
+                  <button 
+                    onClick={() => setShowStickerPicker(false)}
+                    className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="h-full overflow-y-auto p-4">
+                  <div className="grid grid-cols-4 gap-3">
+                    {stickers.map((sticker) => (
+                      <button
+                        key={sticker.id}
+                        onClick={() => handleStickerClick(sticker)}
+                        className="p-3 hover:bg-gray-100 rounded-lg transition-colors text-3xl flex items-center justify-center"
+                        title={sticker.name}
+                      >
+                        {sticker.emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Emoji Picker - Fixed overlay */}
             {showEmojiPicker && (
               <div className="fixed inset-x-0 bottom-0 z-50 bg-white shadow-2xl border-t border-gray-300" 
@@ -1779,6 +1883,12 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
                   className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation"
                 >
                   <Smile className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={() => setShowStickerPicker(!showStickerPicker)}
+                  className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation"
+                >
+                  <ImageIcon className="w-5 h-5" />
                 </button>
                 <button 
                   onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
@@ -1873,65 +1983,65 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
           </div>
         </div>
       )}
-{showGiftAnimationOverlay && (
-  <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-    <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-gray-900 text-2xl">🎁 Animated Gift</h3>
-          <button 
-            onClick={() => setShowGiftAnimationOverlay(null)}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 mb-6">
-        <div className="w-64 h-64 mx-auto">
-        {showGiftAnimationOverlay.giftImage ? (
-          <Image
-            src={showGiftAnimationOverlay.giftImage}
-            alt={showGiftAnimationOverlay.giftName}
-            width={256}
-            height={256}
-            className="object-contain w-full h-full"
-          />
-        ) : (
-          <Gift className="w-32 h-32 text-purple-400 mx-auto" />
-        )}
-      </div>
-        </div>
-        
-        <div className="text-center">
-          <h4 className="font-bold text-xl text-gray-900 mb-2">{showGiftAnimationOverlay.giftName}</h4>
-          <p className="text-gray-600 mb-4">
-            You sent this animated gift to {botProfile?.username}
-          </p>
-          {showGiftAnimationOverlay.message && (
-            <p className="text-gray-700 text-lg italic mb-6">&ldquo;{showGiftAnimationOverlay.message}&rdquo;</p>
-          )}
-          <div className="flex items-center justify-center gap-3">
-            <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-3 rounded-xl border border-amber-200">
-              <Crown className="w-5 h-5 text-amber-500" />
-              <span className="text-xl font-bold text-gray-900">{showGiftAnimationOverlay.price}</span>
-              <span className="text-gray-600">credits</span>
+      {showGiftAnimationOverlay && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-bold text-gray-900 text-2xl">🎁 Animated Gift</h3>
+                <button 
+                  onClick={() => setShowGiftAnimationOverlay(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 mb-6">
+                <div className="w-64 h-64 mx-auto">
+                  {showGiftAnimationOverlay.giftImage ? (
+                    <Image
+                      src={showGiftAnimationOverlay.giftImage}
+                      alt={showGiftAnimationOverlay.giftName}
+                      width={256}
+                      height={256}
+                      className="object-contain w-full h-full"
+                    />
+                  ) : (
+                    <Gift className="w-32 h-32 text-purple-400 mx-auto" />
+                  )}
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <h4 className="font-bold text-xl text-gray-900 mb-2">{showGiftAnimationOverlay.giftName}</h4>
+                <p className="text-gray-600 mb-4">
+                  You sent this animated gift to {botProfile?.username}
+                </p>
+                {showGiftAnimationOverlay.message && (
+                  <p className="text-gray-700 text-lg italic mb-6">&ldquo;{showGiftAnimationOverlay.message}&rdquo;</p>
+                )}
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-3 rounded-xl border border-amber-200">
+                    <Crown className="w-5 h-5 text-amber-500" />
+                    <span className="text-xl font-bold text-gray-900">{showGiftAnimationOverlay.price}</span>
+                    <span className="text-gray-600">credits</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setShowGiftAnimationOverlay(null)}
+                  className="px-8 py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all"
+                >
+                  Continue Chatting
+                </button>
+              </div>
             </div>
           </div>
         </div>
-        
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => setShowGiftAnimationOverlay(null)}
-            className="px-8 py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all"
-          >
-            Continue Chatting
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 }
