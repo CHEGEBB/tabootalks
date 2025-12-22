@@ -15,7 +15,7 @@ import {
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import LayoutController from '@/components/layout/LayoutController';
 import dynamic from 'next/dynamic';
-import giftHandlerService, { ChatGiftMessage } from '@/lib/services/giftHandlerService';
+import giftHandlerService, { ChatGiftMessage as ImportedChatGiftMessage } from '@/lib/services/giftHandlerService';
 
 
 // Dynamically import emoji picker to avoid SSR issues
@@ -113,7 +113,8 @@ export default function ChatPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [typingIndicator, setTypingIndicator] = useState(false);
-  
+  const [respondedGifts, setRespondedGifts] = useState<Set<string>>(new Set());
+
   // Gift states
   const [giftsInChat, setGiftsInChat] = useState<ChatGiftMessage[]>([]);
   const [giftsFromGiftsCollection, setGiftsFromGiftsCollection] = useState<AppwriteGiftDocument[]>([]);
@@ -204,9 +205,10 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
     };
   };convertToChatGiftMessage
 
-  // Listen for new gifts
   useEffect(() => {
     if (!actualConversationId) return;
+    
+    let previousGiftCount = giftsInChat.length;
     
     const checkForNewGifts = async () => {
       try {
@@ -215,6 +217,28 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
         // Convert gifts from gifts collection to ChatGiftMessage format
         const convertedGifts = giftsFromGiftsColl.map(convertToChatGiftMessage);
         
+        // Check if there's a new gift that hasn't been responded to
+        if (convertedGifts.length > previousGiftCount) {
+          const newGift = convertedGifts[convertedGifts.length - 1];
+          const giftDoc = giftsFromGiftsColl.find(g => g.giftId === newGift.giftId.toString());
+          
+          // Create a unique identifier for this gift
+          const giftId = `${newGift.giftId}_${newGift.timestamp}`;
+          
+          // Only trigger AI response if we haven't responded to this gift yet
+          if (!respondedGifts.has(giftId) && botProfile && currentUser) {
+            console.log('🎁 Triggering AI response for new gift:', newGift.giftName);
+            
+            // Mark this gift as responded to
+            setRespondedGifts(prev => new Set([...prev, giftId]));
+            
+            // Trigger AI response
+            await sendGiftResponseToAI(newGift, giftDoc?.message);
+          }
+          
+          previousGiftCount = convertedGifts.length;
+        }
+        
         setGiftsInChat(convertedGifts);
         setGiftsFromGiftsCollection(giftsFromGiftsColl);
       } catch (error) {
@@ -222,11 +246,14 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
       }
     };
     
-    // Check every 10 seconds for new gifts
-    const interval = setInterval(checkForNewGifts, 10000);
+    // Initial check
+    checkForNewGifts();
+    
+    // Check every 5 seconds for new gifts (increase interval to reduce duplicate triggers)
+    const interval = setInterval(checkForNewGifts, 8000);
     
     return () => clearInterval(interval);
-  }, [actualConversationId]);
+  }, [actualConversationId, botProfile, currentUser, respondedGifts]); 
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -454,7 +481,120 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
       setIsLoadingConversations(false);
     }
   };
-
+  // Function to trigger AI response to gifts
+  const sendGiftResponseToAI = async (giftMessage: ChatGiftMessage, personalMessage?: string) => {
+    try {
+      console.log('🎁 Sending single AI response to gift:', giftMessage.giftName);
+      
+      // Prevent multiple concurrent responses
+      if (isSending || typingIndicator) {
+        console.log('⚠️ Already responding, skipping duplicate...');
+        return;
+      }
+      
+      setTypingIndicator(true);
+      setStreamingText('');
+  
+      const response = await fetch(FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: currentUser?.$id,
+          botProfileId: botProfile?.$id,
+          conversationId: actualConversationId,
+          message: '', // Empty message since it's a gift response
+          isGiftResponse: true,
+          giftData: {
+            giftName: giftMessage.giftName,
+            message: personalMessage,
+            category: giftMessage.category,
+            isAnimated: giftMessage.isAnimated,
+            animationUrl: giftMessage.animationUrl,
+            price: giftMessage.price
+          }
+        }),
+      });
+  
+      if (!response.ok) {
+        console.error('Failed to get AI gift response');
+        setTypingIndicator(false);
+        return;
+      }
+  
+      // Handle SSE stream
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullBotResponse = '';
+      let buffer = '';
+  
+      if (!reader) {
+        throw new Error('No response stream');
+      }
+  
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+  
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+  
+          for (const line of lines) {
+            if (line.trim().startsWith('data: ')) {
+              try {
+                const jsonStr = line.substring(6);
+                const data = JSON.parse(jsonStr);
+  
+                if (data.chunk) {
+                  fullBotResponse += data.chunk;
+                  setStreamingText(fullBotResponse);
+                }
+  
+                if (data.done) {
+                  console.log('✅ AI gift response complete:', fullBotResponse);
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e);
+              }
+            }
+          }
+        }
+      } catch (streamError) {
+        console.error('Error reading SSE stream:', streamError);
+      }
+  
+      // Clear streaming
+      setStreamingText('');
+      setTypingIndicator(false);
+      
+      // Reload messages after a brief delay
+      setTimeout(async () => {
+        try {
+          if (!actualConversationId) return;
+  
+          const messagesData = await databases.listDocuments(
+            DATABASE_ID,
+            'messages',
+            [
+              Query.equal('conversationId', actualConversationId),
+              Query.orderAsc('timestamp'),
+              Query.limit(100)
+            ]
+          );
+          setMessages(messagesData.documents as any);
+        } catch (err) {
+          console.error('❌ Error reloading messages after gift response:', err);
+        }
+      }, 1000); // Increased delay to ensure database is updated
+  
+    } catch (error) {
+      console.error('❌ Error getting AI gift response:', error);
+      setTypingIndicator(false);
+    }
+  };
   const sendMessage = async () => {
     if (!inputMessage.trim() || !currentUser) {
       return;
@@ -726,7 +866,7 @@ const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGif
               </div>
               <p className={`font-semibold text-gray-800 mb-1 ${isMobile ? 'text-sm' : ''}`}>{giftData.giftName}</p>
               {giftData.message && (
-                <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm'} italic mb-${isMobile ? '1' : '2'}`}>"{giftData.message}"</p>
+                <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm'} italic mb-${isMobile ? '1' : '2'}`}>&ldquo;{giftData.message}&rdquo;</p>
               )}
               <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500`}>
                 {formatTime(giftData.timestamp)}

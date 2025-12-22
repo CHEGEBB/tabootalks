@@ -66,6 +66,7 @@ class GiftHandlerService {
     chatMessageId?: string;
     giftMessage?: ChatGiftMessage;
     error?: string;
+    shouldTriggerAIResponse?: boolean;
   }> {
     try {
       console.log('🎁 sendGiftToChat called with:', {
@@ -85,7 +86,7 @@ class GiftHandlerService {
   
       console.log('✅ Gift found:', { name: gift.name, price: gift.price });
   
-      // 2. Send gift and deduct credits - THIS ALREADY CREATES THE GIFT DOCUMENT
+      // 2. Send gift and deduct credits
       console.log('💰 Calling giftService.sendGift...');
       const giftSendResult = await giftService.sendGift(
         senderId,
@@ -160,16 +161,14 @@ class GiftHandlerService {
         }
       }
   
-      // 7. Gift transaction is already created by giftService.sendGift()
       console.log('✅ Gift transaction ID from giftService:', chatMessageId);
   
-      // 8. Skip notifications (temporarily disabled)
-      console.log('🔕 Skipping notifications');
-  
+      // 7. Signal that AI should respond to this gift
       return {
         success: true,
         chatMessageId: chatMessageId || undefined,
-        giftMessage
+        giftMessage,
+        shouldTriggerAIResponse: true
       };
   
     } catch (error: any) {
@@ -221,58 +220,6 @@ class GiftHandlerService {
       console.error('Error updating conversation:', error);
     }
   }
-
-  // REMOVE THIS ENTIRE METHOD - giftService already creates the gift document
-  /*
-  private async createGiftTransactionRecord(transaction: {
-    senderId: string;
-    senderName: string;
-    recipientId: string;
-    recipientName: string;
-    giftId: number;
-    giftName: string;
-    giftPrice: number;
-    giftImage: string;
-    message: string;
-    sentAt: string;
-    isAnimated: boolean;
-    animationUrl: string;
-    category: string;
-    conversationId?: string;
-  }): Promise<string | null> {
-    try {
-      console.log('💾 Creating transaction with giftId:', transaction.giftId, 'as string:', transaction.giftId.toString());
-      
-      const result = await databases.createDocument(
-        DATABASE_ID,
-        COLLECTIONS.GIFTS,
-        ID.unique(),
-        {
-          senderId: transaction.senderId,
-          recipientId: transaction.recipientId,
-          recipientName: transaction.recipientName,
-          giftId: transaction.giftId.toString(),
-          giftName: transaction.giftName,
-          giftPrice: transaction.giftPrice,
-          giftImage: transaction.giftImage,
-          message: transaction.message,
-          sentAt: transaction.sentAt,
-          isAnimated: transaction.isAnimated,
-          animationUrl: transaction.animationUrl,
-          category: transaction.category,
-          status: 'sent',
-          conversationId: transaction.conversationId || ''
-        }
-      );
-      
-      console.log('✅ Transaction saved with ID:', result.$id);
-      return result.$id;
-    } catch (error: any) {
-      console.error('❌ Error creating gift transaction:', error);
-      return null;
-    }
-  }
-  */
 
   private async createGiftNotification(notification: GiftNotification): Promise<void> {
     console.log('ℹ️ Skipping notification creation - notifications collection not found');
