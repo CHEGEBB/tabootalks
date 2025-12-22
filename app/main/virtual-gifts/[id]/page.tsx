@@ -721,15 +721,15 @@ export default function VirtualGiftToPersonaPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+              className="bg-gray-100  sm:rounded-3xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
             >
               
               {/* Modal Content - Stacked on Mobile, Side by Side on Desktop */}
-              <div className="flex flex-col md:flex-row overflow-y-auto">
+              <div className="flex flex-col md:flex-row overflow-y-auto ">
                 
                 {/* Left Side - Gift Preview */}
                 <div className="md:w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 p-6 sm:p-8 flex flex-col items-center justify-center md:rounded-l-3xl">
-                  <div className="w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 mb-4 sm:mb-6 bg-white rounded-2xl shadow-lg p-4 flex items-center justify-center">
+                  <div className="w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 mb-4 sm:mb-6 bg-white  shadow-lg p-4 flex items-center justify-center">
                     {selectedGift.imageUrl ? (
                       <Image
                         src={selectedGift.imageUrl}
