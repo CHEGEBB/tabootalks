@@ -10,29 +10,54 @@ interface CreditTransaction extends Models.Document {
   description: string;
   balanceBefore: number;
   balanceAfter: number;
-  metadata?: Record<string, any>;
   timestamp: string;
 }
 
 class CreditService {
   async getCurrentBalance(userId: string): Promise<number> {
     try {
-      // FIXED: Fetch from USER DOCUMENT, not transactions
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        COLLECTIONS.USERS, // CHANGE THIS to USERS
-        [
-          Query.equal('userId', userId),
-          Query.limit(1)
-        ]
-      );
+      // FIRST TRY: Get by document ID (since that's how you fetch in chat page)
+      try {
+        const userDoc = await databases.getDocument(
+          DATABASE_ID,
+          COLLECTIONS.USERS,
+          userId  // userId should be the document ID
+        );
+        return userDoc.credits || 0;
+      } catch (getError: any) {
+        // If getDocument fails, try listDocuments with $id field
+        if (getError.code === 404 || getError.message?.includes('not found')) {
+          const response = await databases.listDocuments(
+            DATABASE_ID,
+            COLLECTIONS.USERS,
+            [
+              Query.equal('$id', userId),
+              Query.limit(1)
+            ]
+          );
 
-      if (response.documents.length === 0) {
-        return 0;
+          if (response.documents.length === 0) {
+            // Last try: maybe there's a userId field
+            const response2 = await databases.listDocuments(
+              DATABASE_ID,
+              COLLECTIONS.USERS,
+              [
+                Query.equal('userId', userId),
+                Query.limit(1)
+              ]
+            );
+            
+            if (response2.documents.length > 0) {
+              return response2.documents[0].credits || 0;
+            }
+            return 0;
+          }
+
+          const userDoc = response.documents[0];
+          return userDoc.credits || 0;
+        }
+        throw getError;
       }
-
-      const userDoc = response.documents[0];
-      return userDoc.credits || 0;
 
     } catch (error) {
       console.error('Error fetching current balance:', error);
@@ -48,40 +73,94 @@ class CreditService {
     metadata?: Record<string, any>
   ): Promise<number> {
     try {
-      // 1. Get current balance from USER DOCUMENT
+      // 1. Get current balance
       const currentBalance = await this.getCurrentBalance(userId);
-      const newBalance = currentBalance + amount;
+      const newBalance = Math.max(0, currentBalance + amount); // Ensure never negative
 
-      // 2. UPDATE USER DOCUMENT
-      const userResponse = await databases.listDocuments(
-        DATABASE_ID,
-        COLLECTIONS.USERS,
-        [Query.equal('userId', userId), Query.limit(1)]
-      );
+      // 2. Try multiple ways to find and update user document
+      let userDocId = userId; // Default to using userId as document ID
       
-      if (userResponse.documents.length > 0) {
-        const userDoc = userResponse.documents[0];
+      // First try to get the document directly
+      try {
         await databases.updateDocument(
           DATABASE_ID,
           COLLECTIONS.USERS,
-          userDoc.$id,
+          userId, // Try userId as document ID
           {
             credits: newBalance,
             lastActive: new Date().toISOString()
           }
         );
+      } catch (updateError: any) {
+        // If that fails, try to find document by userId field
+        if (updateError.code === 404 || updateError.message?.includes('not found')) {
+          console.log('Document not found with ID, searching by userId field...');
+          
+          const response = await databases.listDocuments(
+            DATABASE_ID,
+            COLLECTIONS.USERS,
+            [Query.equal('userId', userId), Query.limit(1)]
+          );
+          
+          if (response.documents.length > 0) {
+            userDocId = response.documents[0].$id;
+            await databases.updateDocument(
+              DATABASE_ID,
+              COLLECTIONS.USERS,
+              userDocId,
+              {
+                credits: newBalance,
+                lastActive: new Date().toISOString()
+              }
+            );
+          } else {
+            // Last try: find by $id field
+            const response2 = await databases.listDocuments(
+              DATABASE_ID,
+              COLLECTIONS.USERS,
+              [Query.equal('$id', userId), Query.limit(1)]
+            );
+            
+            if (response2.documents.length > 0) {
+              userDocId = response2.documents[0].$id;
+              await databases.updateDocument(
+                DATABASE_ID,
+                COLLECTIONS.USERS,
+                userDocId,
+                {
+                  credits: newBalance,
+                  lastActive: new Date().toISOString()
+                }
+              );
+            } else {
+              throw new Error(`User document not found for userId: ${userId}`);
+            }
+          }
+        } else {
+          throw updateError;
+        }
       }
 
-      // 3. Add transaction record (for history)
+      // 3. Add transaction record
       await this.addTransaction({
-        userId,
+        userId: userId,
         type,
         amount,
         description,
         balanceBefore: currentBalance,
         balanceAfter: newBalance,
-        metadata: metadata || {},
         timestamp: new Date().toISOString()
+      });
+
+      // Log for debugging
+      console.log('Credits updated:', {
+        userId,
+        amount,
+        type,
+        description,
+        oldBalance: currentBalance,
+        newBalance,
+        metadata
       });
 
       return newBalance;
@@ -95,19 +174,26 @@ class CreditService {
     try {
       // Check if user has enough credits
       const currentBalance = await this.getCurrentBalance(userId);
+      console.log('useCredits check:', { userId, amount, currentBalance });
+      
       if (currentBalance < amount) {
+        console.warn('Insufficient credits:', { currentBalance, required: amount });
         return false;
       }
 
-      // Use updateCredits which updates BOTH user doc and transaction
+      // Use negative amount to deduct
       await this.updateCredits(
         userId,
-        -amount,
+        -amount, // Negative amount for deduction
         'CREDIT_USAGE',
         description,
         metadata
       );
 
+      // Verify deduction worked
+      const updatedBalance = await this.getCurrentBalance(userId);
+      console.log('After deduction:', { updatedBalance, expected: currentBalance - amount });
+      
       return true;
     } catch (error) {
       console.error('Error using credits:', error);
@@ -124,7 +210,13 @@ class CreditService {
         collectionId,
         'unique()',
         {
-          ...transactionData,
+          userId: transactionData.userId,
+          type: transactionData.type,
+          amount: transactionData.amount,
+          description: transactionData.description,
+          balanceBefore: transactionData.balanceBefore,
+          balanceAfter: transactionData.balanceAfter,
+          timestamp: transactionData.timestamp,
           transactionId: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         }
       );
@@ -135,7 +227,6 @@ class CreditService {
     }
   }
 
-  // Keep other methods but they should reference USER DOCUMENT, not transactions
   async getUserCredits(userId: string): Promise<{
     currentBalance: number;
     totalPurchased: number;
@@ -143,11 +234,26 @@ class CreditService {
     lastTransaction: CreditTransaction | null;
   }> {
     try {
-      // Get current from user doc
       const currentBalance = await this.getCurrentBalance(userId);
       
-      // Get history from transactions
-      const transactions = await this.getRecentTransactions(userId, 100);
+      // Try to get transactions for this user
+      let transactions: CreditTransaction[] = [];
+      try {
+        const collectionId = COLLECTIONS.CREDIT_TRANSACTIONS || COLLECTIONS.TRANSACTIONS || 'transactions';
+        
+        const response = await databases.listDocuments(
+          DATABASE_ID,
+          collectionId,
+          [
+            Query.equal('userId', userId),
+            Query.orderDesc('timestamp'),
+            Query.limit(100)
+          ]
+        );
+        transactions = response.documents as unknown as CreditTransaction[];
+      } catch (txError) {
+        console.warn('Could not fetch transactions:', txError);
+      }
       
       let totalPurchased = 0;
       let totalUsed = 0;
@@ -197,7 +303,13 @@ class CreditService {
 
   async hasEnoughCredits(userId: string, requiredAmount: number): Promise<boolean> {
     const currentBalance = await this.getCurrentBalance(userId);
+    console.log('hasEnoughCredits check:', { userId, requiredAmount, currentBalance });
     return currentBalance >= requiredAmount;
+  }
+
+  // Add a method to force refresh user data in chat
+  async forceRefreshUser(userId: string): Promise<number> {
+    return this.getCurrentBalance(userId);
   }
 }
 

@@ -17,7 +17,7 @@ export function useCredits(): UseCreditsReturn {
   const [credits, setCredits] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const fetchingRef = useRef(false); // Prevent duplicate fetches
+  const fetchingRef = useRef(false);
 
   const fetchCredits = useCallback(async () => {
     if (!user?.$id) {
@@ -26,7 +26,6 @@ export function useCredits(): UseCreditsReturn {
       return;
     }
 
-    // Prevent duplicate fetches
     if (fetchingRef.current) return;
     fetchingRef.current = true;
 
@@ -35,7 +34,11 @@ export function useCredits(): UseCreditsReturn {
       setError(null);
       
       const currentBalance = await creditService.getCurrentBalance(user.$id);
+      console.log('useCredits: Fetched balance:', currentBalance);
       setCredits(currentBalance);
+      
+      // Dispatch event for other components to refresh
+      window.dispatchEvent(new CustomEvent('credits-updated', { detail: currentBalance }));
     } catch (err) {
       console.error('Failed to fetch credits:', err);
       setError('Failed to load credits');
@@ -50,7 +53,13 @@ export function useCredits(): UseCreditsReturn {
     if (!user?.$id) return false;
     
     try {
-      return await creditService.hasEnoughCredits(user.$id, requiredAmount);
+      const result = await creditService.hasEnoughCredits(user.$id, requiredAmount);
+      console.log('useCredits: hasEnoughCredits result:', { 
+        userId: user.$id, 
+        required: requiredAmount, 
+        result 
+      });
+      return result;
     } catch (err) {
       console.error('Failed to check credits:', err);
       return false;
@@ -65,19 +74,51 @@ export function useCredits(): UseCreditsReturn {
     if (!user?.$id) return false;
     
     try {
+      console.log('useCredits: Using credits:', { 
+        userId: user.$id, 
+        amount, 
+        description 
+      });
+      
       const success = await creditService.useCredits(user.$id, amount, description, metadata);
-      // DON'T auto-refresh here - let the chat handle it silently
+      
+      // Always refresh after using credits
+      if (success) {
+        console.log('useCredits: Success, refreshing...');
+        setTimeout(() => {
+          fetchCredits();
+        }, 100); // Small delay to ensure DB update
+      } else {
+        console.warn('useCredits: Failed to use credits');
+      }
+      
       return success;
     } catch (err) {
       console.error('Failed to use credits:', err);
       return false;
     }
-  }, [user?.$id]);
+  }, [user?.$id, fetchCredits]);
 
-  // Fetch credits ONLY on mount or when user changes
+  // Fetch credits on mount/user change
   useEffect(() => {
     fetchCredits();
-  }, [user?.$id]); // Don't include fetchCredits here!
+  }, [user?.$id]);
+
+  // Add event listener for credit updates from other components
+  useEffect(() => {
+    const handleCreditsUpdated = (event: CustomEvent) => {
+      if (event.detail !== undefined) {
+        setCredits(event.detail);
+      } else {
+        fetchCredits();
+      }
+    };
+
+    window.addEventListener('credits-updated', handleCreditsUpdated as EventListener);
+    return () => {
+      window.removeEventListener('credits-updated', handleCreditsUpdated as EventListener);
+    };
+  }, [fetchCredits]);
 
   return {
     credits,

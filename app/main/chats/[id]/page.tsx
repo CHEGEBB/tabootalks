@@ -10,11 +10,15 @@ import {
   CheckCircle, Volume2, VolumeX, MapPin, Clock, Sparkles, ChevronRight, 
   Image as ImageIcon, Users, Home, MoreVertical, Search, Eye, MessageCircle,
   RefreshCw, Plus, UserPlus, TrendingUp, Activity, Award, Clock4,
-  Target, BarChart3, CreditCard, Phone, Video, Star, Camera, X
+  Target, BarChart3, CreditCard, Phone, Video, Star, Camera, X,
+  LucideSpeaker,
+  MessageCircleHeart
 } from 'lucide-react';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import LayoutController from '@/components/layout/LayoutController';
 import dynamic from 'next/dynamic';
+import giftHandlerService, { ChatGiftMessage as ImportedChatGiftMessage } from '@/lib/services/giftHandlerService';
+import giftService from '@/lib/services/giftService';
 
 // Dynamically import emoji picker to avoid SSR issues
 const EmojiPicker = dynamic(
@@ -29,6 +33,25 @@ interface Message {
   content: string;
   timestamp: string;
   conversationId: string;
+  isGift?: boolean;
+  giftData?: string;
+  giftId?: string;
+  giftName?: string;
+  giftPrice?: number;
+  giftImage?: string;
+}
+export interface ChatGiftMessage {
+  type: 'gift';
+  giftId: number;
+  giftName: string;
+  giftImage?: string;
+  message?: string;
+  isAnimated: boolean;
+  animationUrl?: string;
+  price: number;
+  category?: string;
+  timestamp: string;
+  documentId?: string;
 }
 
 interface Conversation {
@@ -52,6 +75,26 @@ interface User {
   profilePic?: string;
 }
 
+interface AppwriteGiftDocument {
+  $id: string;
+  senderId: string;
+  recipientId: string;
+  recipientName: string;
+  giftId: string;
+  giftName: string;
+  giftPrice: number;
+  giftImage?: string;
+  message?: string;
+  sentAt: string;
+  isAnimated: boolean;
+  animationUrl?: string;
+  category?: string;
+  status: string;
+  conversationId?: string;
+  $createdAt: string;
+  $updatedAt: string;
+}
+
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
@@ -72,18 +115,31 @@ export default function ChatPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [typingIndicator, setTypingIndicator] = useState(false);
+  const [respondedGifts, setRespondedGifts] = useState<Set<string>>(new Set());
+
+  // Gift states
+  const [giftsInChat, setGiftsInChat] = useState<ChatGiftMessage[]>([]);
+  const [giftsFromGiftsCollection, setGiftsFromGiftsCollection] = useState<AppwriteGiftDocument[]>([]);
+  const [showGiftAnimation, setShowGiftAnimation] = useState<ChatGiftMessage | null>(null);
+  const [newGiftNotification, setNewGiftNotification] = useState<ChatGiftMessage | null>(null);
   
   // Chat list sidebar states
   const [conversations, setConversations] = useState<ConversationWithBot[]>([]);
-  const [suggestedBots, setSuggestedBots] = useState<ParsedPersonaProfile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'active'>('all');
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  
+  // Sticker state
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
+  const [stickers, setStickers] = useState<any[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const mobileInputContainerRef = useRef<HTMLDivElement>(null);
+  const stickerPickerRef = useRef<HTMLDivElement>(null);
+
+  const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGiftMessage | null>(null);
   
   // Initialize Appwrite
   const client = new Client()
@@ -96,6 +152,30 @@ export default function ChatPage() {
   
   const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
   const FUNCTION_URL = process.env.NEXT_PUBLIC_APPWRITE_FUNCTION_AI_CHATBOT!;
+
+  // Load stickers
+  useEffect(() => {
+    const loadStickers = async () => {
+      try {
+        const response = await fetch('/data/stickers.json');
+        const data = await response.json();
+        setStickers(data);
+      } catch (error) {
+        console.error('Error loading stickers:', error);
+        // Fallback stickers
+        setStickers([
+          { id: 1, name: 'Smile', emoji: '😊', category: 'happy' },
+          { id: 2, name: 'Heart', emoji: '❤️', category: 'love' },
+          { id: 3, name: 'Laugh', emoji: '😂', category: 'happy' },
+          { id: 4, name: 'Fire', emoji: '🔥', category: 'cool' },
+          { id: 5, name: 'Star', emoji: '⭐', category: 'cool' },
+          { id: 6, name: 'Wink', emoji: '😉', category: 'flirty' },
+        ]);
+      }
+    };
+    
+    loadStickers();
+  }, []);
 
   const getProfileImageUrl = (fileId?: string) => {
     if (!fileId) return null;
@@ -110,17 +190,264 @@ export default function ChatPage() {
     }
   };
 
-  // Close emoji picker when clicking outside
+  // Load gifts from gifts collection (ONLY for display, NOT for triggering responses)
+  const loadGiftsFromGiftsCollection = async (conversationId: string) => {
+    try {
+      console.log('Loading gifts for conversation:', conversationId);
+      
+      const currentUser = await account.get();
+      const userId = currentUser.$id;
+      
+      const giftsResponse = await databases.listDocuments(
+        DATABASE_ID,
+        'gifts',
+        [
+          Query.equal('conversationId', conversationId),
+          Query.orderAsc('sentAt'),
+          Query.limit(50)
+        ]
+      );
+      
+      console.log(`Found ${giftsResponse.documents.length} gifts in collection`);
+      
+      const gifts = giftsResponse.documents as unknown as AppwriteGiftDocument[];
+      return gifts;
+    } catch (error: any) {
+      console.error('Error loading gifts from collection:', error);
+      return [];
+    }
+  };
+  
+  // Convert Appwrite gift document to ChatGiftMessage
+  const convertToChatGiftMessage = (giftDoc: AppwriteGiftDocument): ChatGiftMessage => {
+    return {
+      type: 'gift',
+      giftId: parseInt(giftDoc.giftId),
+      giftName: giftDoc.giftName,
+      giftImage: giftDoc.giftImage,
+      message: giftDoc.message,
+      isAnimated: giftDoc.isAnimated,
+      animationUrl: giftDoc.animationUrl,
+      price: giftDoc.giftPrice,
+      category: giftDoc.category,
+      timestamp: giftDoc.sentAt || giftDoc.$createdAt,
+      documentId: giftDoc.$id
+    };
+  };
+
+  // ============ REMOVED: Gift response polling ============
+  // The backend will handle all gift responses automatically
+
+  // Close emoji/sticker picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
         setShowEmojiPicker(false);
+      }
+      if (stickerPickerRef.current && !stickerPickerRef.current.contains(event.target as Node)) {
+        setShowStickerPicker(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Handle sticker click
+  const handleStickerClick = (sticker: any) => {
+    console.log('Sticker clicked:', sticker);
+    
+    // Auto-send sticker as a message
+    if (currentUser && botProfile) {
+      const stickerMessage = sticker.emoji || sticker.name;
+      
+      // Create optimistic sticker message
+      const tempMessage: Message = {
+        $id: `sticker_${Date.now()}`,
+        role: 'user',
+        content: stickerMessage,
+        timestamp: new Date().toISOString(),
+        conversationId: actualConversationId || 'pending'
+      };
+      
+      setMessages(prev => [...prev, tempMessage]);
+      setShowStickerPicker(false);
+      
+      // Send sticker as regular message
+      sendStickerAsMessage(stickerMessage);
+    }
+  };
+
+  // Send sticker as regular message
+  const sendStickerAsMessage = async (stickerContent: string) => {
+    if (!currentUser || !botProfile) return;
+    
+    setIsSending(true);
+    setError('');
+    setStreamingText('');
+    setTypingIndicator(true);
+
+    try {
+      if (!FUNCTION_URL) {
+        throw new Error('Chat function is not configured');
+      }
+
+      const response = await fetch(FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: currentUser.$id,
+          botProfileId: botProfile.$id,
+          message: stickerContent,
+          conversationId: actualConversationId || undefined,
+          isNewConversation: isNewConversation,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      // Handle SSE stream
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullBotResponse = '';
+      let newConvId = actualConversationId;
+      let buffer = '';
+
+      if (!reader) {
+        throw new Error('No response stream');
+      }
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim().startsWith('data: ')) {
+              try {
+                const jsonStr = line.substring(6);
+                const data = JSON.parse(jsonStr);
+
+                if (data.chunk) {
+                  fullBotResponse += data.chunk;
+                  setStreamingText(fullBotResponse);
+                }
+
+                if (data.conversationId && !actualConversationId) {
+                  newConvId = data.conversationId;
+                  setActualConversationId(data.conversationId);
+                  setIsNewConversation(false);
+                  
+                  window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
+                }
+
+                if (data.done && data.creditsUsed) {
+                  setCurrentUser(prev => prev ? {
+                    ...prev,
+                    credits: prev.credits - data.creditsUsed
+                  } : null);
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e);
+              }
+            }
+          }
+        }
+      } catch (streamError) {
+        console.error('Error reading SSE stream:', streamError);
+      }
+
+      // Clear streaming
+      setStreamingText('');
+      setTypingIndicator(false);
+      
+      // Reload messages
+      setTimeout(async () => {
+        try {
+          const finalConvId = newConvId || actualConversationId;
+          if (!finalConvId) return;
+
+          const messagesData = await databases.listDocuments(
+            DATABASE_ID,
+            'messages',
+            [
+              Query.equal('conversationId', finalConvId),
+              Query.orderAsc('timestamp'),
+              Query.limit(100)
+            ]
+          );
+          setMessages(messagesData.documents as any);
+
+          if (newConvId) {
+            const convData = await databases.getDocument(
+              DATABASE_ID,
+              'conversations',
+              finalConvId
+            );
+            setConversation(convData as any);
+          }
+
+        } catch (err) {
+          console.error('❌ Error reloading messages:', err);
+        }
+      }, 500);
+
+    } catch (err: any) {
+      console.error('❌ Send sticker error:', err);
+      setTypingIndicator(false);
+      
+      if (err.message.includes('credits')) {
+        setError('Insufficient credits to send sticker');
+      } else if (err.message.includes('404')) {
+        setError('Chat function not found. Please try again later.');
+      } else if (err.message.includes('failed to fetch')) {
+        setError('Network error. Please check your connection.');
+      } else if (err.message.includes('500')) {
+        setError('Server error. Please try again.');
+      } else {
+        setError('Failed to send sticker. Please try again.');
+      }
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleCreditsUpdated = () => {
+      console.log('Chat page: Credits updated event received');
+      if (currentUser?.$id) {
+        const refreshUser = async () => {
+          try {
+            const accountData = await account.get();
+            const userData = await databases.getDocument(
+              DATABASE_ID,
+              'users',
+              accountData.$id
+            );
+            setCurrentUser(userData as any);
+            console.log('Chat page: Refreshed user credits:', userData.credits);
+          } catch (error) {
+            console.error('Error refreshing user:', error);
+          }
+        };
+        refreshUser();
+      }
+    };
+
+    window.addEventListener('credits-updated', handleCreditsUpdated);
+    return () => {
+      window.removeEventListener('credits-updated', handleCreditsUpdated);
+    };
+  }, [currentUser?.$id]);
 
   // Scroll to bottom
   const scrollToBottom = () => {
@@ -129,7 +456,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, streamingText]);
+  }, [messages, streamingText, giftsInChat]);
 
   // Load everything on mount
   useEffect(() => {
@@ -169,7 +496,6 @@ export default function ChatPage() {
           conversationId
         );
         
-        // Verify this conversation belongs to current user
         if (convData.userId !== accountData.$id) {
           setError('You do not have permission to access this conversation.');
           return;
@@ -181,17 +507,14 @@ export default function ChatPage() {
         convExists = true;
 
       } catch (convErr: any) {
-        // Conversation doesn't exist - this might be a botProfileId
         convExists = false;
       }
 
       // 3. Use personaService to load bot profile
       try {
         const botData = await personaService.getPersonaById(botId);
-        
         setBotProfile(botData);
 
-        // If conversation doesn't exist, this is a new conversation
         if (!convExists) {
           setIsNewConversation(true);
           setActualConversationId('');
@@ -203,9 +526,10 @@ export default function ChatPage() {
         return;
       }
 
-      // 4. If conversation exists, load messages
+      // 4. If conversation exists, load messages AND gifts
       if (convExists) {
         try {
+          // Load messages
           const messagesData = await databases.listDocuments(
             DATABASE_ID,
             'messages',
@@ -216,11 +540,26 @@ export default function ChatPage() {
             ]
           );
           setMessages(messagesData.documents as any);
+          
+          // Load gifts from gifts collection (ONLY for display)
+          const giftsFromGiftsColl = await loadGiftsFromGiftsCollection(conversationId);
+          
+          // Convert gifts from gifts collection to ChatGiftMessage format
+          const convertedGifts = giftsFromGiftsColl.map(convertToChatGiftMessage);
+          
+          setGiftsInChat(convertedGifts);
+          setGiftsFromGiftsCollection(giftsFromGiftsColl);
+          
         } catch (msgErr) {
+          console.error('Error loading messages/gifts:', msgErr);
           setMessages([]);
+          setGiftsInChat([]);
+          setGiftsFromGiftsCollection([]);
         }
       } else {
         setMessages([]);
+        setGiftsInChat([]);
+        setGiftsFromGiftsCollection([]);
       }
 
     } catch (err: any) {
@@ -241,10 +580,8 @@ export default function ChatPage() {
     try {
       setIsLoadingConversations(true);
       
-      // Get current user
       const accountData = await account.get();
       
-      // Get user's conversations
       const conversationsData = await databases.listDocuments(
         DATABASE_ID,
         'conversations',
@@ -255,7 +592,6 @@ export default function ChatPage() {
         ]
       );
 
-      // Load bot profiles for existing conversations using personaService
       const conversationsWithBots = await Promise.all(
         conversationsData.documents.map(async (conv) => {
           try {
@@ -265,7 +601,7 @@ export default function ChatPage() {
               ...conv,
               bot: {
                 ...botData,
-                isOnline: Math.random() > 0.3 // Simulate online status for now
+                isOnline: Math.random() > 0.3
               }
             };
           } catch (err: any) {
@@ -300,6 +636,9 @@ export default function ChatPage() {
     }
   };
 
+  // ============ REMOVED: sendGiftResponseToAI function ============
+  // The backend handles gift responses automatically through giftService
+
   const sendMessage = async () => {
     if (!inputMessage.trim() || !currentUser) {
       return;
@@ -320,7 +659,8 @@ export default function ChatPage() {
     setError('');
     setStreamingText('');
     setTypingIndicator(true);
-    setShowEmojiPicker(false); // Close emoji picker when sending
+    setShowEmojiPicker(false);
+    setShowStickerPicker(false);
 
     // Optimistic update
     const tempUserMessage: Message = {
@@ -361,48 +701,57 @@ export default function ChatPage() {
       const decoder = new TextDecoder();
       let fullBotResponse = '';
       let newConvId = actualConversationId;
+      let buffer = ''; // Buffer for incomplete lines
 
       if (!reader) {
         throw new Error('No response stream');
       }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+          // Append new chunk to buffer
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Split by newlines but keep the last incomplete line in buffer
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep the last (possibly incomplete) line
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const jsonStr = line.substring(6);
-              const data = JSON.parse(jsonStr);
+          for (const line of lines) {
+            if (line.trim().startsWith('data: ')) {
+              try {
+                const jsonStr = line.substring(6);
+                const data = JSON.parse(jsonStr);
 
-              if (data.chunk) {
-                fullBotResponse += data.chunk;
-                setStreamingText(fullBotResponse);
+                if (data.chunk) {
+                  fullBotResponse += data.chunk;
+                  setStreamingText(fullBotResponse);
+                }
+
+                if (data.conversationId && !actualConversationId) {
+                  newConvId = data.conversationId;
+                  setActualConversationId(data.conversationId);
+                  setIsNewConversation(false);
+                  
+                  window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
+                }
+
+                if (data.done && data.creditsUsed) {
+                  setCurrentUser(prev => prev ? {
+                    ...prev,
+                    credits: prev.credits - data.creditsUsed
+                  } : null);
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e);
               }
-
-              if (data.conversationId && !actualConversationId) {
-                newConvId = data.conversationId;
-                setActualConversationId(data.conversationId);
-                setIsNewConversation(false);
-                
-                window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
-              }
-
-              if (data.done && data.creditsUsed) {
-                setCurrentUser(prev => prev ? {
-                  ...prev,
-                  credits: prev.credits - data.creditsUsed
-                } : null);
-              }
-            } catch (e) {
-              // Silently handle parse errors
             }
           }
         }
+      } catch (streamError) {
+        console.error('Error reading SSE stream:', streamError);
       }
 
       // Clear streaming
@@ -447,13 +796,14 @@ export default function ChatPage() {
       setMessages(prev => prev.filter(m => m.$id !== tempUserMessage.$id));
       setTypingIndicator(false);
       
-      // Show user-friendly error
       if (err.message.includes('credits')) {
         setError('Insufficient credits to send message');
       } else if (err.message.includes('404')) {
         setError('Chat function not found. Please try again later.');
       } else if (err.message.includes('failed to fetch')) {
         setError('Network error. Please check your connection.');
+      } else if (err.message.includes('500')) {
+        setError('Server error. Please try again.');
       } else {
         setError('Failed to send message. Please try again.');
       }
@@ -500,7 +850,6 @@ export default function ChatPage() {
   const handleEmojiSelect = useCallback((emojiObject: any) => {
     setInputMessage(prev => prev + emojiObject.emoji);
     setShowEmojiPicker(false);
-    // Focus input after a small delay to ensure it works
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
@@ -508,7 +857,6 @@ export default function ChatPage() {
 
   const startNewChat = async (botId: string) => {
     try {
-      // Navigate directly to the bot for new chat
       router.push(`/main/chats/${botId}`);
     } catch (err: any) {
       console.error('❌ Error starting chat:', err);
@@ -526,6 +874,94 @@ export default function ChatPage() {
     
     return matchesSearch;
   });
+
+  // Function to render gift messages
+  const renderGiftMessage = (giftData: ChatGiftMessage, index: number, isMobile = false) => {
+    return (
+      <div key={`gift-${index}`} className="flex justify-end">
+        <div className={`${isMobile ? 'max-w-[85%] p-3' : 'max-w-[75%] p-4'} rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200`}>
+          <div className={`flex items-start gap-${isMobile ? '2' : '3'}`}>
+            {/* Gift Preview */}
+            <div 
+              onClick={() => giftData.isAnimated && setShowGiftAnimationOverlay(giftData)}
+              className={`${isMobile ? 'w-10 h-10 p-1' : 'w-12 h-12 p-2'} rounded-lg overflow-hidden bg-white flex-shrink-0 cursor-pointer hover:scale-105 transition-transform`}
+            >
+              {giftData.giftImage ? (
+                <Image
+                  src={giftData.giftImage}
+                  alt={giftData.giftName}
+                  width={isMobile ? 40 : 48}
+                  height={isMobile ? 40 : 48}
+                  className="object-contain w-full h-full"
+                />
+              ) : (
+                <Gift className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-amber-500 mx-auto`} />
+              )}
+            </div>
+            
+            <div className="flex-1">
+              <div className={`flex items-center gap-${isMobile ? '1' : '2'} mb-1`}>
+                <span className={`font-bold text-gray-900 ${isMobile ? 'text-sm' : ''}`}>🎁 Gift Sent!</span>
+                <span className={`${isMobile ? 'text-xs px-1 py-0.5' : 'text-xs px-2 py-0.5'} bg-amber-100 text-amber-800 rounded-full`}>
+                  {giftData.price} credits
+                </span>
+              </div>
+              <p className={`font-semibold text-gray-800 mb-1 ${isMobile ? 'text-sm' : ''}`}>{giftData.giftName}</p>
+              {giftData.message && (
+                <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm'} italic mb-${isMobile ? '1' : '2'}`}>&ldquo;{giftData.message}&rdquo;</p>
+              )}
+              <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500`}>
+                {formatTime(giftData.timestamp)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Function to handle gift animation close
+  const handleGiftAnimationClose = () => {
+    setShowGiftAnimation(null);
+    setShowGiftAnimationOverlay(null);
+  };
+
+  // Combine and sort all messages and gifts chronologically
+  const getAllChatItems = () => {
+    const allItems: Array<{
+      type: 'message' | 'gift';
+      data: Message | ChatGiftMessage;
+      timestamp: string;
+      index: number;
+    }> = [];
+    
+    // Add messages
+    messages.forEach((msg, index) => {
+      if (!msg.isGift && !giftHandlerService.parseGiftMessage(msg)) {
+        allItems.push({
+          type: 'message',
+          data: msg,
+          timestamp: msg.timestamp,
+          index
+        });
+      }
+    });
+    
+    // Add gifts
+    giftsInChat.forEach((gift, index) => {
+      allItems.push({
+        type: 'gift',
+        data: gift,
+        timestamp: gift.timestamp,
+        index
+      });
+    });
+    
+    // Sort chronologically
+    allItems.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    
+    return allItems;
+  };
 
   // Loading state
   if (isLoading) {
@@ -582,7 +1018,7 @@ export default function ChatPage() {
         {/* Desktop: 3-Column Layout */}
         <div className="hidden lg:flex w-full max-w-[1400px] mx-auto">
           
-          {/* Left Sidebar - Chat List (copied from chats page) */}
+          {/* Left Sidebar - Chat List */}
           <div className="w-[400px] flex-shrink-0 border border-gray-200 h-full overflow-hidden flex flex-col bg-white scrollbar-thin">
             {/* Fixed Header */}
             <div className="bg-white border-b border-gray-200 px-6 py-4">
@@ -863,7 +1299,7 @@ export default function ChatPage() {
               {isNewConversation && (
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center gap-3 bg-gradient-to-r from-[#5e17eb]/10 to-purple-500/10 px-6 py-4 rounded-2xl border border-[#5e17eb]/20">
-                    <Sparkles className="w-6 h-6 text-amber-500" />
+                    <MessageCircleHeart className="w-6 h-6 text-amber-500" />
                     <div className="text-left">
                       <h3 className="font-bold text-gray-900">Start a new conversation</h3>
                       <p className="text-sm text-gray-600">Send your first message to {botProfile?.username}!</p>
@@ -882,7 +1318,7 @@ export default function ChatPage() {
               )}
 
               <div className="space-y-4 max-w-3xl mx-auto">
-                {messages.length === 0 && !streamingText && botProfile && (
+                {messages.length === 0 && giftsInChat.length === 0 && !streamingText && botProfile && (
                   <div className="text-center py-12">
                     <div className="w-24 h-24 mx-auto mb-6 rounded-full overflow-hidden border-4 border-white shadow-xl">
                       <Image
@@ -903,27 +1339,36 @@ export default function ChatPage() {
                   </div>
                 )}
 
-                {messages.map((msg) => (
-                  <div
-                    key={msg.$id}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[75%] rounded-2xl p-4 ${
-                        msg.role === 'user'
-                          ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
-                          : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
-                      }`}
-                    >
-                      <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                      <div className={`flex items-center justify-end mt-2 text-xs ${
-                        msg.role === 'user' ? 'text-white/80' : 'text-gray-500'
-                      }`}>
-                        {formatTime(msg.timestamp)}
+                {/* Render all items chronologically */}
+                {getAllChatItems().map((item, index) => {
+                  if (item.type === 'message') {
+                    const msg = item.data as Message;
+                    return (
+                      <div
+                        key={`msg-${index}-${msg.$id}`}
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[75%] rounded-2xl p-4 ${
+                            msg.role === 'user'
+                              ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
+                              : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
+                          }`}
+                        >
+                          <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+                          <div className={`flex items-center justify-end mt-2 text-xs ${
+                            msg.role === 'user' ? 'text-white/80' : 'text-gray-500'
+                          }`}>
+                            {formatTime(msg.timestamp)}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  } else {
+                    const gift = item.data as ChatGiftMessage;
+                    return renderGiftMessage(gift, index);
+                  }
+                })}
 
                 {(typingIndicator || isSending) && !streamingText && (
                   <div className="flex justify-start">
@@ -953,6 +1398,31 @@ export default function ChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Sticker Picker */}
+            {/* Sticker Picker */}
+{showStickerPicker && (
+  <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 shadow-xl rounded-lg bg-white border border-gray-200" 
+       ref={stickerPickerRef}
+       style={{ width: '400px', maxHeight: '400px', overflowY: 'auto' }}>
+    <div className="p-4">
+      <h3 className="font-semibold text-gray-900 mb-3">Stickers</h3>
+      <div className="grid grid-cols-4 gap-2">
+        {stickers.map((sticker) => (
+          <button
+            key={sticker.id}
+            onClick={() => handleStickerClick(sticker)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-2xl flex items-center justify-center"
+            title={sticker.name}
+          >
+            {sticker.emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+            {/* Emoji Picker */}
             {/* Emoji Picker */}
             {showEmojiPicker && (
               <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 shadow-xl rounded-lg" ref={emojiPickerRef}>
@@ -971,8 +1441,8 @@ export default function ChatPage() {
             )}
 
             {/* Input Area */}
-            <div className="border-t border-gray-200 bg-white p-4">
-              <div className="max-w-3xl mx-auto">
+            <div className="border-t border-gray-200 bg-white p-4 relative" style={{ zIndex: 10 }}>
+            <div className="max-w-3xl mx-auto">
                 <div className="flex items-center gap-2 mb-3">
                   <button 
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -980,10 +1450,16 @@ export default function ChatPage() {
                   >
                     <Smile className="w-4 h-4" />
                   </button>
-                  <button className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm">
+                  <button 
+                    onClick={() => setShowStickerPicker(!showStickerPicker)}
+                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm"
+                  >
                     <ImageIcon className="w-4 h-4" />
                   </button>
-                  <button className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm">
+                  <button 
+                    onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
+                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm"
+                  >
                     <Gift className="w-4 h-4" />
                   </button>
                   <button 
@@ -1036,7 +1512,7 @@ export default function ChatPage() {
             </div>
           </div>
 
-          {/* Right Sidebar - Profile Info (Always Visible) */}
+          {/* Right Sidebar - Profile Info */}
           <div className="w-[320px] flex-shrink-0 border-l border-gray-200 bg-white overflow-y-auto scrollbar-thin">
             <div className="p-6">
               <div className="mb-6">
@@ -1130,7 +1606,10 @@ export default function ChatPage() {
               </div>
 
               <div className="space-y-3">
-                <button className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all text-sm">
+                <button 
+                  onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
+                  className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all text-sm"
+                >
                   <Gift className="w-4 h-4 inline mr-2" />
                   Send Virtual Gift
                 </button>
@@ -1159,7 +1638,7 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Mobile Layout - Optimized for Touch */}
+        {/* Mobile Layout */}
         <div className="lg:hidden flex flex-col h-screen w-full">
           {/* Mobile Header */}
           <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
@@ -1231,7 +1710,7 @@ export default function ChatPage() {
             </div>
           )}
 
-          {/* Messages Area - Takes remaining space */}
+          {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-4 pb-24 bg-gradient-to-b from-white to-gray-50">
             {isNewConversation && (
               <div className="text-center mb-6">
@@ -1255,7 +1734,7 @@ export default function ChatPage() {
             )}
 
             <div className="space-y-3">
-              {messages.length === 0 && !streamingText && botProfile && (
+              {messages.length === 0 && giftsInChat.length === 0 && !streamingText && botProfile && (
                 <div className="text-center py-8">
                   <div className="w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white shadow-xl">
                     <Image
@@ -1276,25 +1755,34 @@ export default function ChatPage() {
                 </div>
               )}
 
-              {messages.map((msg) => (
-                <div
-                  key={msg.$id}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl p-3 ${
-                      msg.role === 'user'
-                        ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
-                        : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                    <div className={`text-xs mt-1 ${msg.role === 'user' ? 'text-white/80' : 'text-gray-500'}`}>
-                      {formatTime(msg.timestamp)}
+              {/* Render all items chronologically for mobile */}
+              {getAllChatItems().map((item, index) => {
+                if (item.type === 'message') {
+                  const msg = item.data as Message;
+                  return (
+                    <div
+                      key={`msg-mobile-${index}-${msg.$id}`}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[85%] rounded-2xl p-3 ${
+                          msg.role === 'user'
+                            ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
+                            : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+                        <div className={`text-xs mt-1 ${msg.role === 'user' ? 'text-white/80' : 'text-gray-500'}`}>
+                          {formatTime(msg.timestamp)}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                } else {
+                  const gift = item.data as ChatGiftMessage;
+                  return renderGiftMessage(gift, index, true);
+                }
+              })}
 
               {(typingIndicator || isSending) && !streamingText && (
                 <div className="flex justify-start">
@@ -1326,6 +1814,37 @@ export default function ChatPage() {
 
           {/* Input Area - Fixed at bottom */}
           <div className="border-t border-gray-200 bg-white pb-20" ref={mobileInputContainerRef}>
+            {/* Sticker Picker - Fixed overlay */}
+            {showStickerPicker && (
+              <div className="fixed inset-x-0 bottom-0 z-50 bg-white shadow-2xl border-t border-gray-300" 
+                   style={{ height: '50vh' }} 
+                   ref={stickerPickerRef}>
+                <div className="flex justify-between items-center p-3 border-b border-gray-200 bg-gray-50">
+                  <h3 className="font-medium text-gray-700">Select Sticker</h3>
+                  <button 
+                    onClick={() => setShowStickerPicker(false)}
+                    className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="h-full overflow-y-auto p-4">
+                  <div className="grid grid-cols-4 gap-3">
+                    {stickers.map((sticker) => (
+                      <button
+                        key={sticker.id}
+                        onClick={() => handleStickerClick(sticker)}
+                        className="p-3 hover:bg-gray-100 rounded-lg transition-colors text-3xl flex items-center justify-center"
+                        title={sticker.name}
+                      >
+                        {sticker.emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Emoji Picker - Fixed overlay */}
             {showEmojiPicker && (
               <div className="fixed inset-x-0 bottom-0 z-50 bg-white shadow-2xl border-t border-gray-300" 
@@ -1365,10 +1884,16 @@ export default function ChatPage() {
                 >
                   <Smile className="w-5 h-5" />
                 </button>
-                <button className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation">
+                <button 
+                  onClick={() => setShowStickerPicker(!showStickerPicker)}
+                  className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation"
+                >
                   <ImageIcon className="w-5 h-5" />
                 </button>
-                <button className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation">
+                <button 
+                  onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
+                  className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation"
+                >
                   <Gift className="w-5 h-5" />
                 </button>
               </div>
@@ -1383,7 +1908,7 @@ export default function ChatPage() {
                   placeholder={`Message ${botProfile?.username}...`}
                   className="flex-1 px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-base touch-manipulation"
                   disabled={isSending}
-                  style={{ fontSize: '16px' }} // Prevents iOS zoom
+                  style={{ fontSize: '16px' }}
                 />
                 <button
                   onClick={sendMessage}
@@ -1411,6 +1936,112 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+
+      {/* Gift Animation Modal */}
+      {showGiftAnimation && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 animate-in slide-in-from-bottom">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-gray-900 text-lg">🎁 Gift Animation</h3>
+              <button 
+                onClick={handleGiftAnimationClose}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="text-center mb-6">
+              <div className="w-48 h-48 mx-auto mb-4 rounded-xl overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                {showGiftAnimation.giftImage ? (
+                  <Image
+                    src={showGiftAnimation.giftImage}
+                    alt={showGiftAnimation.giftName}
+                    width={192}
+                    height={192}
+                    className="object-contain w-full h-full p-4"
+                  />
+                ) : (
+                  <Gift className="w-24 h-24 text-purple-400" />
+                )}
+              </div>
+              <h4 className="font-bold text-xl text-gray-900 mb-2">{showGiftAnimation.giftName}</h4>
+              <p className="text-gray-600">
+                An animated gift has been delivered to {botProfile?.username}!
+              </p>
+              {showGiftAnimation.message && (
+                <p className="text-gray-700 mt-2 italic">&ldquo;{showGiftAnimation.message}&rdquo;</p>
+              )}
+            </div>
+            <div className="text-center">
+              <button
+                onClick={handleGiftAnimationClose}
+                className="px-6 py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all"
+              >
+                Continue Chatting
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showGiftAnimationOverlay && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-bold text-gray-900 text-2xl">🎁 Animated Gift</h3>
+                <button 
+                  onClick={() => setShowGiftAnimationOverlay(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 mb-6">
+                <div className="w-64 h-64 mx-auto">
+                  {showGiftAnimationOverlay.giftImage ? (
+                    <Image
+                      src={showGiftAnimationOverlay.giftImage}
+                      alt={showGiftAnimationOverlay.giftName}
+                      width={256}
+                      height={256}
+                      className="object-contain w-full h-full"
+                    />
+                  ) : (
+                    <Gift className="w-32 h-32 text-purple-400 mx-auto" />
+                  )}
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <h4 className="font-bold text-xl text-gray-900 mb-2">{showGiftAnimationOverlay.giftName}</h4>
+                <p className="text-gray-600 mb-4">
+                  You sent this animated gift to {botProfile?.username}
+                </p>
+                {showGiftAnimationOverlay.message && (
+                  <p className="text-gray-700 text-lg italic mb-6">&ldquo;{showGiftAnimationOverlay.message}&rdquo;</p>
+                )}
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-3 rounded-xl border border-amber-200">
+                    <Crown className="w-5 h-5 text-amber-500" />
+                    <span className="text-xl font-bold text-gray-900">{showGiftAnimationOverlay.price}</span>
+                    <span className="text-gray-600">credits</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setShowGiftAnimationOverlay(null)}
+                  className="px-8 py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all"
+                >
+                  Continue Chatting
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
