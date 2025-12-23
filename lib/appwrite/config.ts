@@ -28,6 +28,7 @@ export const COLLECTIONS = {
   PERSONAS: process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_PERSONAS!,
   TRANSACTIONS: 'transactions',
   GIFTS: 'gifts',
+  GIFT_HISTORY: process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_GIFT_HISTORY || 'gifts', // Add this line with fallback
 };
 
 // Export Storage Bucket IDs

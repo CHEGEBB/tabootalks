@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, MessageCircle, Search, Users, CreditCard, Bell, Compass, PlusCircle, User, Settings, LogOut } from 'lucide-react';
+import { Home, MessageCircle, Search, Users, CreditCard, Bell, Compass, PlusCircle, User, Settings, LogOut, GiftIcon } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
@@ -51,6 +51,9 @@ export default function DesktopNav({ activeTab, setActiveTab }: Omit<DesktopNavP
     };
   }, []);
 
+  const handleGift = () => {
+    router.push(`/main/virtual-gifts`);
+};
   const handleNavigation = (id: string) => {
     setActiveTab(id);
     
@@ -203,10 +206,10 @@ export default function DesktopNav({ activeTab, setActiveTab }: Omit<DesktopNavP
           {/* Right Side Actions */}
           <div className="flex items-center gap-6">
             <button 
-              onClick={() => handleRightSideAction('notifications')}
+              onClick={handleGift}
               className="relative p-3 text-gray-600 hover:text-[#5e17eb] transition hover:bg-gray-100 rounded-full"
             >
-              <Bell size={24} />
+              <GiftIcon size={34} />
               <span className="absolute top-3 right-3 h-3 w-3 rounded-full bg-[#ff2e2e]"></span>
             </button>
             
