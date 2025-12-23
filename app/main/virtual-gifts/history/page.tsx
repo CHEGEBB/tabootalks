@@ -130,7 +130,7 @@ export default function GiftHistoryPage() {
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2 bg-gradient-to-r from-[#5e17eb]/10 to-purple-500/10 px-3 sm:px-4 py-2 rounded-xl border border-purple-100">
                 <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
-                <span className="font-bold text-base sm:text-lg">{credits}</span>
+                <span className="font-bold text-gray-500 text-base sm:text-lg">{credits}</span>
                 <span className="text-gray-600 text-sm hidden sm:inline">credits</span>
               </div>
               <button
@@ -410,8 +410,8 @@ export default function GiftHistoryPage() {
                           
                           <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-2 rounded-lg border border-amber-200 flex-shrink-0">
                             <Crown className="w-4 h-4 text-amber-500" />
-                            <span className="font-bold text-lg">{gift.giftPrice}</span>
-                          </div>
+                            <span className="font-bold text-gray-500 text-lg">{gift.giftPrice}</span>
+                          </div> 
                         </div>
                         
                         {/* Message */}
