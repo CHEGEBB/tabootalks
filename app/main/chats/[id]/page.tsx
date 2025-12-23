@@ -253,6 +253,182 @@ export default function ChatPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Add this near your other useEffects in the ChatPage component
+useEffect(() => {
+  const handleWinkMessage = async () => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const hasWink = searchParams.get('wink') === 'true';
+    
+    if (hasWink && currentUser && botProfile && !isSending) {
+      // Remove the wink parameter from URL
+      window.history.replaceState(null, '', `/main/chats/${conversationId}`);
+      
+      // Send wink as a message
+      const winkMessage = "😉";
+      
+      // Optimistic update
+      const tempUserMessage: Message = {
+        $id: `wink_${Date.now()}`,
+        role: 'user',
+        content: winkMessage,
+        timestamp: new Date().toISOString(),
+        conversationId: actualConversationId || 'pending'
+      };
+      setMessages(prev => [...prev, tempUserMessage]);
+      
+      // Send the wink message to AI
+      await sendWinkMessage(winkMessage);
+    }
+  };
+  
+  if (typeof window !== 'undefined') {
+    handleWinkMessage();
+  }
+}, [currentUser, botProfile, conversationId]);
+
+// Add this function to send wink message
+const sendWinkMessage = async (winkMessage: string) => {
+  if (!currentUser || !botProfile) return;
+  
+  setIsSending(true);
+  setError('');
+  setStreamingText('');
+  setTypingIndicator(true);
+
+  try {
+    if (!FUNCTION_URL) {
+      throw new Error('Chat function is not configured');
+    }
+
+    const response = await fetch(FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: currentUser.$id,
+        botProfileId: botProfile.$id,
+        message: winkMessage,
+        conversationId: actualConversationId || undefined,
+        isNewConversation: isNewConversation,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    // Handle SSE stream
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    let fullBotResponse = '';
+    let newConvId = actualConversationId;
+    let buffer = '';
+
+    if (!reader) {
+      throw new Error('No response stream');
+    }
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.trim().startsWith('data: ')) {
+            try {
+              const jsonStr = line.substring(6);
+              const data = JSON.parse(jsonStr);
+
+              if (data.chunk) {
+                fullBotResponse += data.chunk;
+                setStreamingText(fullBotResponse);
+              }
+
+              if (data.conversationId && !actualConversationId) {
+                newConvId = data.conversationId;
+                setActualConversationId(data.conversationId);
+                setIsNewConversation(false);
+                
+                window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
+              }
+
+              if (data.done && data.creditsUsed) {
+                setCurrentUser(prev => prev ? {
+                  ...prev,
+                  credits: prev.credits - data.creditsUsed
+                } : null);
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
+            }
+          }
+        }
+      }
+    } catch (streamError) {
+      console.error('Error reading SSE stream:', streamError);
+    }
+
+    // Clear streaming
+    setStreamingText('');
+    setTypingIndicator(false);
+    
+    // Reload messages
+    setTimeout(async () => {
+      try {
+        const finalConvId = newConvId || actualConversationId;
+        if (!finalConvId) return;
+
+        const messagesData = await databases.listDocuments(
+          DATABASE_ID,
+          'messages',
+          [
+            Query.equal('conversationId', finalConvId),
+            Query.orderAsc('timestamp'),
+            Query.limit(100)
+          ]
+        );
+        setMessages(messagesData.documents as any);
+
+        if (newConvId) {
+          const convData = await databases.getDocument(
+            DATABASE_ID,
+            'conversations',
+            finalConvId
+          );
+          setConversation(convData as any);
+        }
+
+      } catch (err) {
+        console.error('❌ Error reloading messages:', err);
+      }
+    }, 500);
+
+  } catch (err: any) {
+    console.error('❌ Send wink error:', err);
+    setTypingIndicator(false);
+    
+    if (err.message.includes('credits')) {
+      setError('Insufficient credits to send wink');
+    } else if (err.message.includes('404')) {
+      setError('Chat function not found. Please try again later.');
+    } else if (err.message.includes('failed to fetch')) {
+      setError('Network error. Please check your connection.');
+    } else if (err.message.includes('500')) {
+      setError('Server error. Please try again.');
+    } else {
+      setError('Failed to send wink. Please try again.');
+    }
+  } finally {
+    setIsSending(false);
+  }
+};
+
   // Handle sticker click
   const handleStickerClick = (sticker: any) => {
     console.log('Sticker clicked:', sticker);

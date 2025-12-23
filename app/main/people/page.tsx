@@ -9,10 +9,11 @@ import { useRouter } from 'next/navigation';
 import LayoutController from '@/components/layout/LayoutController';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import { useAuth } from '@/lib/hooks/useAuth';
+import router from 'next/router';
 
 // Get icon for interest
 const getInterestIcon = (interest: string) => {
-  switch(interest.toLowerCase()) {
+  switch (interest.toLowerCase()) {
     case 'reading': return <Book className="w-4 h-4" />;
     case 'books': return <Book className="w-4 h-4" />;
     case 'travel': return <Plane className="w-4 h-4" />;
@@ -31,7 +32,7 @@ const getInterestIcon = (interest: string) => {
 // Format date to show only date, not time
 const formatBirthday = (birthday: string) => {
   if (!birthday) return 'Not specified';
-  
+
   try {
     const date = new Date(birthday);
     return date.toLocaleDateString('en-US', {
@@ -44,10 +45,12 @@ const formatBirthday = (birthday: string) => {
   }
 };
 
+
+
 // Extract location (city/region) from full location string
 const getLocationDisplay = (location: string) => {
   if (!location) return 'Unknown';
-  
+
   // Split by comma and take first part (city/region)
   const parts = location.split(',');
   return parts[0]?.trim() || location;
@@ -59,13 +62,13 @@ const convertPersonaToDisplayUser = (persona: ParsedPersonaProfile) => {
   const lastActive = new Date(persona.lastActive || persona.$createdAt);
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
   const isOnline = lastActive > fifteenMinutesAgo;
-  
+
   // Get all photos
   const allPhotos = [
     persona.profilePic,
     ...(persona.additionalPhotos || [])
   ].filter(Boolean);
-  
+
   // Common looking for items
   const commonLookingFor = [
     'Finding a friend',
@@ -73,19 +76,19 @@ const convertPersonaToDisplayUser = (persona: ParsedPersonaProfile) => {
     'I am bored',
     `People Aged: ${persona.preferences?.ageRange?.[0] || 18} - ${persona.preferences?.ageRange?.[1] || 90}`
   ];
-  
+
   // Determine personality type based on traits
   const personalityType = persona.personalityTraits?.[0] || 'Adventurer';
-  
+
   // About me traits
   const aboutTraits = persona.personalityTraits?.slice(0, 4) || ['Kind', 'Friendly', 'Adventurous', 'Creative'];
-  
+
   // Description/bio
   const description = persona.bio || `Looking for meaningful connections. I enjoy ${persona.interests?.slice(0, 2).join(' and ')} in my free time.`;
-  
+
   // Get location display (city/region only)
   const locationDisplay = getLocationDisplay(persona.location);
-  
+
   return {
     id: persona.$id,
     name: persona.username,
@@ -119,9 +122,9 @@ const convertPersonaToSuggestedPerson = (persona: ParsedPersonaProfile, index: n
   const lastActive = new Date(persona.lastActive || persona.$createdAt);
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
   const isOnline = lastActive > fifteenMinutesAgo;
-  
+
   const locationDisplay = getLocationDisplay(persona.location);
-  
+
   return {
     id: persona.$id,
     name: persona.username,
@@ -153,7 +156,7 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onLike, onHold, chi
     const touch = e.touches[0];
     setStartPos({ x: touch.clientX, y: touch.clientY });
     setIsDragging(true);
-    
+
     holdTimeoutRef.current = setTimeout(() => {
       setIsHolding(true);
       onHold(true);
@@ -162,14 +165,14 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onLike, onHold, chi
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
-    
+
     const touch = e.touches[0];
     const deltaX = touch.clientX - startPos.x;
     const deltaY = touch.clientY - startPos.y;
-    
-    setPosition({ 
-      x: deltaX * 0.8, 
-      y: deltaY * 0.3 
+
+    setPosition({
+      x: deltaX * 0.8,
+      y: deltaY * 0.3
     });
 
     if (deltaX < -50) {
@@ -210,7 +213,7 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onLike, onHold, chi
     e.preventDefault();
     setStartPos({ x: e.clientX, y: e.clientY });
     setIsDragging(true);
-    
+
     holdTimeoutRef.current = setTimeout(() => {
       setIsHolding(true);
       onHold(true);
@@ -219,13 +222,13 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onLike, onHold, chi
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
-    
+
     const deltaX = e.clientX - startPos.x;
     const deltaY = e.clientY - startPos.y;
-    
-    setPosition({ 
-      x: deltaX * 0.8, 
-      y: deltaY * 0.3 
+
+    setPosition({
+      x: deltaX * 0.8,
+      y: deltaY * 0.3
     });
 
     if (deltaX < -50) {
@@ -291,10 +294,10 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onLike, onHold, chi
   const opacity = 1 - Math.min(Math.abs(position.x) / 500, 0.5);
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="relative w-full h-full cursor-grab active:cursor-grabbing"
-      style={{ 
+      style={{
         transform,
         opacity,
         transition: isDragging ? 'none' : 'transform 0.3s ease-out, opacity 0.3s ease-out'
@@ -308,7 +311,7 @@ const SwipeReject: React.FC<SwipeRejectProps> = ({ onReject, onLike, onHold, chi
       onMouseLeave={handleMouseUp}
     >
       {children}
-      
+
       {isHolding && (
         <div className="absolute top-4 right-4 z-50">
           <div className="bg-red-500 text-white px-6 py-3 rounded-full font-bold text-xl md:text-2xl shadow-lg animate-pulse border-2 border-white">
@@ -380,7 +383,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, images, curren
         >
           <X className="w-6 h-6" />
         </button>
-        
+
         {/* Previous button */}
         {images.length > 1 && (
           <button
@@ -390,7 +393,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, images, curren
             <ChevronLeft className="w-6 h-6" />
           </button>
         )}
-        
+
         {/* Image container */}
         <div className="relative w-full h-full min-h-[400px]">
           {images[currentIndex] && (
@@ -404,7 +407,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, images, curren
             />
           )}
         </div>
-        
+
         {/* Next button */}
         {images.length > 1 && (
           <button
@@ -414,7 +417,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, images, curren
             <ChevronRight className="w-6 h-6" />
           </button>
         )}
-        
+
         {/* Image counter */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-medium">
           {currentIndex + 1} / {images.length}
@@ -441,10 +444,10 @@ export default function PeoplePage() {
   const [nextUserIndex, setNextUserIndex] = useState(1);
   const [modalImageIndex, setModalImageIndex] = useState(0);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  
+
   // NEW STATE: For showing animated Chat Now button
   const [showChatNowButton, setShowChatNowButton] = useState(false);
-  
+
   // State for dynamic data
   const [users, setUsers] = useState<any[]>([]);
   const [suggestedPeople, setSuggestedPeople] = useState<any[]>([]);
@@ -456,7 +459,7 @@ export default function PeoplePage() {
   });
 
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   // Load users from Appwrite
   useEffect(() => {
     if (profile) {
@@ -470,20 +473,20 @@ export default function PeoplePage() {
       console.log('⚠️ No user profile available yet');
       return;
     }
-    
+
     setIsLoading(true);
     try {
       console.log('🎯 Loading users for:', profile.username, 'Gender pref:', profile.gender);
-      
+
       // ✅ Use smartFetchPersonas with user profile
       const personas = await personaService.smartFetchPersonas(profile, {
         limit: 255,
         offset: 0
       });
-      
+
       const displayUsers = personas.map(convertPersonaToDisplayUser);
       setUsers(displayUsers);
-      
+
       if (displayUsers.length > 1) {
         setNextUserIndex(1);
       }
@@ -496,10 +499,10 @@ export default function PeoplePage() {
 
   const loadSuggestedPeople = async () => {
     if (!profile) return;
-    
+
     try {
       console.log('🔍 Loading suggested people for:', profile.username);
-      
+
       // ✅ Use smartFetchWithVariety with user profile
       const randomPersonas = await personaService.smartFetchWithVariety(profile, [], { limit: 6 });
       const suggestedData = randomPersonas.map(convertPersonaToSuggestedPerson);
@@ -511,55 +514,55 @@ export default function PeoplePage() {
 
   const currentUser = users[currentUserIndex];
   const nextUser = users[nextUserIndex];
-  
+
   const nextProfile = () => {
     if (users.length === 0) return;
-    
+
     setIsAnimatingOut(true);
     setCurrentPhotoIndex(0);
     setIsHoldingImage(false);
-    
+
     setTimeout(() => {
       const newIndex = (currentUserIndex + 1) % users.length;
       setCurrentUserIndex(newIndex);
-      
+
       // Calculate next user index correctly
       const nextIndex = (newIndex + 1) % users.length;
       setNextUserIndex(nextIndex);
-      
+
       setIsAnimatingOut(false);
-      
+
       if (containerRef.current) {
         containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }, 300);
   };
-  
+
   const prevProfile = () => {
     if (users.length === 0) return;
-    
+
     setCurrentPhotoIndex(0);
     setIsHoldingImage(false);
-    
+
     // Calculate previous index correctly
     const newIndex = (currentUserIndex - 1 + users.length) % users.length;
     setCurrentUserIndex(newIndex);
-    
+
     // Calculate next user index correctly (should be the one after the new current index)
     const nextIndex = (newIndex + 1) % users.length;
     setNextUserIndex(nextIndex);
-    
+
     if (containerRef.current) {
       containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
-  
+
   const handleLike = async () => {
     if (!currentUser) return;
-    
+
     if (!likedUsers.includes(currentUser.id)) {
       setLikedUsers([...likedUsers, currentUser.id]);
-      
+
       // Update like count in Appwrite
       try {
         await personaService.updatePersonaStats(currentUser.id, {
@@ -570,24 +573,24 @@ export default function PeoplePage() {
         console.error('Error updating like count:', error);
       }
     }
-    
+
     // NEW: Show animated Chat Now button
     setShowChatNowButton(true);
-    
+
     // Hide the button after 3 seconds (TikTok-like behavior)
     setTimeout(() => {
       setShowChatNowButton(false);
     }, 3000);
   };
-  
+
   const handleReject = () => {
     nextProfile();
   };
-  
+
   const handleSkip = () => {
     nextProfile();
   };
-  
+
   const handleChat = () => {
     if (currentUser) {
       router.push(`/main/chats/${currentUser.id}`);
@@ -651,7 +654,7 @@ export default function PeoplePage() {
   return (
     <div className="min-h-screen bg-white">
       <LayoutController />
-      
+
       {/* Clean Top Navigation */}
       <div className="fixed top-18 lg:top-24 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-2 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -664,17 +667,17 @@ export default function PeoplePage() {
               {currentUserIndex + 1} of {users.length}
             </div>
           </div>
-          
+
           <div className="flex items-center gap-1">
-            <button 
+            <button
               onClick={prevProfile}
               className="p-1.5 md:p-2 hover:bg-gray-100 rounded-lg transition-colors"
               title="Previous profile"
             >
               <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-700" />
             </button>
-            
-            <button 
+
+            <button
               onClick={nextProfile}
               className="p-1.5 md:p-2 hover:bg-gray-100 rounded-lg transition-colors"
               title="Next profile"
@@ -686,12 +689,12 @@ export default function PeoplePage() {
       </div>
 
       {/* Main Content Container */}
-      <div 
+      <div
         ref={containerRef}
         className="max-w-7xl mx-auto px-3 md:px-4 pt-14 md:pt-20 pb-24 md:pb-8 overflow-y-auto"
       >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          
+
           {/* LEFT COLUMN: Image Container */}
           <div className="lg:col-span-2 space-y-4 md:space-y-6 relative">
             {/* MAIN IMAGE CONTAINER WITH SWIPE FUNCTIONALITY - TALLER RECTANGLE */}
@@ -710,11 +713,11 @@ export default function PeoplePage() {
                     )}
                   </div>
                 </SwipeReject>
-                
+
                 {/* ANIMATED CHAT NOW BUTTON - Appears when you click like */}
                 {showChatNowButton && (
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce-slow">
-                    <button 
+                    <button
                       onClick={handleChat}
                       className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full font-bold text-xl md:text-2xl shadow-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 animate-pulse flex items-center gap-3 border-4 border-white"
                     >
@@ -723,11 +726,11 @@ export default function PeoplePage() {
                     </button>
                   </div>
                 )}
-                
+
                 {/* Photo Navigation */}
                 {currentUser.photos.length > 1 && (
                   <>
-                    <button 
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setCurrentPhotoIndex(prev => (prev - 1 + currentUser.photos.length) % currentUser.photos.length);
@@ -736,7 +739,7 @@ export default function PeoplePage() {
                     >
                       <ChevronLeft className="w-4 h-4 md:w-6 md:h-6" />
                     </button>
-                    <button 
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setCurrentPhotoIndex(prev => (prev + 1) % currentUser.photos.length);
@@ -747,15 +750,15 @@ export default function PeoplePage() {
                     </button>
                   </>
                 )}
-                
+
                 {/* Photo Counter */}
                 <div className="absolute top-2 md:top-4 right-2 md:right-4 bg-black/80 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium z-20">
                   {currentPhotoIndex + 1} / {currentUser.photos.length}
                 </div>
-                
+
                 {/* Quick Action Buttons */}
                 <div className="absolute top-2 md:top-4 left-2 md:left-4 flex gap-1 md:gap-2 z-20">
-                  <button 
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleSkip();
@@ -765,7 +768,7 @@ export default function PeoplePage() {
                   >
                     <X className="w-3 h-3 md:w-4 md:h-4" />
                   </button>
-                  <button 
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleLike();
@@ -776,7 +779,7 @@ export default function PeoplePage() {
                     <Heart className={`w-3 h-3 md:w-4 md:h-4 ${likedUsers.includes(currentUser.id) ? 'text-red-400 fill-red-400' : ''}`} />
                   </button>
                 </div>
-                
+
                 {/* User Info Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/90 to-transparent p-4 md:p-6 z-20">
                   <div className="flex items-start justify-between">
@@ -795,7 +798,7 @@ export default function PeoplePage() {
                       </div>
                       <p className="mt-2 md:mt-3 text-white/80 text-sm md:text-lg md:max-w-2xl">{currentUser.bio}</p>
                     </div>
-                    
+
                     <div className="flex items-center gap-1 md:gap-2 text-white/80">
                       <Camera className="w-3 h-3 md:w-5 md:h-5" />
                       <span className="text-sm md:text-lg">{currentUser.photosCount}</span>
@@ -847,7 +850,7 @@ export default function PeoplePage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {currentUser.interests.map((interest: string, index: number) => (
-                    <div 
+                    <div
                       key={index}
                       className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl text-gray-700 text-sm md:text-base font-medium hover:bg-gray-100 transition-colors"
                     >
@@ -866,7 +869,7 @@ export default function PeoplePage() {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-3 md:mb-4">
                   {currentUser.lookingFor.map((item: string, index: number) => (
-                    <div 
+                    <div
                       key={index}
                       className="p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl hover:bg-gray-100 transition-colors cursor-pointer text-center"
                     >
@@ -889,7 +892,7 @@ export default function PeoplePage() {
                 </div>
                 <div className="flex flex-wrap gap-2 md:gap-3 mb-3 md:mb-4">
                   {currentUser.about.map((trait: string, index: number) => (
-                    <div 
+                    <div
                       key={index}
                       className="px-3 md:px-4 py-1.5 md:py-2.5 bg-purple-600 text-white rounded-lg md:rounded-xl font-bold text-sm md:text-lg shadow-sm"
                     >
@@ -910,10 +913,10 @@ export default function PeoplePage() {
                 </div>
               </div>
             </div>
-            
+
             {/* SEND MESSAGE BUTTON - Below Main Image */}
             <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-3 md:p-4">
-              <button 
+              <button
                 onClick={handleChat}
                 className="w-full py-3 md:py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg md:rounded-xl font-bold text-base md:text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg"
               >
@@ -921,6 +924,85 @@ export default function PeoplePage() {
                 Send Message to {currentUser.name}
               </button>
             </div>
+            {/* SEND GIFT SECTION */}
+            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2">
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <Gift className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+                    Virtual Gifts for Special Ones
+                  </h2>
+                  <p className="text-gray-600 text-sm md:text-base mt-1">
+                    Liven up your chat with {currentUser.name}
+                  </p>
+                </div>
+                <button
+                   onClick={() => router.push(`/main/virtual-gifts/${currentUser.id}`)}
+                  className="text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-full transition-colors w-fit"
+                >
+                  Choose Virtual Gift
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+                {/* Gift 1 - Just image, no click */}
+                <div className="flex flex-col items-center p-3 md:p-4">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 mb-2">
+                    <Image
+                      src="/magical/roseinglass.png"
+                      alt="Gift 1"
+                      width={96}
+                      height={96}
+                      className="rounded-lg object-cover"
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">Rose</span>
+                </div>
+
+                {/* Gift 2 - Just image, no click */}
+                <div className="flex flex-col items-center p-3 md:p-4">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 mb-2">
+                    <Image
+                      src="/magical/wishwell.png"
+                      alt="Gift 2"
+                      width={96}
+                      height={96}
+                      className="rounded-lg object-cover"
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">Wishwell</span>
+                </div>
+
+                {/* Gift 3 - Just image, no click */}
+                <div className="flex flex-col items-center p-3 md:p-4">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 mb-2">
+                    <Image
+                      src="/gifts/flower5.png"
+                      alt="Gift 3"
+                      width={96}
+                      height={96}
+                      className="rounded-lg object-cover"
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">flowers</span>
+                </div>
+
+                {/* Gift 4 - Just image, no click */}
+                <div className="flex flex-col items-center p-3 md:p-4">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 mb-2">
+                    <Image
+                      src="/gifts/love_potion.png"
+                      alt="Gift 4"
+                      width={96}
+                      height={96}
+                      className="rounded-lg object-cover"
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">Love potion</span>
+                </div>
+              </div>
+            </div>
+
 
             {/* PHOTOS CONTAINER - MODAL ONLY FOR THESE IMAGES */}
             {currentUser.photosCount > 0 && (
@@ -928,10 +1010,10 @@ export default function PeoplePage() {
                 <div className="flex items-center justify-between mb-4 md:mb-6">
                   <h2 className="text-lg md:text-2xl font-bold text-gray-900">Photos ({currentUser.photosCount})</h2>
                 </div>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                   {currentUser.photos.map((photo: string, index: number) => (
-                    <div 
+                    <div
                       key={index}
                       className="aspect-[3/4] rounded-lg md:rounded-xl overflow-hidden cursor-pointer group shadow hover:shadow-md transition-all duration-300"
                       onClick={(e) => {
@@ -955,24 +1037,24 @@ export default function PeoplePage() {
 
           {/* RIGHT COLUMN: People You Might Like + Sidebar */}
           <div className="space-y-4 md:space-y-6">
-            {/* ENHANCED: People You Might Like */}
+            {/* ENHANCED: People You Might Like - SHOW 5 RANDOM PEOPLE */}
             <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
               <div className="flex items-center justify-between mb-3 md:mb-4">
                 <h3 className="text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
                   People You Might Like
                 </h3>
-                <button 
+                <button
                   className="text-purple-600 text-xs md:text-sm font-medium hover:text-purple-700 transition-colors"
                   onClick={() => loadSuggestedPeople()}
                 >
                   Refresh
                 </button>
               </div>
-              
+
               <div className="space-y-3 md:space-y-4">
-                {suggestedPeople.map((person) => (
-                  <div 
+                {suggestedPeople.slice(0, 5).map((person) => (
+                  <div
                     key={person.id}
                     className="p-3 md:p-4 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl hover:bg-gray-100 transition-all duration-300 cursor-pointer hover:scale-[1.02] group"
                     onClick={() => {
@@ -1031,7 +1113,7 @@ export default function PeoplePage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(`/main/chats/${person.id}`);
@@ -1041,7 +1123,7 @@ export default function PeoplePage() {
                         <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
                         Chat
                       </button>
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!likedUsers.includes(person.id)) {
@@ -1056,6 +1138,19 @@ export default function PeoplePage() {
                   </div>
                 ))}
               </div>
+
+              {/* SHOW MORE button if there are more suggestions */}
+              {suggestedPeople.length > 5 && (
+                <button
+                  onClick={() => {
+                    // Load more suggestions or navigate to a browse page
+                    console.log('Show more people');
+                  }}
+                  className="w-full mt-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg font-medium transition-colors border border-gray-200"
+                >
+                  Show More
+                </button>
+              )}
             </div>
 
             {/* Get More with Credits */}
@@ -1074,7 +1169,7 @@ export default function PeoplePage() {
                   <span className="text-gray-700 text-sm md:text-base">Send Virtual Gifts</span>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setShowCreditsPopup(true)}
                 className="w-full py-2.5 md:py-3.5 bg-purple-600 text-white rounded-lg font-bold text-sm md:text-lg hover:bg-purple-700 transition-all duration-300 hover:scale-[1.02]"
               >
@@ -1111,23 +1206,23 @@ export default function PeoplePage() {
       {showActionButtons && (
         <div className="fixed bottom-20 right-4 z-30 md:hidden">
           <div className="flex flex-col gap-3">
-            <button 
+            <button
               onClick={handleChat}
               className="bg-purple-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-purple-700 transition-all duration-300 hover:scale-110"
               title="Start Chat"
             >
               <MessageCircle className="w-6 h-6" />
             </button>
-            
-            <button 
+
+            <button
               onClick={handleLike}
               className="bg-red-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all duration-300 hover:scale-110"
               title="Like"
             >
               <Heart className={`w-6 h-6 ${likedUsers.includes(currentUser.id) ? 'fill-white' : ''}`} />
             </button>
-            
-            <button 
+
+            <button
               onClick={handleSkip}
               className="bg-gray-800 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-900 transition-all duration-300 hover:scale-110"
               title="Skip"
@@ -1141,23 +1236,23 @@ export default function PeoplePage() {
       {/* Desktop Floating Action Buttons - LOVE BUTTON FIXED */}
       <div className="fixed bottom-8 right-8 z-30 hidden md:block">
         <div className="flex gap-4">
-          <button 
+          <button
             onClick={handleSkip}
             className="bg-white text-gray-800 border border-gray-300 w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50 transition-all duration-300 hover:scale-110"
             title="Skip (changes profile)"
           >
             <X className="w-5 h-5" />
           </button>
-          
-          <button 
+
+          <button
             onClick={handleChat}
             className="bg-purple-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-purple-700 transition-all duration-300 hover:scale-110"
             title="Start Chat"
           >
             <MessageCircle className="w-5 h-5" />
           </button>
-          
-          <button 
+
+          <button
             onClick={handleLike}
             className="bg-red-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all duration-300 hover:scale-110"
             title="Like (does NOT change profile)"
@@ -1192,7 +1287,7 @@ export default function PeoplePage() {
                 <X className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </div>
-            
+
             <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
               <div className="p-3 md:p-4 border border-gray-300 rounded-lg hover:border-purple-400 transition-colors cursor-pointer">
                 <div className="flex justify-between items-center">
@@ -1203,7 +1298,7 @@ export default function PeoplePage() {
                   <div className="text-lg md:text-xl font-bold text-purple-600">$9.99</div>
                 </div>
               </div>
-              
+
               <div className="p-3 md:p-4 border-2 border-purple-600 rounded-lg bg-purple-50">
                 <div className="flex justify-between items-center">
                   <div>
@@ -1213,7 +1308,7 @@ export default function PeoplePage() {
                   <div className="text-lg md:text-xl font-bold text-purple-600">$19.99</div>
                 </div>
               </div>
-              
+
               <div className="p-3 md:p-4 border border-gray-300 rounded-lg hover:border-purple-400 transition-colors cursor-pointer">
                 <div className="flex justify-between items-center">
                   <div>
@@ -1224,14 +1319,14 @@ export default function PeoplePage() {
                 </div>
               </div>
             </div>
-            
+
             <button className="w-full py-2.5 md:py-3.5 bg-purple-600 text-white rounded-lg font-bold text-sm md:text-lg hover:bg-purple-700 transition-all duration-300 hover:scale-[1.02]">
               Continue to Payment
             </button>
           </div>
         </div>
       )}
-      
+
       {/* Add custom styles for animation */}
       <style jsx global>{`
         @keyframes bounce-slow {

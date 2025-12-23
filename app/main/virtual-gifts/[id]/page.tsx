@@ -55,7 +55,6 @@ export default function VirtualGiftToPersonaPage() {
   const [selectedGift, setSelectedGift] = useState<any>(null);
   const [personalMessage, setPersonalMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false); // New state for navigation loading
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -193,7 +192,7 @@ export default function VirtualGiftToPersonaPage() {
     }
   };
 
-  // Send gift
+  // Send gift - INSTANT NAVIGATION
   const handleSendGift = async () => {
     if (!selectedGift || !recipient) {
       setError('Missing required information');
@@ -206,6 +205,7 @@ export default function VirtualGiftToPersonaPage() {
     try {
       let conversationId = '';
       
+      // Find or create conversation
       try {
         if (currentUser?.$id) {
           const conversations = await databases.listDocuments(
@@ -241,6 +241,7 @@ export default function VirtualGiftToPersonaPage() {
         console.warn('Could not find/create conversation:', convError);
       }
   
+      // Send gift (this will handle credits and trigger AI in background)
       const result = await giftHandlerService.sendGiftToChat(
         currentUser?.$id || '',
         recipient.$id,
@@ -250,25 +251,23 @@ export default function VirtualGiftToPersonaPage() {
       );
       
       if (result.success) {
-        setSuccess(`🎁 Gift sent to ${recipient.username}!`);
+        // Refresh credits
         refreshCredits();
         
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('credits-updated'));
         }
         
-        setIsSending(false);
+        // Close modal
         setShowGiftOverlay(false);
-        setIsNavigating(true); // Start navigation loading
+        setIsSending(false);
         
-        // Give a moment for the success message to be visible
-        setTimeout(() => {
-          if (conversationId) {
-            router.push(`/main/chats/${conversationId}`);
-          } else {
-            router.back();
-          }
-        }, 1000);
+        // Navigate INSTANTLY - AI response happens in background
+        if (conversationId) {
+          router.push(`/main/chats/${conversationId}`);
+        } else {
+          router.back();
+        }
       } else {
         setError(result.error || 'Failed to send gift');
         setIsSending(false);
@@ -309,8 +308,6 @@ export default function VirtualGiftToPersonaPage() {
   // Get filtered gifts
   const getFilteredGifts = () => {
     if (activeCategory === 'all') {
-      // Custom order for displaying all categories
-      // Featured FIRST, then romantic order, Animated LAST
       const orderedCategories = [
         'flowers',
         'romantic', 
@@ -319,24 +316,21 @@ export default function VirtualGiftToPersonaPage() {
         'postcard',
         'fashion',
         'hobby',
-        'animated' // LAST
+        'animated'
       ];
       
       const orderedGifts: Record<string, any[]> = {};
       
-      // Add FEATURED first if it exists
       if (giftsByCategory['featured'] && giftsByCategory['featured'].length > 0) {
         orderedGifts['featured'] = giftsByCategory['featured'];
       }
       
-      // Then add categories in the desired order
       orderedCategories.forEach(catId => {
         if (giftsByCategory[catId] && giftsByCategory[catId].length > 0) {
           orderedGifts[catId] = giftsByCategory[catId];
         }
       });
       
-      // Add any remaining categories not in the ordered list
       Object.keys(giftsByCategory).forEach(catId => {
         if (catId !== 'featured' && !orderedCategories.includes(catId) && giftsByCategory[catId].length > 0) {
           orderedGifts[catId] = giftsByCategory[catId];
@@ -351,8 +345,8 @@ export default function VirtualGiftToPersonaPage() {
 
   const filteredGifts = getFilteredGifts();
 
-  // Loading states - Initial loading, gift loading, or navigation loading
-  if (giftsLoading || !recipient || isNavigating) {
+  // Loading states - Only initial loading
+  if (giftsLoading || !recipient) {
     return (
       <div className="min-h-screen bg-white">
         <LayoutController />
@@ -362,28 +356,8 @@ export default function VirtualGiftToPersonaPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center"
           >
-            {isNavigating ? (
-              <>
-                <div className="relative flex justify-center mb-6">
-                  <div className="w-16 h-16 border-4 border-[#5e17eb] border-t-transparent rounded-full animate-spin"></div>
-                  <motion.div 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#5e17eb] bg-white rounded-full p-1"
-                  >
-                    <Gift className="w-6 h-6" />
-                  </motion.div>
-                </div>
-                <h3 className="font-semibold text-lg text-gray-800 mb-2">Gift Sent Successfully!</h3>
-                <p className="text-gray-600">Taking you to your conversation...</p>
-              </>
-            ) : (
-              <>
-                <div className="w-16 h-16 border-4 border-[#5e17eb] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-                <p className="text-gray-600 font-medium">Loading gifts...</p>
-              </>
-            )}
+            <div className="w-16 h-16 border-4 border-[#5e17eb] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <p className="text-gray-600 font-medium">Loading gifts...</p>
           </motion.div>
         </div>
       </div>
@@ -404,7 +378,7 @@ export default function VirtualGiftToPersonaPage() {
         >
           {/* Top Row - Mobile Optimized */}
           <div className="flex items-center justify-between gap-3 mb-4">
-            {/* Left: Back Button + Persona */}
+            {/* Left: Back Button + Recipient */}
             <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
               <button
                 onClick={handleBack}
@@ -414,7 +388,7 @@ export default function VirtualGiftToPersonaPage() {
                 <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 group-hover:text-[#5e17eb] group-hover:-translate-x-1 transition-all" />
               </button>
               
-              {/* Persona Info */}
+              {/* Recipient Info */}
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <div className="relative flex-shrink-0">
                   <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden border-2 border-white shadow-md">
@@ -531,7 +505,6 @@ export default function VirtualGiftToPersonaPage() {
           </div>
           
           <div className="relative">
-            {/* Scroll Button Left - Mobile */}
             <button
               onClick={() => scrollCategories('left')}
               className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center lg:hidden hover:bg-white transition-colors"
@@ -540,7 +513,6 @@ export default function VirtualGiftToPersonaPage() {
               <ChevronLeft className="w-5 h-5 text-gray-600" />
             </button>
             
-            {/* Category Scroll Container */}
             <div
               ref={categoryScrollRef}
               className="flex overflow-x-auto pb-2 gap-2 scrollbar-hide scroll-smooth px-8 lg:px-0"
@@ -586,7 +558,6 @@ export default function VirtualGiftToPersonaPage() {
               ))}
             </div>
             
-            {/* Scroll Button Right - Mobile */}
             <button
               onClick={() => scrollCategories('right')}
               className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center lg:hidden hover:bg-white transition-colors"
@@ -707,7 +678,7 @@ export default function VirtualGiftToPersonaPage() {
         </div>
       </div>
       
-      {/* Gift Overlay Modal - Improved with better border radius and styling */}
+      {/* Gift Overlay Modal */}
       <AnimatePresence>
         {showGiftOverlay && selectedGift && recipient && (
           <motion.div
@@ -721,15 +692,15 @@ export default function VirtualGiftToPersonaPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="bg-gray-100  sm:rounded-3xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+              className="bg-gray-100 sm:rounded-3xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
             >
               
               {/* Modal Content - Stacked on Mobile, Side by Side on Desktop */}
-              <div className="flex flex-col md:flex-row overflow-y-auto ">
+              <div className="flex flex-col md:flex-row overflow-y-auto">
                 
                 {/* Left Side - Gift Preview */}
                 <div className="md:w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 p-6 sm:p-8 flex flex-col items-center justify-center md:rounded-l-3xl">
-                  <div className="w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 mb-4 sm:mb-6 bg-white  shadow-lg p-4 flex items-center justify-center">
+                  <div className="w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 mb-4 sm:mb-6 bg-white shadow-lg p-4 flex items-center justify-center">
                     {selectedGift.imageUrl ? (
                       <Image
                         src={selectedGift.imageUrl}
@@ -879,7 +850,7 @@ export default function VirtualGiftToPersonaPage() {
         )}
       </AnimatePresence>
       
-      {/* Insufficient Credits Modal - Improved with better styling */}
+      {/* Insufficient Credits Modal */}
       <AnimatePresence>
         {showInsufficientCredits && selectedGift && (
           <motion.div

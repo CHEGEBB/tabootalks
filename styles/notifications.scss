@@ -1,0 +1,553 @@
+// notification-animations.scss
+// Import this in your global styles or layout: @import './notification-animations.scss';
+
+// ============================================================================
+// MAIN NOTIFICATION CONTAINER ANIMATIONS
+// ============================================================================
+
+.notification-container {
+    animation: desktopSlideDown 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    
+    @media (max-width: 767px) {
+      animation: mobilePopIn 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+    }
+  }
+  
+  // Desktop: Slow dramatic slide from top to bottom
+  @keyframes desktopSlideDown {
+    0% {
+      transform: translateY(-180px) translateX(-50%) scale(0.85);
+      opacity: 0;
+      filter: blur(10px);
+    }
+    20% {
+      transform: translateY(-120px) translateX(-50%) scale(0.9);
+      opacity: 0.3;
+      filter: blur(6px);
+    }
+    40% {
+      transform: translateY(-60px) translateX(-50%) scale(0.95);
+      opacity: 0.6;
+      filter: blur(3px);
+    }
+    60% {
+      transform: translateY(-20px) translateX(-50%) scale(0.98);
+      opacity: 0.85;
+      filter: blur(1px);
+    }
+    80% {
+      transform: translateY(8px) translateX(-50%) scale(1.02);
+      opacity: 0.95;
+      filter: blur(0);
+    }
+    100% {
+      transform: translateY(0) translateX(-50%) scale(1);
+      opacity: 1;
+      filter: blur(0);
+    }
+  }
+  
+  // Mobile: Quick energetic pop-in
+  @keyframes mobilePopIn {
+    0% {
+      transform: translateY(-100px) translateX(-50%) scale(0.6) rotate(-5deg);
+      opacity: 0;
+    }
+    50% {
+      transform: translateY(10px) translateX(-50%) scale(1.08) rotate(2deg);
+      opacity: 0.8;
+    }
+    75% {
+      transform: translateY(-5px) translateX(-50%) scale(0.96) rotate(-1deg);
+      opacity: 0.95;
+    }
+    100% {
+      transform: translateY(0) translateX(-50%) scale(1) rotate(0);
+      opacity: 1;
+    }
+  }
+  
+  // ============================================================================
+  // NOTIFICATION CARD EFFECTS
+  // ============================================================================
+  
+  .notification-card {
+    position: relative;
+    animation: cardBreathing 4s ease-in-out infinite;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 1.1rem;
+      background: linear-gradient(
+        135deg,
+        #8b5cf6 0%,
+        #ec4899 25%,
+        #8b5cf6 50%,
+        #ec4899 75%,
+        #8b5cf6 100%
+      );
+      background-size: 400% 400%;
+      animation: borderFlowGlow 4s ease infinite;
+      opacity: 0.4;
+      z-index: -1;
+      filter: blur(12px);
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 1rem;
+      background: radial-gradient(
+        circle at 50% 0%,
+        rgba(139, 92, 246, 0.15),
+        transparent 70%
+      );
+      animation: innerGlowPulse 3s ease-in-out infinite;
+      pointer-events: none;
+    }
+  }
+  
+  @keyframes cardBreathing {
+    0%, 100% {
+      box-shadow: 
+        0 20px 60px rgba(139, 92, 246, 0.35),
+        0 0 30px rgba(236, 72, 153, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    50% {
+      box-shadow: 
+        0 25px 80px rgba(139, 92, 246, 0.5),
+        0 0 50px rgba(236, 72, 153, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+  }
+  
+  @keyframes borderFlowGlow {
+    0% {
+      background-position: 0% 50%;
+      opacity: 0.35;
+    }
+    25% {
+      opacity: 0.5;
+    }
+    50% {
+      background-position: 100% 50%;
+      opacity: 0.35;
+    }
+    75% {
+      opacity: 0.5;
+    }
+    100% {
+      background-position: 0% 50%;
+      opacity: 0.35;
+    }
+  }
+  
+  @keyframes innerGlowPulse {
+    0%, 100% {
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+  
+  // ============================================================================
+  // PROGRESS BAR ANIMATIONS
+  // ============================================================================
+  
+  .progress-bar {
+    position: relative;
+    overflow: hidden;
+    transition: width 50ms linear;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        transparent 100%
+      );
+      animation: shimmerFlow 2.5s ease-in-out infinite;
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 20%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2)
+      );
+      animation: edgeGlow 1.5s ease-in-out infinite;
+    }
+  }
+  
+  @keyframes shimmerFlow {
+    0% {
+      left: -100%;
+    }
+    50%, 100% {
+      left: 200%;
+    }
+  }
+  
+  @keyframes edgeGlow {
+    0%, 100% {
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+  
+  // ============================================================================
+  // CTA BUTTON EFFECTS
+  // ============================================================================
+  
+  .cta-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 70%
+      );
+      background-size: 200% 200%;
+      animation: buttonShine 3s linear infinite;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 10px 30px rgba(139, 92, 246, 0.4),
+        0 0 40px rgba(139, 92, 246, 0.3);
+      
+      &::before {
+        width: 400px;
+        height: 400px;
+      }
+      
+      &::after {
+        opacity: 1;
+      }
+    }
+    
+    &:active {
+      transform: translateY(0) scale(0.97);
+    }
+  }
+  
+  @keyframes buttonShine {
+    0% {
+      background-position: -200% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
+  }
+  
+  // ============================================================================
+  // SMALL ELEMENT ANIMATIONS
+  // ============================================================================
+  
+  // Pulsing online dot
+  .pulse-dot {
+    animation: dotPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  
+  @keyframes dotPulse {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    50% {
+      transform: scale(1.3);
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+  }
+  
+  // Glowing chevron indicator
+  .drop-shadow-glow {
+    filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.7));
+    animation: chevronGlow 2.5s ease-in-out infinite;
+  }
+  
+  @keyframes chevronGlow {
+    0%, 100% {
+      filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.7));
+      transform: translateY(0);
+    }
+    50% {
+      filter: drop-shadow(0 0 20px rgba(167, 139, 250, 1));
+      transform: translateY(2px);
+    }
+  }
+  
+  // Background glow effect
+  .glow-effect {
+    animation: backgroundGlow 5s ease-in-out infinite;
+  }
+  
+  @keyframes backgroundGlow {
+    0%, 100% {
+      opacity: 0.5;
+      filter: blur(40px);
+    }
+    50% {
+      opacity: 0.8;
+      filter: blur(60px);
+    }
+  }
+  
+  // ============================================================================
+  // BELL ICON ANIMATION
+  // ============================================================================
+  
+  .bell-ring {
+    animation: bellRing 2s ease-in-out infinite;
+    transform-origin: top center;
+  }
+  
+  @keyframes bellRing {
+    0%, 100% {
+      transform: rotate(0deg);
+    }
+    5% {
+      transform: rotate(15deg);
+    }
+    10% {
+      transform: rotate(-15deg);
+    }
+    15% {
+      transform: rotate(10deg);
+    }
+    20% {
+      transform: rotate(-10deg);
+    }
+    25% {
+      transform: rotate(5deg);
+    }
+    30% {
+      transform: rotate(0deg);
+    }
+  }
+  
+  // ============================================================================
+  // PROFILE IMAGE ANIMATIONS
+  // ============================================================================
+  
+  .profile-image-container {
+    animation: profileEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
+  }
+  
+  @keyframes profileEntrance {
+    0% {
+      transform: scale(0) rotate(-180deg);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.15) rotate(10deg);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+  
+  // Online badge pulse
+  .online-badge {
+    animation: onlineBadgePulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes onlineBadgePulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    50% {
+      transform: scale(1.2);
+      box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+    }
+  }
+  
+  // ============================================================================
+  // TEXT ANIMATIONS
+  // ============================================================================
+  
+  .text-slide-in {
+    animation: textSlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  }
+  
+  @keyframes textSlideIn {
+    0% {
+      transform: translateX(30px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  // Interest tags fade in
+  .interest-tag {
+    animation: tagFadeIn 0.5s ease backwards;
+    
+    &:nth-child(1) { animation-delay: 0.5s; }
+    &:nth-child(2) { animation-delay: 0.6s; }
+    &:nth-child(3) { animation-delay: 0.7s; }
+  }
+  
+  @keyframes tagFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.8);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  // ============================================================================
+  // HOVER PAUSE INDICATOR
+  // ============================================================================
+  
+  .pause-indicator {
+    animation: pauseFadeIn 0.3s ease;
+  }
+  
+  @keyframes pauseFadeIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  // ============================================================================
+  // EXIT ANIMATIONS
+  // ============================================================================
+  
+  .notification-exit {
+    animation: smoothExit 0.6s cubic-bezier(0.55, 0.09, 0.68, 0.53) forwards;
+  }
+  
+  @keyframes smoothExit {
+    0% {
+      transform: translateY(0) translateX(-50%) scale(1);
+      opacity: 1;
+      filter: blur(0);
+    }
+    100% {
+      transform: translateY(-150px) translateX(-50%) scale(0.7);
+      opacity: 0;
+      filter: blur(10px);
+    }
+  }
+  
+  // ============================================================================
+  // RESPONSIVE ADJUSTMENTS
+  // ============================================================================
+  
+  @media (max-width: 640px) {
+    .notification-card {
+      &::before {
+        filter: blur(8px);
+      }
+    }
+    
+    @keyframes cardBreathing {
+      0%, 100% {
+        box-shadow: 
+          0 15px 40px rgba(139, 92, 246, 0.3),
+          0 0 20px rgba(236, 72, 153, 0.15);
+      }
+      50% {
+        box-shadow: 
+          0 20px 60px rgba(139, 92, 246, 0.45),
+          0 0 35px rgba(236, 72, 153, 0.25);
+      }
+    }
+  }
+  
+  // ============================================================================
+  // PERFORMANCE OPTIMIZATIONS
+  // ============================================================================
+  
+  .notification-container,
+  .notification-card,
+  .progress-bar,
+  .cta-button,
+  .profile-image-container {
+    will-change: transform, opacity;
+  }
+  
+  // Reduce motion for accessibility
+  @media (prefers-reduced-motion: reduce) {
+    .notification-container,
+    .notification-card,
+    .progress-bar,
+    .cta-button,
+    .profile-image-container,
+    .pulse-dot,
+    .drop-shadow-glow,
+    .glow-effect,
+    .bell-ring,
+    .online-badge,
+    .text-slide-in,
+    .interest-tag {
+      animation: none !important;
+      transition: none !important;
+    }
+    
+    .notification-container {
+      opacity: 1;
+      transform: translateY(0) translateX(-50%) scale(1);
+    }
+  }

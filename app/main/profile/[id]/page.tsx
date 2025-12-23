@@ -31,7 +31,7 @@ const ProfilePage = () => {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  
+
   const [profile, setProfile] = useState<ParsedPersonaProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +40,9 @@ const ProfilePage = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isWinking, setIsWinking] = useState(false);
   const [message, setMessage] = useState('');
-  
+  const [winkAnimation, setWinkAnimation] = useState(false);
+
+
   const personaId = params.id as string;
 
   useEffect(() => {
@@ -53,13 +55,13 @@ const ProfilePage = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const data = await personaService.getPersonaById(personaId);
       setProfile(data);
-      
+
       // Simulate checking if following (in real app, this would be from user's data)
       setIsFollowing(Math.random() > 0.5);
-      
+
     } catch (err: any) {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile. Please try again.');
@@ -76,6 +78,35 @@ const ProfilePage = () => {
       router.push(`/main/chats?user=${personaId}&message=${encodeURIComponent(message)}`);
     }
   };
+
+
+  const handleSendWink = async () => {
+    if (!profile) return;
+  
+    setIsWinking(true);
+    setWinkAnimation(true); // Start animation
+  
+    try {
+      // 1. Send wink as a message to the chat
+      const winkMessage = "😉"; // Wink emoji
+  
+      // 2. Navigate to chat with wink message pre-filled
+      router.push(`/main/chats/${profile.$id}?wink=true`);
+  
+      // Show animation for 1.5 seconds before navigating
+      setTimeout(() => {
+        setWinkAnimation(false);
+        setIsWinking(false);
+      }, 1500);
+  
+    } catch (error: any) {
+      console.error('Error sending wink:', error);
+      alert('Failed to send wink. Please try again.');
+      setWinkAnimation(false);
+      setIsWinking(false);
+    }
+  };
+
 
   const handleWink = async () => {
     setIsWinking(true);
@@ -94,17 +125,17 @@ const ProfilePage = () => {
     try {
       const newFollowingState = !isFollowing;
       setIsFollowing(newFollowingState);
-      
+
       if (profile) {
-        const newFollowingCount = newFollowingState 
-          ? profile.followingCount + 1 
+        const newFollowingCount = newFollowingState
+          ? profile.followingCount + 1
           : profile.followingCount - 1;
-        
+
         await personaService.updatePersonaStats(personaId, {
           followingCount: newFollowingCount,
           lastActive: new Date().toISOString()
         });
-        
+
         // Update local profile
         setProfile(prev => prev ? { ...prev, followingCount: newFollowingCount } : null);
       }
@@ -115,7 +146,7 @@ const ProfilePage = () => {
   };
 
   const handleSendGift = () => {
-   router.push(`/main/virtual-gifts/${profile?.$id}`)
+    router.push(`/main/virtual-gifts/${profile?.$id}`)
   };
 
   const openImageModal = (imageUrl: string, index: number) => {
@@ -129,14 +160,14 @@ const ProfilePage = () => {
 
   const navigateImage = (direction: 'prev' | 'next') => {
     if (!allImages.length) return;
-    
+
     let newIndex = currentImageIndex;
     if (direction === 'prev') {
       newIndex = currentImageIndex === 0 ? allImages.length - 1 : currentImageIndex - 1;
     } else {
       newIndex = currentImageIndex === allImages.length - 1 ? 0 : currentImageIndex + 1;
     }
-    
+
     setCurrentImageIndex(newIndex);
     setSelectedImage(allImages[newIndex]);
   };
@@ -157,7 +188,7 @@ const ProfilePage = () => {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
-    
+
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
@@ -274,7 +305,7 @@ const ProfilePage = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4 text-gray-600 mb-4">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
@@ -314,7 +345,7 @@ const ProfilePage = () => {
                 <h2 className="text-xl font-bold text-gray-900">Photos</h2>
                 <span className="text-sm text-gray-500">{allImages.length} photos</span>
               </div>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {allImages.map((image, index) => (
                   <div
@@ -342,7 +373,7 @@ const ProfilePage = () => {
             {/* About Me Section */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">About Me</h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Personality Traits */}
                 <div>
@@ -382,7 +413,84 @@ const ProfilePage = () => {
                 </div>
               </div>
             </div>
+            {/* SEND GIFT SECTION */}
+            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2">
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <Gift className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+                    Virtual Gifts for Special Ones
+                  </h2>
+                  <p className="text-gray-600 text-sm md:text-base mt-1">
+                    Liven up your chat with {profile.username} by sending a thoughtful gift
+                  </p>
+                </div>
+                <button
+                  onClick={handleSendGift}
+                  className="text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-full transition-colors w-fit"
+                >
+                  Choose Virtual Gift
+                </button>
+              </div>
 
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+                {/* Gift 1 - Just image, no click */}
+                <div className="flex flex-col items-center p-3 md:p-4">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 mb-2">
+                    <Image
+                      src="/magical/roseinglass.png"
+                      alt="Gift 1"
+                      width={96}
+                      height={96}
+                      className="rounded-lg object-cover"
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">Rose</span>
+                </div>
+
+                {/* Gift 2 - Just image, no click */}
+                <div className="flex flex-col items-center p-3 md:p-4">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 mb-2">
+                    <Image
+                      src="/magical/wishwell.png"
+                      alt="Gift 2"
+                      width={96}
+                      height={96}
+                      className="rounded-lg object-cover"
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">Wishwell</span>
+                </div>
+
+                {/* Gift 3 - Just image, no click */}
+                <div className="flex flex-col items-center p-3 md:p-4">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 mb-2">
+                    <Image
+                      src="/gifts/flower5.png"
+                      alt="Gift 3"
+                      width={96}
+                      height={96}
+                      className="rounded-lg object-cover"
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">flowers</span>
+                </div>
+
+                {/* Gift 4 - Just image, no click */}
+                <div className="flex flex-col items-center p-3 md:p-4">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 mb-2">
+                    <Image
+                      src="/gifts/love_potion.png"
+                      alt="Gift 4"
+                      width={96}
+                      height={96}
+                      className="rounded-lg object-cover"
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">Love potion</span>
+                </div>
+              </div>
+            </div>
             {/* Posts Section */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Posts</h2>
@@ -422,29 +530,33 @@ const ProfilePage = () => {
                   <MessageCircle className="w-5 h-5" />
                   Start Chat
                 </button>
-                
+
                 <button
-                  onClick={handleWink}
-                  disabled={isWinking}
-                  className="w-full py-3 bg-gradient-to-r from-[#ff2e2e] to-[#ff6b6b] text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  {isWinking ? 'Winking...' : 'Send Wink'}
-                </button>
-                
+  onClick={handleSendWink}
+  disabled={isWinking}
+  className="w-full py-3 bg-gradient-to-r from-[#ff2e2e] to-[#ff6b6b] text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 relative overflow-hidden"
+>
+  <Sparkles className="w-5 h-5" />
+  {isWinking ? 'Winking...' : 'Send Wink'}
+  
+  {/* Animated background effect */}
+  {winkAnimation && (
+    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+  )}
+</button>
+
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={handleFollow}
-                    className={`py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 ${
-                      isFollowing
+                    className={`py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 ${isFollowing
                         ? 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
                         : 'bg-[#5e17eb] text-white hover:bg-[#4a13c4]'
-                    }`}
+                      }`}
                   >
                     <UserPlus className="w-5 h-5" />
                     {isFollowing ? 'Following' : 'Follow'}
                   </button>
-                  
+
                   <button
                     onClick={handleSendGift}
                     className="py-3 bg-white border-2 border-[#5e17eb] text-[#5e17eb] rounded-xl font-medium hover:bg-[#5e17eb]/5 transition-colors flex items-center justify-center gap-2"
@@ -598,11 +710,10 @@ const ProfilePage = () => {
                       setCurrentImageIndex(index);
                       setSelectedImage(image);
                     }}
-                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                      currentImageIndex === index 
-                        ? 'border-[#5e17eb] scale-110' 
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${currentImageIndex === index
+                        ? 'border-[#5e17eb] scale-110'
                         : 'border-transparent hover:border-white/50'
-                    }`}
+                      }`}
                   >
                     <Image
                       src={image}
@@ -618,6 +729,35 @@ const ProfilePage = () => {
           </div>
         </div>
       )}
+      <style jsx global>{`
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+        
+        .animate-shimmer {
+          animation: shimmer 1.5s infinite;
+        }
+        
+        /* Wink emoji animation */
+        .wink-emoji {
+          animation: wink-bounce 1s infinite;
+          display: inline-block;
+        }
+        
+        @keyframes wink-bounce {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.2);
+          }
+        }
+      `}</style>
     </div>
   );
 };
