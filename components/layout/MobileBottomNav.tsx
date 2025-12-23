@@ -54,6 +54,10 @@ export default function MobileBottomNav({ activeTab, setActiveTab }: MobileBotto
     router.push(`/main/virtual-gifts`);
 };
 
+const handleDiscover= () =>{
+  router.push("/main/discover")
+}
+
   const handleNavigation = (id: string) => {
     setActiveTab(id);
     
@@ -184,11 +188,11 @@ export default function MobileBottomNav({ activeTab, setActiveTab }: MobileBotto
           <div className="flex items-center gap-3">
             {/* Explore Button */}
             <button 
-              onClick={() => handleTopBarAction('explore')}
+              onClick={handleDiscover}
               className="p-2 text-gray-600 hover:text-[#5e17eb] transition-colors rounded-full hover:bg-gray-100"
               aria-label="Explore"
             >
-              <Compass size={22} />
+              <Compass size={30} />
             </button>
             
             {/* Notifications Button */}
