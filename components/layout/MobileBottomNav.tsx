@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, MessageCircle, Search, Users, CreditCard, Compass, Bell, User, Settings, LogOut } from 'lucide-react';
+import { Home, MessageCircle, Search, Users, CreditCard, Compass, Bell, User, Settings, LogOut, GiftIcon } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useEffect, useState, useRef } from 'react';
@@ -49,6 +49,14 @@ export default function MobileBottomNav({ activeTab, setActiveTab }: MobileBotto
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const handleGift = () => {
+    router.push(`/main/virtual-gifts`);
+};
+
+const handleDiscover= () =>{
+  router.push("/main/discover")
+}
 
   const handleNavigation = (id: string) => {
     setActiveTab(id);
@@ -180,20 +188,20 @@ export default function MobileBottomNav({ activeTab, setActiveTab }: MobileBotto
           <div className="flex items-center gap-3">
             {/* Explore Button */}
             <button 
-              onClick={() => handleTopBarAction('explore')}
+              onClick={handleDiscover}
               className="p-2 text-gray-600 hover:text-[#5e17eb] transition-colors rounded-full hover:bg-gray-100"
               aria-label="Explore"
             >
-              <Compass size={22} />
+              <Compass size={30} />
             </button>
             
             {/* Notifications Button */}
             <button 
-              onClick={() => handleTopBarAction('notifications')}
+              onClick={handleGift}
               className="relative p-2 text-gray-600 hover:text-[#5e17eb] transition-colors rounded-full hover:bg-gray-100"
               aria-label="Notifications"
             >
-              <Bell size={22} />
+              <GiftIcon size={30} />
               <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-[#ff2e2e] border-2 border-white"></span>
             </button>
             
