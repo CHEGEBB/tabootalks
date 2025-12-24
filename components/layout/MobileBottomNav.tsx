@@ -306,7 +306,7 @@ export default function MobileBottomNav({ activeTab, setActiveTab }: MobileBotto
         </div>
       </div>
 
-      {/* Bottom Navigation - FIXED at bottom */}
+      {/* Bottom Navigationn - FIXED at bottom */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-lg h-16">
         <div className="flex justify-around items-center h-full px-2">
           {navItems.map(item => {
