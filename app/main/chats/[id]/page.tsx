@@ -1549,40 +1549,46 @@ export default function ChatPage() {
                         </div>
 
                         {/* Chat Info */}
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          {/* Top row: Username + age + verified + time */}
                           <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
                               <h4 className="font-semibold text-gray-900 truncate">
                                 {botProfile?.username || 'Unknown'}
                               </h4>
                               {botProfile?.isVerified && (
                                 <CheckCircle className="w-4 h-4 text-blue-500 fill-blue-100 flex-shrink-0" />
                               )}
-                              <span className="text-xs text-gray-500">
-                                {botProfile?.age ? `, ${botProfile.age}` : ''}
-                              </span>
+                              {botProfile?.age && (
+                                <span className="text-xs text-gray-500 flex-shrink-0">
+                                  , {botProfile.age}
+                                </span>
+                              )}
                             </div>
-                            <span className="text-xs text-gray-500 whitespace-nowrap">
-                              {formatConversationTime(conv.lastMessageAt)}
+                            <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0 ml-2">
+                              {formatTime(conv.lastMessageAt)}
                             </span>
                           </div>
-
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-600 truncate">
+                        
+                          {/* Middle row: Last message + message count badge */}
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm text-gray-600 truncate flex-1 min-w-0">
                               {conv.lastMessage || 'Start a conversation...'}
                             </p>
                             {conv.messageCount > 0 && (
-                              <span className="w-full h-6 flex justify-center text-xs font-medium text-[#5e17eb] bg-purple-100 px-2 py-0.5 rounded-full">
-                                {conv.messageCount} msgs
+                              <span className="flex-shrink-0 px-3 py-1 text-xs font-medium text-[#5e17eb] bg-[#5e17eb]/10 rounded-full min-w-[52px] text-center">
+                                {conv.messageCount} {conv.messageCount === 1 ? 'msg' : 'msgs'}
                               </span>
                             )}
                           </div>
-
-                          {/* Location */}
+                        
+                          {/* Bottom row: Location */}
                           {botProfile?.location && (
                             <div className="flex items-center gap-1 mt-1">
-                              <MapPin className="w-3 h-3 text-gray-400" />
-                              <span className="text-xs text-gray-500">{botProfile.location}</span>
+                              <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                              <span className="text-xs text-gray-500 truncate">
+                                {botProfile.location}
+                              </span>
                             </div>
                           )}
                         </div>

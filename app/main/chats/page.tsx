@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Client, Databases, Query, Account, Storage } from 'appwrite';
@@ -13,7 +13,7 @@ import {
   Shield, Phone, Video, Heart, Send, Smile,
   ChevronLeft, Camera, Star, Paperclip, Clock,
   UserPlus, TrendingUp, Activity, Award, Clock4,
-  Target, BarChart3, RefreshCw
+  Target, BarChart3, RefreshCw, Trash2, AlertCircle
 } from 'lucide-react';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import LayoutController from '@/components/layout/LayoutController';
@@ -64,7 +64,14 @@ export default function ChatsPage() {
     mostActiveHour: '8 PM'
   });
   
+  // Delete functionality states
+  const [swipingId, setSwipingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState<{ [key: string]: number }>({});
+  
   const router = useRouter();
+  const swipeStartX = useRef<{ [key: string]: number }>({});
 
   // Initialize Appwrite
   const client = new Client()
@@ -97,17 +104,14 @@ export default function ChatsPage() {
   const calculateStats = (conversations: ConversationWithBot[]) => {
     const totalMessages = conversations.reduce((sum, conv) => sum + conv.messageCount, 0);
     const activeChats = conversations.filter(conv => conv.isActive).length;
-    const creditsSpent = conversations.reduce((sum, conv) => sum + conv.messageCount, 0); // 1 credit per message
+    const creditsSpent = conversations.reduce((sum, conv) => sum + conv.messageCount, 0);
     
-    // Calculate average response time (simulated for now)
     const responseTimes = ['1m', '2m', '3m', '5m', '10m'];
     const randomTime = responseTimes[Math.floor(Math.random() * responseTimes.length)];
     
-    // Calculate longest conversation (simulated)
     const conversationLengths = ['15m', '30m', '45m', '1h', '2h'];
     const randomLength = conversationLengths[Math.floor(Math.random() * conversationLengths.length)];
     
-    // Most active hour (simulated)
     const hours = ['2 PM', '6 PM', '8 PM', '10 PM', '12 AM'];
     const randomHour = hours[Math.floor(Math.random() * hours.length)];
     
@@ -147,22 +151,19 @@ export default function ChatsPage() {
         ]
       );
 
-      // If NO conversations, load suggestions
       if (conversationsData.documents.length === 0) {
         loadSuggestedBots();
       } else {
-        // Load bot profiles for existing conversations using personaService
         const conversationsWithBots = await Promise.all(
           conversationsData.documents.map(async (conv) => {
             try {
-              // Use personaService to get complete profile data
               const botData = await personaService.getPersonaById(conv.botProfileId);
               
               return {
                 ...conv,
                 bot: {
                   ...botData,
-                  isOnline: Math.random() > 0.3 // Simulate online status for now
+                  isOnline: Math.random() > 0.3
                 }
               };
             } catch (err: any) {
@@ -204,10 +205,8 @@ export default function ChatsPage() {
     try {
       setIsLoadingSuggestions(true);
       
-      // Use personaService to get random suggested personas
       const suggestions = await personaService.getRandomPersonas(6);
       
-      // Transform to suggested bot format with online status
       const suggestedBotsWithStatus = suggestions.map((bot) => ({
         ...bot,
         isOnline: Math.random() > 0.3,
@@ -225,9 +224,85 @@ export default function ChatsPage() {
     }
   };
 
+  // DELETE CONVERSATION FUNCTION
+  const deleteConversation = async (conversationId: string) => {
+    try {
+      setIsDeleting(conversationId);
+      setError('');
+
+      // Delete from Appwrite backend
+      await databases.deleteDocument(
+        DATABASE_ID,
+        'conversations',
+        conversationId
+      );
+
+      // Remove from local state
+      setConversations(prev => prev.filter(conv => conv.$id !== conversationId));
+      
+      // Recalculate stats
+      calculateStats(conversations.filter(conv => conv.$id !== conversationId));
+      
+      // Reset delete states
+      setDeleteConfirmId(null);
+      setSwipingId(null);
+      setSwipeOffset(prev => ({ ...prev, [conversationId]: 0 }));
+
+      console.log('✅ Conversation deleted successfully');
+
+    } catch (err: any) {
+      console.error('❌ Error deleting conversation:', err);
+      setError(err.message || 'Failed to delete conversation');
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  // SWIPE HANDLERS
+  const handleSwipeStart = (e: React.TouchEvent | React.MouseEvent, conversationId: string) => {
+    if ('touches' in e) {
+      swipeStartX.current[conversationId] = e.touches[0].clientX;
+    } else {
+      swipeStartX.current[conversationId] = e.clientX;
+    }
+    setSwipingId(conversationId);
+  };
+
+  const handleSwipeMove = (e: React.TouchEvent | React.MouseEvent, conversationId: string) => {
+    if (!swipeStartX.current[conversationId]) return;
+    
+    const currentX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const diff = swipeStartX.current[conversationId] - currentX;
+    
+    // Only allow left swipe (negative diff) and limit to 80px
+    if (diff > 0) {
+      const offset = Math.min(diff, 80);
+      setSwipeOffset(prev => ({ ...prev, [conversationId]: offset }));
+    }
+  };
+
+  const handleSwipeEnd = (conversationId: string) => {
+    const offset = swipeOffset[conversationId] || 0;
+    
+    // If swiped more than 50px, show delete confirmation
+    if (offset > 50) {
+      setDeleteConfirmId(conversationId);
+    } else {
+      // Reset swipe
+      setSwipeOffset(prev => ({ ...prev, [conversationId]: 0 }));
+    }
+    
+    setSwipingId(null);
+    swipeStartX.current[conversationId] = 0;
+  };
+
+  const resetSwipe = (conversationId: string) => {
+    setSwipeOffset(prev => ({ ...prev, [conversationId]: 0 }));
+    setDeleteConfirmId(null);
+  };
+
   const startNewChat = async (botId: string) => {
     try {
-      // Create a new conversation document
       const accountData = await account.get();
       const userData = await databases.getDocument(
         DATABASE_ID,
@@ -235,13 +310,11 @@ export default function ChatsPage() {
         accountData.$id
       );
 
-      // Check credits
       if (userData.credits < 1) {
         setError('Insufficient credits to start a chat');
         return;
       }
 
-      // Create conversation
       const conversationData = {
         userId: accountData.$id,
         botProfileId: botId,
@@ -258,7 +331,6 @@ export default function ChatsPage() {
         conversationData
       );
 
-      // Navigate to the new chat
       router.push(`/main/chats/${conversation.$id}`);
 
     } catch (err: any) {
@@ -316,17 +388,15 @@ export default function ChatsPage() {
   }
 
   return (
-    <div className="min-h-[1600px] bg-white">
+    <div className="min-h-screen bg-white">
       <LayoutController />
       
-      {/* Desktop Layout - Improved UI */}
-      <div className="hidden lg:flex h-[calc(100vh-64px)] w-full">
+      {/* Desktop Layout */}
+      <div className="hidden lg:flex h-[calc(200vh-64px)] w-full">
         <div className="w-full max-w-[1400px] mx-auto flex h-full">
           
-          {/* Left Sidebar - Chat List - Improved UI */}
-          <div className="w-[400px] h-full flex-shrink-0 border border-gray-200 h-full overflow-hidden flex flex-col bg-white">
-            {/* Fixed Header */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
+          {/* Left Sidebar - Chat List */}
+          <div className="w-[400px] min-h-[1000px] flex-shrink-0 border-r border-l border-gray-200 overflow-hidden flex flex-col bg-white">            <div className="bg-white border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-[#5e17eb]">{currentUser?.credits || 0}</span>
@@ -357,7 +427,7 @@ export default function ChatsPage() {
                 />
               </div>
               
-              {/* Tabs - Improved */}
+              {/* Tabs */}
               <div className="flex space-x-2 mb-2">
                 <button
                   onClick={() => setActiveFilter('all')}
@@ -385,7 +455,7 @@ export default function ChatsPage() {
               </div>
             </div>
 
-            {/* Chat List - Scrollable - Improved UI */}
+            {/* Chat List - Scrollable */}
             <div className="flex-1 overflow-y-auto bg-white">
               {conversations.length === 0 ? (
                 <div className="p-8 text-center">
@@ -405,83 +475,226 @@ export default function ChatsPage() {
                 <div className="divide-y divide-gray-100">
                   {filteredConversations.map(conv => {
                     const botProfile = conv.bot;
+                    const isSwiping = swipingId === conv.$id;
+                    const offset = swipeOffset[conv.$id] || 0;
+                    const showDeleteConfirm = deleteConfirmId === conv.$id;
                     
                     return (
-                      <Link
+                      <div
                         key={conv.$id}
-                        href={`/main/chats/${conv.$id}`}
-                        className="flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer transition-all border-b border-gray-100"
+                        className={`relative transition-all duration-200 ${isDeleting === conv.$id ? 'opacity-50' : ''}`}
+                        style={{ transform: `translateX(-${offset}px)` }}
                       >
-                        {/* Profile Image - Improved */}
-                        <div className="relative flex-shrink-0">
-                          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm">
-                            {botProfile?.profilePic ? (
-                              <Image
-                                src={botProfile.profilePic}
-                                alt={botProfile.username || 'Bot'}
-                                width={48}
-                                height={48}
-                                className="w-full h-full object-cover"
-                                unoptimized={botProfile.profilePic?.startsWith('http')}
-                              />
+                        {/* Delete Button (Hidden behind chat) */}
+                        <div className="absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center bg-red-500 rounded-r-lg">
+                          <button
+                            onClick={() => deleteConversation(conv.$id)}
+                            disabled={isDeleting === conv.$id}
+                            className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {isDeleting === conv.$id ? (
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             ) : (
-                              <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
-                                <UserPlus className="w-6 h-6 text-gray-500" />
-                              </div>
+                              <>
+                                <Trash2 className="w-4 h-4" />
+                                <span className="text-xs font-medium">Delete</span>
+                              </>
                             )}
-                          </div>
-                          {/* Online Status */}
-                          {conv.isActive && (
-                            <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-green-500"></div>
-                          )}
+                          </button>
                         </div>
 
-                        {/* Chat Info - Improved */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-semibold text-gray-900 truncate">
-                                {botProfile?.username || 'Unknown'}
-                              </h4>
-                              {botProfile?.isVerified && (
-                                <CheckCircle className="w-4 h-4 text-blue-500 fill-blue-100 flex-shrink-0" />
+                        {/* Chat Item */}
+                        <div
+                          className={`relative bg-white ${showDeleteConfirm ? 'border-2 border-red-500' : 'border-b border-gray-100'}`}
+                          onTouchStart={(e) => handleSwipeStart(e, conv.$id)}
+                          onTouchMove={(e) => handleSwipeMove(e, conv.$id)}
+                          onTouchEnd={() => handleSwipeEnd(conv.$id)}
+                          onMouseDown={(e) => handleSwipeStart(e, conv.$id)}
+                          onMouseMove={(e) => handleSwipeMove(e, conv.$id)}
+                          onMouseUp={() => handleSwipeEnd(conv.$id)}
+                          onMouseLeave={() => {
+                            if (swipingId === conv.$id) {
+                              handleSwipeEnd(conv.$id);
+                            }
+                          }}
+                        >
+                          <Link
+                            href={`/main/chats/${conv.$id}`}
+                            className="flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer transition-all"
+                            onClick={(e) => {
+                              if (offset > 10 || showDeleteConfirm) {
+                                e.preventDefault();
+                                resetSwipe(conv.$id);
+                              }
+                            }}
+                          >
+                            {/* Profile Image */}
+                            <div className="relative flex-shrink-0">
+                              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                                {botProfile?.profilePic ? (
+                                  <Image
+                                    src={botProfile.profilePic}
+                                    alt={botProfile.username || 'Bot'}
+                                    width={48}
+                                    height={48}
+                                    className="w-full h-full object-cover"
+                                    unoptimized={botProfile.profilePic?.startsWith('http')}
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
+                                    <UserPlus className="w-6 h-6 text-gray-500" />
+                                  </div>
+                                )}
+                              </div>
+                              {conv.isActive && (
+                                <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-green-500"></div>
                               )}
-                              <span className="text-xs text-gray-500">
-                                {botProfile?.age ? `, ${botProfile.age}` : ''}
-                              </span>
                             </div>
-                            <span className="text-xs text-gray-500 whitespace-nowrap">
-                              {formatTime(conv.lastMessageAt)}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-600 truncate">
-                              {conv.lastMessage || 'Start a conversation...'}
-                            </p>
-                            {conv.messageCount > 0 && (
-                              <span className=" w-full h-5 flex justify-center text-xs font-[5px] text-[#5e17eb] bg-purple-100 px-2 py-0.5 rounded-full">
-                                {conv.messageCount} msgs
-                              </span>
-                            )}
-                          </div>
-                          
-                          {/* Location */}
-                          {botProfile?.location && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <MapPin className="w-3 h-3 text-gray-400" />
-                              <span className="text-xs text-gray-500">{botProfile.location}</span>
+
+                            {/* Chat Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-semibold text-gray-900 truncate">
+                                    {botProfile?.username || 'Unknown'}
+                                  </h4>
+                                  {botProfile?.isVerified && (
+                                    <CheckCircle className="w-4 h-4 text-blue-500 fill-blue-100 flex-shrink-0" />
+                                  )}
+                                  <span className="text-xs text-gray-500">
+                                    {botProfile?.age ? `, ${botProfile.age}` : ''}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-gray-500 whitespace-nowrap">
+                                  {formatTime(conv.lastMessageAt)}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm text-gray-600 truncate max-w-[200px]">
+                                  {conv.lastMessage || 'Start a conversation...'}
+                                </p>
+                                {conv.messageCount > 0 && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs bg-[#5e17eb]/10 text-[#5e17eb] px-2 py-0.5 rounded-full min-w-[40px] text-center">
+                                      {conv.messageCount} msg{conv.messageCount !== 1 ? 's' : ''}
+                                    </span>
+                                    {showDeleteConfirm && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          resetSwipe(conv.$id);
+                                        }}
+                                        className="text-xs text-gray-500 hover:text-gray-700"
+                                      >
+                                        Cancel
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Location */}
+                              {botProfile?.location && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <MapPin className="w-3 h-3 text-gray-400" />
+                                  <span className="text-xs text-gray-500">{botProfile.location}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Delete Menu Button (Desktop only) */}
+                            <div className="relative group">
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setDeleteConfirmId(deleteConfirmId === conv.$id ? null : conv.$id);
+                                }}
+                                className="p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100"
+                              >
+                                <MoreVertical className="w-5 h-5" />
+                              </button>
+                              
+                              {/* Delete Dropdown */}
+                              {deleteConfirmId === conv.$id && (
+                                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                  <div className="p-3 border-b border-gray-100">
+                                    <p className="text-sm font-medium text-gray-900">Delete this chat?</p>
+                                    <p className="text-xs text-gray-500 mt-1">This action cannot be undone</p>
+                                  </div>
+                                  <div className="p-2">
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        deleteConversation(conv.$id);
+                                      }}
+                                      disabled={isDeleting === conv.$id}
+                                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                      {isDeleting === conv.$id ? (
+                                        <>
+                                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                          Deleting...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Trash2 className="w-4 h-4" />
+                                          Yes, Delete Chat
+                                        </>
+                                      )}
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setDeleteConfirmId(null);
+                                      }}
+                                      className="w-full mt-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </Link>
+
+                          {/* Delete Confirmation Banner */}
+                          {showDeleteConfirm && (
+                            <div className="absolute top-0 left-0 right-0 bottom-0 bg-red-50 border border-red-200 flex items-center justify-between px-4">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="w-5 h-5 text-red-600" />
+                                <span className="text-sm font-medium text-red-700">Swipe to delete</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => resetSwipe(conv.$id)}
+                                  className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => deleteConversation(conv.$id)}
+                                  disabled={isDeleting === conv.$id}
+                                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  {isDeleting === conv.$id ? 'Deleting...' : 'Delete'}
+                                </button>
+                              </div>
                             </div>
                           )}
                         </div>
-                      </Link>
+                      </div>
                     );
                   })}
                 </div>
               )}
             </div>
 
-            {/* Sidebar Footer - Improved */}
+            {/* Sidebar Footer */}
             <div className="border-t border-gray-200 bg-white p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -509,12 +722,11 @@ export default function ChatsPage() {
                     </p>
                   </div>
                 </div>
-               
               </div>
             </div>
           </div>
 
-          {/* Main Content Area - Dynamically Adjusted Height */}
+          {/* Main Content Area */}
           <div className={`flex-1 flex flex-col ${conversations.length === 0 ? 'min-h-[800px]' : ''}`}>
             {/* Error Message */}
             {error && (
@@ -531,7 +743,7 @@ export default function ChatsPage() {
               </div>
             )}
 
-            {/* NO CONVERSATIONS STATE - Shows Suggestions */}
+            {/* NO CONVERSATIONS STATE */}
             {conversations.length === 0 && !isLoading && (
               <div className="flex-1 flex flex-col p-8">
                 {/* Welcome Header */}
@@ -564,7 +776,7 @@ export default function ChatsPage() {
                   </div>
                 </div>
 
-                {/* Stats Cards - Improved */}
+                {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                   <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                     <div className="flex items-center gap-3 mb-3">
@@ -606,7 +818,7 @@ export default function ChatsPage() {
                   </div>
                 </div>
 
-                {/* Suggested People Section - Improved */}
+                {/* Suggested People Section */}
                 <div className="w-full">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
                     <div>
@@ -729,7 +941,7 @@ export default function ChatsPage() {
                   ) : null}
                 </div>
 
-                {/* Credit Warning - Improved */}
+                {/* Credit Warning */}
                 {currentUser && currentUser.credits < 20 && (
                   <div className="mt-8 w-full max-w-4xl">
                     <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6">
@@ -761,10 +973,10 @@ export default function ChatsPage() {
               </div>
             )}
 
-            {/* HAS CONVERSATIONS STATE - Shows Right Sidebar Content */}
+            {/* HAS CONVERSATIONS STATE */}
             {conversations.length > 0 && (
               <div className="flex-1 flex">
-                {/* Left Content - Conversations Header */}
+                {/* Left Content */}
                 <div className="flex-1 flex flex-col">
                   {/* Desktop Header */}
                   <div className="bg-white border-b border-gray-200 px-6 py-4">
@@ -833,8 +1045,8 @@ export default function ChatsPage() {
                   </div>
                 </div>
 
-                {/* Right Sidebar - Statistics & Quick Actions */}
-                <div className="w-[320px] border-l border-gray-200 bg-white overflow-y-auto p-6">
+                {/* Right Sidebar */}
+                <div className="w-[320px] border-l border-r min-h-[1000px] border-gray-200 bg-white overflow-y-auto p-6">
                   {/* Activity Stats */}
                   <div className="mb-8">
                     <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -954,7 +1166,7 @@ export default function ChatsPage() {
         </div>
       </div>
 
-      {/* Mobile Layout - Improved */}
+      {/* Mobile Layout */}
       <div className="lg:hidden flex flex-col h-[calc(100vh-64px)]">
         {/* Mobile Header */}
         <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-3">
@@ -1005,62 +1217,129 @@ export default function ChatsPage() {
           {conversations.length > 0 ? (
             <div className="p-4">
               <div className="grid grid-cols-1 gap-3">
-                {filteredConversations.map((conv) => (
-                  <Link
-                    key={conv.$id}
-                    href={`/main/chats/${conv.$id}`}
-                    className="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-md">
-                          <Image
-                            src={conv.bot?.profilePic || '/default-avatar.png'}
-                            alt= {conv.bot?.username || 'User'}
-                            width={56}
-                            height={56}
-                            className="object-cover"
-                            unoptimized={conv.bot?.profilePic?.startsWith('http')}
-                          />
-                        </div>
-                        {conv.bot?.isOnline && (
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                {filteredConversations.map((conv) => {
+                  const isSwiping = swipingId === conv.$id;
+                  const offset = swipeOffset[conv.$id] || 0;
+                  const showDeleteConfirm = deleteConfirmId === conv.$id;
+                  
+                  return (
+                    <div
+                      key={conv.$id}
+                      className="relative"
+                      style={{ transform: `translateX(-${offset}px)` }}
+                    >
+                      {/* Delete Button (Hidden behind chat) */}
+                      <div className="absolute right-0 top-0 bottom-0 w-16 flex items-center justify-center bg-red-500 rounded-r-lg">
+                        <button
+                          onClick={() => deleteConversation(conv.$id)}
+                          disabled={isDeleting === conv.$id}
+                          className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {isDeleting === conv.$id ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <Trash2 className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Chat Item */}
+                      <div
+                        className={`bg-white rounded-xl border ${showDeleteConfirm ? 'border-red-500' : 'border-gray-200'} overflow-hidden`}
+                        onTouchStart={(e) => handleSwipeStart(e, conv.$id)}
+                        onTouchMove={(e) => handleSwipeMove(e, conv.$id)}
+                        onTouchEnd={() => handleSwipeEnd(conv.$id)}
+                      >
+                        <Link
+                          href={`/main/chats/${conv.$id}`}
+                          className="block p-4 hover:bg-gray-50 transition-all"
+                          onClick={(e) => {
+                            if (offset > 10 || showDeleteConfirm) {
+                              e.preventDefault();
+                              resetSwipe(conv.$id);
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-md">
+                                <Image
+                                  src={conv.bot?.profilePic || '/default-avatar.png'}
+                                  alt={conv.bot?.username || 'User'}
+                                  width={56}
+                                  height={56}
+                                  className="object-cover"
+                                  unoptimized={conv.bot?.profilePic?.startsWith('http')}
+                                />
+                              </div>
+                              {conv.bot?.isOnline && (
+                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-1">
+                                  <h3 className="font-bold text-gray-900 text-sm truncate">
+                                    {conv.bot?.username}
+                                  </h3>
+                                  {conv.bot?.isVerified && (
+                                    <CheckCircle className="w-3 h-3 text-blue-500 fill-blue-100" />
+                                  )}
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {formatTime(conv.lastMessageAt)}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600 truncate mb-1">
+                                {conv.lastMessage || 'Start a conversation...'}
+                              </p>
+                              <div className="flex items-center justify-between">
+                                {conv.bot?.location && (
+                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" />
+                                    {conv.bot.location}
+                                  </span>
+                                )}
+                                {conv.messageCount > 0 && (
+                                  <span className="text-xs bg-[#5e17eb]/10 text-[#5e17eb] px-2 py-1 rounded-full min-w-[50px] text-center">
+                                    {conv.messageCount} msg{conv.messageCount !== 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+
+                        {/* Delete Confirmation Banner (Mobile) */}
+                        {showDeleteConfirm && (
+                          <div className="bg-red-50 border-t border-red-200 p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-red-600" />
+                                <span className="text-xs font-medium text-red-700">Delete this chat?</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => resetSwipe(conv.$id)}
+                                  className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => deleteConversation(conv.$id)}
+                                  disabled={isDeleting === conv.$id}
+                                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  {isDeleting === conv.$id ? 'Deleting...' : 'Delete'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-1">
-                            <h3 className="font-bold text-gray-900 text-sm truncate">
-                              {conv.bot?.username}
-                            </h3>
-                            {conv.bot?.isVerified && (
-                              <CheckCircle className="w-3 h-3 text-blue-500 fill-blue-100" />
-                            )}
-                          </div>
-                          <span className="text-xs text-gray-500">
-                            {formatTime(conv.lastMessageAt)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-600 truncate mb-1">
-                          {conv.lastMessage || 'Start a conversation...'}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          {conv.bot?.location && (
-                            <span className="text-xs text-gray-500 flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {conv.bot.location}
-                            </span>
-                          )}
-                          {conv.messageCount > 0 && (
-                            <span className="text-xs bg-[#5e17eb]/10 text-[#5e17eb] px-2 py-1 rounded-full">
-                              {conv.messageCount} msgs
-                            </span>
-                          )}
-                        </div>
-                      </div>
                     </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Credit Warning Banner Mobile */}
