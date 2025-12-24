@@ -2551,68 +2551,83 @@ export default function ChatPage() {
           </div>
         </div>
       )}
-      {/* Photo Viewer Modal */}
-      {showPhotoViewer && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50">
-          <div className="relative max-w-4xl w-full">
-            {/* Close button */}
-            <button
-              onClick={() => setShowPhotoViewer(null)}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
-            >
-              <X className="w-8 h-8" />
-            </button>
-
-            {/* Photo */}
-            <div className="bg-white rounded-lg overflow-hidden shadow-2xl">
-              <Image
-                src={showPhotoViewer.url}
-                alt={`Photo from ${botProfile?.username}`}
-                width={1200}
-                height={1200}
-                className="w-full h-auto object-contain max-h-[85vh]"
-                unoptimized={showPhotoViewer.url?.startsWith('http')}
-              />
-
-              {/* Photo info */}
-              <div className="p-4 bg-white border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200">
-                      <Image
-                        src={botProfile?.profilePic || '/default-avatar.png'}
-                        alt={botProfile?.username || 'User'}
-                        width={40}
-                        height={40}
-                        className="object-cover w-full h-full"
-                        unoptimized={botProfile?.profilePic?.startsWith('http')}
-                      />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{botProfile?.username}</p>
-                      <p className="text-xs text-gray-500">{formatTime(showPhotoViewer.message.timestamp)}</p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      // Optional: Add download functionality
-                      window.open(showPhotoViewer.url, '_blank');
-                    }}
-                    className="px-4 py-2 bg-[#5e17eb] text-white rounded-lg hover:bg-[#4a13c4] transition-colors text-sm"
-                  >
-                    Open in New Tab
-                  </button>
-                </div>
-
-                {showPhotoViewer.message.content && (
-                  <p className="mt-3 text-gray-700 text-sm">{showPhotoViewer.message.content}</p>
-                )}
+      {/* Photo Viewer Modal - Improved */}
+{showPhotoViewer && (
+  <div 
+    className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+    onClick={() => setShowPhotoViewer(null)} // Click outside to close
+  >
+    <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+      {/* Close X Button - Top Right */}
+      <button 
+        onClick={() => setShowPhotoViewer(null)}
+        className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-110 backdrop-blur-sm"
+        aria-label="Close photo viewer"
+      >
+        <X className="w-6 h-6" />
+      </button>
+      
+      {/* Photo Container */}
+      <div className="bg-white rounded-lg overflow-hidden shadow-2xl">
+        {/* Photo */}
+        <div className="relative bg-black">
+          <Image
+            src={showPhotoViewer.url}
+            alt={`Photo from ${botProfile?.username}`}
+            width={1200}
+            height={1200}
+            className="w-full h-auto object-contain max-h-[85vh]"
+            unoptimized={showPhotoViewer.url?.startsWith('http')}
+          />
+        </div>
+        
+        {/* Photo Info Footer */}
+        <div className="p-4 bg-white border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200">
+                <Image
+                  src={botProfile?.profilePic || '/default-avatar.png'}
+                  alt={botProfile?.username || 'User'}
+                  width={40}
+                  height={40}
+                  className="object-cover w-full h-full"
+                  unoptimized={botProfile?.profilePic?.startsWith('http')}
+                />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">{botProfile?.username}</p>
+                <p className="text-xs text-gray-500">{formatTime(showPhotoViewer.message.timestamp)}</p>
               </div>
             </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => window.open(showPhotoViewer.url, '_blank')}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Open
+              </button>
+              <button
+                onClick={() => setShowPhotoViewer(null)}
+                className="px-4 py-2 bg-[#5e17eb] hover:bg-[#4a13c4] text-white rounded-lg transition-colors text-sm"
+              >
+                Close
+              </button>
+            </div>
           </div>
+          
+          {showPhotoViewer.message.content && (
+            <p className="mt-3 text-gray-700 text-sm">{showPhotoViewer.message.content}</p>
+          )}
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
