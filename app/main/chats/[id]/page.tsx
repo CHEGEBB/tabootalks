@@ -5,9 +5,9 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Client, Databases, Query, Account, Storage } from 'appwrite';
 import Image from 'next/image';
-import { 
-  Send, ArrowLeft, Gift, Heart, Smile, Paperclip, Crown, Zap, Shield, 
-  CheckCircle, Volume2, VolumeX, MapPin, Clock, Sparkles, ChevronRight, 
+import {
+  Send, ArrowLeft, Gift, Heart, Smile, Paperclip, Crown, Zap, Shield,
+  CheckCircle, Volume2, VolumeX, MapPin, Clock, Sparkles, ChevronRight,
   Image as ImageIcon, Users, Home, MoreVertical, Search, Eye, MessageCircle,
   RefreshCw, Plus, UserPlus, TrendingUp, Activity, Award, Clock4,
   Target, BarChart3, CreditCard, Phone, Video, Star, Camera, X,
@@ -39,6 +39,7 @@ interface Message {
   giftName?: string;
   giftPrice?: number;
   giftImage?: string;
+  photoUrl?: string;  // ADD THIS LINE - for AI-sent photos
 }
 export interface ChatGiftMessage {
   type: 'gift';
@@ -99,7 +100,7 @@ export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
   const conversationId = params.id as string;
-  
+
   // State
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -108,6 +109,8 @@ export default function ChatPage() {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [isRequestingPhoto, setIsRequestingPhoto] = useState(false);
+  const [showPhotoRequestConfirm, setShowPhotoRequestConfirm] = useState(false);
   const [streamingText, setStreamingText] = useState('');
   const [error, setError] = useState('');
   const [isNewConversation, setIsNewConversation] = useState(false);
@@ -122,17 +125,22 @@ export default function ChatPage() {
   const [giftsFromGiftsCollection, setGiftsFromGiftsCollection] = useState<AppwriteGiftDocument[]>([]);
   const [showGiftAnimation, setShowGiftAnimation] = useState<ChatGiftMessage | null>(null);
   const [newGiftNotification, setNewGiftNotification] = useState<ChatGiftMessage | null>(null);
-  
+
+  const [showPhotoViewer, setShowPhotoViewer] = useState<{
+    url: string;
+    message: Message
+  } | null>(null);
+
   // Chat list sidebar states
   const [conversations, setConversations] = useState<ConversationWithBot[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'active'>('all');
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
-  
+
   // Sticker state
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [stickers, setStickers] = useState<any[]>([]);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -140,16 +148,16 @@ export default function ChatPage() {
   const stickerPickerRef = useRef<HTMLDivElement>(null);
 
   const [showGiftAnimationOverlay, setShowGiftAnimationOverlay] = useState<ChatGiftMessage | null>(null);
-  
+
   // Initialize Appwrite
   const client = new Client()
     .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
     .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
-  
+
   const databases = new Databases(client);
   const storage = new Storage(client);
   const account = new Account(client);
-  
+
   const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
   const FUNCTION_URL = process.env.NEXT_PUBLIC_APPWRITE_FUNCTION_AI_CHATBOT!;
 
@@ -173,7 +181,7 @@ export default function ChatPage() {
         ]);
       }
     };
-    
+
     loadStickers();
   }, []);
 
@@ -194,10 +202,10 @@ export default function ChatPage() {
   const loadGiftsFromGiftsCollection = async (conversationId: string) => {
     try {
       console.log('Loading gifts for conversation:', conversationId);
-      
+
       const currentUser = await account.get();
       const userId = currentUser.$id;
-      
+
       const giftsResponse = await databases.listDocuments(
         DATABASE_ID,
         'gifts',
@@ -207,9 +215,9 @@ export default function ChatPage() {
           Query.limit(50)
         ]
       );
-      
+
       console.log(`Found ${giftsResponse.documents.length} gifts in collection`);
-      
+
       const gifts = giftsResponse.documents as unknown as AppwriteGiftDocument[];
       return gifts;
     } catch (error: any) {
@@ -217,7 +225,7 @@ export default function ChatPage() {
       return [];
     }
   };
-  
+
   // Convert Appwrite gift document to ChatGiftMessage
   const convertToChatGiftMessage = (giftDoc: AppwriteGiftDocument): ChatGiftMessage => {
     return {
@@ -254,189 +262,197 @@ export default function ChatPage() {
   }, []);
 
   // Add this near your other useEffects in the ChatPage component
-useEffect(() => {
-  const handleWinkMessage = async () => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const hasWink = searchParams.get('wink') === 'true';
-    
-    if (hasWink && currentUser && botProfile && !isSending) {
-      // Remove the wink parameter from URL
-      window.history.replaceState(null, '', `/main/chats/${conversationId}`);
-      
-      // Send wink as a message
-      const winkMessage = "😉";
-      
-      // Optimistic update
-      const tempUserMessage: Message = {
-        $id: `wink_${Date.now()}`,
-        role: 'user',
-        content: winkMessage,
-        timestamp: new Date().toISOString(),
-        conversationId: actualConversationId || 'pending'
-      };
-      setMessages(prev => [...prev, tempUserMessage]);
-      
-      // Send the wink message to AI
-      await sendWinkMessage(winkMessage);
+  useEffect(() => {
+    const handleWinkMessage = async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const hasWink = searchParams.get('wink') === 'true';
+
+      if (hasWink && currentUser && botProfile && !isSending) {
+        // Remove the wink parameter from URL
+        window.history.replaceState(null, '', `/main/chats/${conversationId}`);
+
+        // Send wink as a message
+        const winkMessage = "😉";
+
+        // Optimistic update
+        const tempUserMessage: Message = {
+          $id: `wink_${Date.now()}`,
+          role: 'user',
+          content: winkMessage,
+          timestamp: new Date().toISOString(),
+          conversationId: actualConversationId || 'pending'
+        };
+        setMessages(prev => [...prev, tempUserMessage]);
+
+        // Send the wink message to AI
+        await sendWinkMessage(winkMessage);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      handleWinkMessage();
     }
-  };
-  
-  if (typeof window !== 'undefined') {
-    handleWinkMessage();
-  }
-}, [currentUser, botProfile, conversationId]);
+  }, [currentUser, botProfile, conversationId]);
 
-// Add this function to send wink message
-const sendWinkMessage = async (winkMessage: string) => {
-  if (!currentUser || !botProfile) return;
-  
-  setIsSending(true);
-  setError('');
-  setStreamingText('');
-  setTypingIndicator(true);
+  // Add this function to send wink message
+  const sendWinkMessage = async (winkMessage: string) => {
+    if (!currentUser || !botProfile) return;
 
-  try {
-    if (!FUNCTION_URL) {
-      throw new Error('Chat function is not configured');
-    }
-
-    const response = await fetch(FUNCTION_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId: currentUser.$id,
-        botProfileId: botProfile.$id,
-        message: winkMessage,
-        conversationId: actualConversationId || undefined,
-        isNewConversation: isNewConversation,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Server error: ${response.status}`);
-    }
-
-    // Handle SSE stream
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
-    let fullBotResponse = '';
-    let newConvId = actualConversationId;
-    let buffer = '';
-
-    if (!reader) {
-      throw new Error('No response stream');
-    }
+    setIsSending(true);
+    setError('');
+    setStreamingText('');
+    setTypingIndicator(true);
 
     try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      if (!FUNCTION_URL) {
+        throw new Error('Chat function is not configured');
+      }
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+      const response = await fetch(FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: currentUser.$id,
+          botProfileId: botProfile.$id,
+          message: winkMessage,
+          conversationId: actualConversationId || undefined,
+          isNewConversation: isNewConversation,
+        }),
+      });
 
-        for (const line of lines) {
-          if (line.trim().startsWith('data: ')) {
-            try {
-              const jsonStr = line.substring(6);
-              const data = JSON.parse(jsonStr);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server error: ${response.status}`);
+      }
 
-              if (data.chunk) {
-                fullBotResponse += data.chunk;
-                setStreamingText(fullBotResponse);
+      // Handle SSE stream
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullBotResponse = '';
+      let newConvId = actualConversationId;
+      let buffer = '';
+
+      if (!reader) {
+        throw new Error('No response stream');
+      }
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim().startsWith('data: ')) {
+              try {
+                const jsonStr = line.substring(6);
+                const data = JSON.parse(jsonStr);
+
+                if (data.chunk) {
+                  fullBotResponse += data.chunk;
+                  setStreamingText(fullBotResponse);
+                }
+
+                if (data.conversationId && !actualConversationId) {
+                  newConvId = data.conversationId;
+                  setActualConversationId(data.conversationId);
+                  setIsNewConversation(false);
+
+                  window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
+                }
+
+                if (data.done) {
+                  if (data.creditsUsed) {
+                    setCurrentUser(prev => prev ? {
+                      ...prev,
+                      credits: prev.credits - data.creditsUsed
+                    } : null);
+                  }
+
+                  // Handle photo URL from AI
+                  if (data.photoUrl) {
+                    console.log('📸 AI sent a photo:', data.photoUrl);
+                    // Photo will be loaded when messages are reloaded
+                  }
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e);
               }
-
-              if (data.conversationId && !actualConversationId) {
-                newConvId = data.conversationId;
-                setActualConversationId(data.conversationId);
-                setIsNewConversation(false);
-                
-                window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
-              }
-
-              if (data.done && data.creditsUsed) {
-                setCurrentUser(prev => prev ? {
-                  ...prev,
-                  credits: prev.credits - data.creditsUsed
-                } : null);
-              }
-            } catch (e) {
-              console.error('Error parsing SSE data:', e);
             }
           }
         }
+      } catch (streamError) {
+        console.error('Error reading SSE stream:', streamError);
       }
-    } catch (streamError) {
-      console.error('Error reading SSE stream:', streamError);
-    }
 
-    // Clear streaming
-    setStreamingText('');
-    setTypingIndicator(false);
-    
-    // Reload messages
-    setTimeout(async () => {
-      try {
-        const finalConvId = newConvId || actualConversationId;
-        if (!finalConvId) return;
+      // Clear streaming
+      setStreamingText('');
+      setTypingIndicator(false);
 
-        const messagesData = await databases.listDocuments(
-          DATABASE_ID,
-          'messages',
-          [
-            Query.equal('conversationId', finalConvId),
-            Query.orderAsc('timestamp'),
-            Query.limit(100)
-          ]
-        );
-        setMessages(messagesData.documents as any);
+      // Reload messages
+      setTimeout(async () => {
+        try {
+          const finalConvId = newConvId || actualConversationId;
+          if (!finalConvId) return;
 
-        if (newConvId) {
-          const convData = await databases.getDocument(
+          const messagesData = await databases.listDocuments(
             DATABASE_ID,
-            'conversations',
-            finalConvId
+            'messages',
+            [
+              Query.equal('conversationId', finalConvId),
+              Query.orderAsc('timestamp'),
+              Query.limit(100)
+            ]
           );
-          setConversation(convData as any);
+          setMessages(messagesData.documents as any);
+
+          if (newConvId) {
+            const convData = await databases.getDocument(
+              DATABASE_ID,
+              'conversations',
+              finalConvId
+            );
+            setConversation(convData as any);
+          }
+
+        } catch (err) {
+          console.error('❌ Error reloading messages:', err);
         }
+      }, 500);
 
-      } catch (err) {
-        console.error('❌ Error reloading messages:', err);
+    } catch (err: any) {
+      console.error('❌ Send wink error:', err);
+      setTypingIndicator(false);
+
+      if (err.message.includes('credits')) {
+        setError('Insufficient credits to send wink');
+      } else if (err.message.includes('404')) {
+        setError('Chat function not found. Please try again later.');
+      } else if (err.message.includes('failed to fetch')) {
+        setError('Network error. Please check your connection.');
+      } else if (err.message.includes('500')) {
+        setError('Server error. Please try again.');
+      } else {
+        setError('Failed to send wink. Please try again.');
       }
-    }, 500);
-
-  } catch (err: any) {
-    console.error('❌ Send wink error:', err);
-    setTypingIndicator(false);
-    
-    if (err.message.includes('credits')) {
-      setError('Insufficient credits to send wink');
-    } else if (err.message.includes('404')) {
-      setError('Chat function not found. Please try again later.');
-    } else if (err.message.includes('failed to fetch')) {
-      setError('Network error. Please check your connection.');
-    } else if (err.message.includes('500')) {
-      setError('Server error. Please try again.');
-    } else {
-      setError('Failed to send wink. Please try again.');
+    } finally {
+      setIsSending(false);
     }
-  } finally {
-    setIsSending(false);
-  }
-};
+  };
 
   // Handle sticker click
   const handleStickerClick = (sticker: any) => {
     console.log('Sticker clicked:', sticker);
-    
+
     // Auto-send sticker as a message
     if (currentUser && botProfile) {
       const stickerMessage = sticker.emoji || sticker.name;
-      
+
       // Create optimistic sticker message
       const tempMessage: Message = {
         $id: `sticker_${Date.now()}`,
@@ -445,10 +461,10 @@ const sendWinkMessage = async (winkMessage: string) => {
         timestamp: new Date().toISOString(),
         conversationId: actualConversationId || 'pending'
       };
-      
+
       setMessages(prev => [...prev, tempMessage]);
       setShowStickerPicker(false);
-      
+
       // Send sticker as regular message
       sendStickerAsMessage(stickerMessage);
     }
@@ -457,7 +473,7 @@ const sendWinkMessage = async (winkMessage: string) => {
   // Send sticker as regular message
   const sendStickerAsMessage = async (stickerContent: string) => {
     if (!currentUser || !botProfile) return;
-    
+
     setIsSending(true);
     setError('');
     setStreamingText('');
@@ -522,7 +538,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                   newConvId = data.conversationId;
                   setActualConversationId(data.conversationId);
                   setIsNewConversation(false);
-                  
+
                   window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
                 }
 
@@ -545,7 +561,7 @@ const sendWinkMessage = async (winkMessage: string) => {
       // Clear streaming
       setStreamingText('');
       setTypingIndicator(false);
-      
+
       // Reload messages
       setTimeout(async () => {
         try {
@@ -580,7 +596,7 @@ const sendWinkMessage = async (winkMessage: string) => {
     } catch (err: any) {
       console.error('❌ Send sticker error:', err);
       setTypingIndicator(false);
-      
+
       if (err.message.includes('credits')) {
         setError('Insufficient credits to send sticker');
       } else if (err.message.includes('404')) {
@@ -653,7 +669,7 @@ const sendWinkMessage = async (winkMessage: string) => {
 
       // 1. Get current user
       const accountData = await account.get();
-      
+
       const userData = await databases.getDocument(
         DATABASE_ID,
         'users',
@@ -671,12 +687,12 @@ const sendWinkMessage = async (winkMessage: string) => {
           'conversations',
           conversationId
         );
-        
+
         if (convData.userId !== accountData.$id) {
           setError('You do not have permission to access this conversation.');
           return;
         }
-        
+
         setConversation(convData as any);
         setActualConversationId(convData.$id);
         botId = convData.botProfileId;
@@ -716,16 +732,16 @@ const sendWinkMessage = async (winkMessage: string) => {
             ]
           );
           setMessages(messagesData.documents as any);
-          
+
           // Load gifts from gifts collection (ONLY for display)
           const giftsFromGiftsColl = await loadGiftsFromGiftsCollection(conversationId);
-          
+
           // Convert gifts from gifts collection to ChatGiftMessage format
           const convertedGifts = giftsFromGiftsColl.map(convertToChatGiftMessage);
-          
+
           setGiftsInChat(convertedGifts);
           setGiftsFromGiftsCollection(giftsFromGiftsColl);
-          
+
         } catch (msgErr) {
           console.error('Error loading messages/gifts:', msgErr);
           setMessages([]);
@@ -740,7 +756,7 @@ const sendWinkMessage = async (winkMessage: string) => {
 
     } catch (err: any) {
       console.error('❌ Error loading chat data:', err);
-      
+
       if (err.code === 401 || err.message.includes('Unauthorized')) {
         setError('Please log in to view chats.');
         router.push('/login');
@@ -755,9 +771,9 @@ const sendWinkMessage = async (winkMessage: string) => {
   const loadConversations = async () => {
     try {
       setIsLoadingConversations(true);
-      
+
       const accountData = await account.get();
-      
+
       const conversationsData = await databases.listDocuments(
         DATABASE_ID,
         'conversations',
@@ -772,7 +788,7 @@ const sendWinkMessage = async (winkMessage: string) => {
         conversationsData.documents.map(async (conv) => {
           try {
             const botData = await personaService.getPersonaById(conv.botProfileId);
-            
+
             return {
               ...conv,
               bot: {
@@ -819,12 +835,12 @@ const sendWinkMessage = async (winkMessage: string) => {
     if (!inputMessage.trim() || !currentUser) {
       return;
     }
-    
+
     if (!botProfile) {
       setError('Cannot send message: Person not found');
       return;
     }
-    
+
     if (isSending) {
       return;
     }
@@ -890,7 +906,7 @@ const sendWinkMessage = async (winkMessage: string) => {
 
           // Append new chunk to buffer
           buffer += decoder.decode(value, { stream: true });
-          
+
           // Split by newlines but keep the last incomplete line in buffer
           const lines = buffer.split('\n');
           buffer = lines.pop() || ''; // Keep the last (possibly incomplete) line
@@ -910,7 +926,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                   newConvId = data.conversationId;
                   setActualConversationId(data.conversationId);
                   setIsNewConversation(false);
-                  
+
                   window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
                 }
 
@@ -933,7 +949,7 @@ const sendWinkMessage = async (winkMessage: string) => {
       // Clear streaming
       setStreamingText('');
       setTypingIndicator(false);
-      
+
       // Reload messages
       setTimeout(async () => {
         try {
@@ -967,11 +983,11 @@ const sendWinkMessage = async (winkMessage: string) => {
 
     } catch (err: any) {
       console.error('❌ Send message error:', err);
-      
+
       // Remove optimistic message on error
       setMessages(prev => prev.filter(m => m.$id !== tempUserMessage.$id));
       setTypingIndicator(false);
-      
+
       if (err.message.includes('credits')) {
         setError('Insufficient credits to send message');
       } else if (err.message.includes('404')) {
@@ -985,6 +1001,177 @@ const sendWinkMessage = async (winkMessage: string) => {
       }
     } finally {
       setIsSending(false);
+    }
+  };
+  // Request a photo from the AI (costs 10 credits)
+  const requestPhoto = async () => {
+    if (!currentUser || !botProfile) return;
+
+    // Check credits first
+    if (currentUser.credits < 10) {
+      setError('You need 10 credits to request a photo');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    setIsRequestingPhoto(true);
+    setShowPhotoRequestConfirm(false);
+    setError('');
+    setStreamingText('');
+    setTypingIndicator(true);
+
+    // Optimistic update - show user's request
+    const tempUserMessage: Message = {
+      $id: `photo_req_${Date.now()}`,
+      role: 'user',
+      content: '📸 Requested a photo',
+      timestamp: new Date().toISOString(),
+      conversationId: actualConversationId || 'pending'
+    };
+    setMessages(prev => [...prev, tempUserMessage]);
+
+    try {
+      if (!FUNCTION_URL) {
+        throw new Error('Chat function is not configured');
+      }
+
+      const response = await fetch(FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: currentUser.$id,
+          botProfileId: botProfile.$id,
+          message: 'Can you send me a photo?', // The actual message to AI
+          conversationId: actualConversationId || undefined,
+          isNewConversation: isNewConversation,
+          isPhotoRequest: true,  // THIS TRIGGERS 10 CREDIT COST
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Photo request failed:', errorText);
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      // Handle SSE stream
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullBotResponse = '';
+      let newConvId = actualConversationId;
+      let buffer = '';
+
+      if (!reader) {
+        throw new Error('No response stream');
+      }
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.trim().startsWith('data: ')) {
+              try {
+                const jsonStr = line.substring(6);
+                const data = JSON.parse(jsonStr);
+
+                if (data.chunk) {
+                  fullBotResponse += data.chunk;
+                  setStreamingText(fullBotResponse);
+                }
+
+                if (data.conversationId && !actualConversationId) {
+                  newConvId = data.conversationId;
+                  setActualConversationId(data.conversationId);
+                  setIsNewConversation(false);
+                  window.history.replaceState(null, '', `/main/chats/${data.conversationId}`);
+                }
+
+                if (data.done && data.creditsUsed) {
+                  // Update credits (should be -10)
+                  setCurrentUser(prev => prev ? {
+                    ...prev,
+                    credits: prev.credits - data.creditsUsed
+                  } : null);
+
+                  console.log('📸 Photo request cost:', data.creditsUsed, 'credits');
+                }
+
+                if (data.photoUrl) {
+                  console.log('📸 AI sent photo:', data.photoUrl);
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e);
+              }
+            }
+          }
+        }
+      } catch (streamError) {
+        console.error('Error reading SSE stream:', streamError);
+      }
+
+      // Clear streaming
+      setStreamingText('');
+      setTypingIndicator(false);
+
+      // Reload messages to get the photo
+      setTimeout(async () => {
+        try {
+          const finalConvId = newConvId || actualConversationId;
+          if (!finalConvId) return;
+
+          const messagesData = await databases.listDocuments(
+            DATABASE_ID,
+            'messages',
+            [
+              Query.equal('conversationId', finalConvId),
+              Query.orderAsc('timestamp'),
+              Query.limit(100)
+            ]
+          );
+          setMessages(messagesData.documents as any);
+
+          if (newConvId) {
+            const convData = await databases.getDocument(
+              DATABASE_ID,
+              'conversations',
+              finalConvId
+            );
+            setConversation(convData as any);
+          }
+
+        } catch (err) {
+          console.error('❌ Error reloading messages:', err);
+        }
+      }, 500);
+
+    } catch (err: any) {
+      console.error('❌ Photo request error:', err);
+
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.$id !== tempUserMessage.$id));
+      setTypingIndicator(false);
+
+      if (err.message.includes('credits')) {
+        setError('Insufficient credits to request photo');
+      } else if (err.message.includes('404')) {
+        setError('Chat function not found. Please try again later.');
+      } else if (err.message.includes('failed to fetch')) {
+        setError('Network error. Please check your connection.');
+      } else if (err.message.includes('500')) {
+        setError('Server error. Please try again.');
+      } else {
+        setError('Failed to request photo. Please try again.');
+      }
+    } finally {
+      setIsRequestingPhoto(false);
     }
   };
 
@@ -1007,7 +1194,7 @@ const sendWinkMessage = async (winkMessage: string) => {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
-    
+
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
@@ -1042,12 +1229,12 @@ const sendWinkMessage = async (winkMessage: string) => {
 
   const filteredConversations = conversations.filter(conv => {
     const matchesSearch = conv.bot?.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase());
-    
+      conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase());
+
     if (activeFilter === 'active') {
       return matchesSearch && conv.isActive;
     }
-    
+
     return matchesSearch;
   });
 
@@ -1058,7 +1245,7 @@ const sendWinkMessage = async (winkMessage: string) => {
         <div className={`${isMobile ? 'max-w-[85%] p-3' : 'max-w-[75%] p-4'} rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200`}>
           <div className={`flex items-start gap-${isMobile ? '2' : '3'}`}>
             {/* Gift Preview */}
-            <div 
+            <div
               onClick={() => giftData.isAnimated && setShowGiftAnimationOverlay(giftData)}
               className={`${isMobile ? 'w-10 h-10 p-1' : 'w-12 h-12 p-2'} rounded-lg overflow-hidden bg-white flex-shrink-0 cursor-pointer hover:scale-105 transition-transform`}
             >
@@ -1074,7 +1261,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                 <Gift className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-amber-500 mx-auto`} />
               )}
             </div>
-            
+
             <div className="flex-1">
               <div className={`flex items-center gap-${isMobile ? '1' : '2'} mb-1`}>
                 <span className={`font-bold text-gray-900 ${isMobile ? 'text-sm' : ''}`}>🎁 Gift Sent!</span>
@@ -1096,6 +1283,56 @@ const sendWinkMessage = async (winkMessage: string) => {
     );
   };
 
+  // Function to render photo messages sent by AI
+  const renderPhotoMessage = (msg: Message, index: number, isMobile = false) => {
+    if (!msg.photoUrl) return null;
+
+    return (
+      <div key={`photo-${index}`} className="flex justify-start">
+        <div className={`${isMobile ? 'max-w-[85%]' : 'max-w-[75%]'} rounded-2xl overflow-hidden bg-white border border-gray-200 shadow-sm`}>
+          {/* Message text (if any) */}
+          {msg.content && (
+            <div className="p-3">
+              <p className="text-sm text-gray-900 whitespace-pre-wrap">{msg.content}</p>
+            </div>
+          )}
+
+          {/* Photo */}
+          <div
+            onClick={() => setShowPhotoViewer({ url: msg.photoUrl!, message: msg })}
+            className="relative cursor-pointer hover:opacity-95 transition-opacity"
+          >
+            <Image
+              src={msg.photoUrl}
+              alt={`Photo from ${botProfile?.username}`}
+              width={isMobile ? 300 : 400}
+              height={isMobile ? 300 : 400}
+              className="w-full h-auto object-cover"
+              unoptimized={msg.photoUrl?.startsWith('http')}
+            />
+            {/* Overlay hint */}
+            <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors flex items-center justify-center">
+              <div className="opacity-0 hover:opacity-100 transition-opacity bg-white/90 px-3 py-2 rounded-full">
+                <span className="text-xs font-medium text-gray-700">Click to view</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Timestamp */}
+          <div className="px-3 pb-2">
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>{formatTime(msg.timestamp)}</span>
+              <span className="flex items-center gap-1">
+                <Camera className="w-3 h-3" />
+                Photo
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Function to handle gift animation close
   const handleGiftAnimationClose = () => {
     setShowGiftAnimation(null);
@@ -1110,7 +1347,7 @@ const sendWinkMessage = async (winkMessage: string) => {
       timestamp: string;
       index: number;
     }> = [];
-    
+
     // Add messages
     messages.forEach((msg, index) => {
       if (!msg.isGift && !giftHandlerService.parseGiftMessage(msg)) {
@@ -1122,7 +1359,7 @@ const sendWinkMessage = async (winkMessage: string) => {
         });
       }
     });
-    
+
     // Add gifts
     giftsInChat.forEach((gift, index) => {
       allItems.push({
@@ -1132,10 +1369,10 @@ const sendWinkMessage = async (winkMessage: string) => {
         index
       });
     });
-    
+
     // Sort chronologically
     allItems.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    
+
     return allItems;
   };
 
@@ -1189,11 +1426,11 @@ const sendWinkMessage = async (winkMessage: string) => {
   return (
     <div className="min-h-screen bg-white">
       <LayoutController />
-      
+
       <div className="flex h-screen bg-white">
         {/* Desktop: 3-Column Layout */}
         <div className="hidden lg:flex w-full max-w-[1400px] mx-auto">
-          
+
           {/* Left Sidebar - Chat List */}
           <div className="w-[400px] flex-shrink-0 border border-gray-200 h-full overflow-hidden flex flex-col bg-white scrollbar-thin">
             {/* Fixed Header */}
@@ -1201,21 +1438,21 @@ const sendWinkMessage = async (winkMessage: string) => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-[#5e17eb]">{currentUser?.credits || 0}</span>
-                  <button 
+                  <button
                     onClick={handleBuyCredits}
                     className="px-3 py-1 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white text-sm rounded-lg hover:from-[#4a13c4] hover:to-[#7238ff] transition-all shadow-sm"
                   >
                     Add Credits
                   </button>
                 </div>
-                <button 
+                <button
                   onClick={() => router.push('/main')}
                   className="text-gray-600 hover:text-[#5e17eb] transition-colors"
                 >
                   <Home className="w-5 h-5" />
                 </button>
               </div>
-              
+
               {/* Search Bar */}
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -1227,26 +1464,24 @@ const sendWinkMessage = async (winkMessage: string) => {
                   className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 focus:border-[#5e17eb] transition-all text-gray-900"
                 />
               </div>
-              
+
               {/* Tabs */}
               <div className="flex space-x-2 mb-2">
                 <button
                   onClick={() => setActiveFilter('all')}
-                  className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-                    activeFilter === 'all'
+                  className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${activeFilter === 'all'
                       ? 'bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white shadow-sm'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   All Chats
                 </button>
                 <button
                   onClick={() => setActiveFilter('active')}
-                  className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all relative ${
-                    activeFilter === 'active'
+                  className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all relative ${activeFilter === 'active'
                       ? 'bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white shadow-sm'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   Active Now
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
@@ -1281,14 +1516,13 @@ const sendWinkMessage = async (winkMessage: string) => {
                 <div className="divide-y divide-gray-100">
                   {filteredConversations.map(conv => {
                     const botProfile = conv.bot;
-                    
+
                     return (
                       <div
                         key={conv.$id}
                         onClick={() => router.push(`/main/chats/${conv.$id}`)}
-                        className={`flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer transition-all border-b border-gray-100 ${
-                          conversationId === conv.$id ? 'bg-purple-50 hover:bg-purple-50' : ''
-                        }`}
+                        className={`flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer transition-all border-b border-gray-100 ${conversationId === conv.$id ? 'bg-purple-50 hover:bg-purple-50' : ''
+                          }`}
                       >
                         {/* Profile Image */}
                         <div className="relative flex-shrink-0">
@@ -1332,7 +1566,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                               {formatConversationTime(conv.lastMessageAt)}
                             </span>
                           </div>
-                          
+
                           <div className="flex items-center justify-between">
                             <p className="text-sm text-gray-600 truncate">
                               {conv.lastMessage || 'Start a conversation...'}
@@ -1343,7 +1577,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                               </span>
                             )}
                           </div>
-                          
+
                           {/* Location */}
                           {botProfile?.location && (
                             <div className="flex items-center gap-1 mt-1">
@@ -1406,7 +1640,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                   <ArrowLeft className="w-5 h-5" />
                   <span className="font-medium">All Chats</span>
                 </button>
-                
+
                 <div className="flex items-center gap-2">
                   <div className="relative">
                     <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
@@ -1423,7 +1657,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                     )}
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="font-bold text-gray-900">
@@ -1519,30 +1753,31 @@ const sendWinkMessage = async (winkMessage: string) => {
                 {getAllChatItems().map((item, index) => {
                   if (item.type === 'message') {
                     const msg = item.data as Message;
+
+                    // Check if this is a photo message
+                    if (msg.photoUrl && msg.role === 'bot') {
+                      return renderPhotoMessage(msg, index, false); // or true for mobile
+                    }
+
                     return (
                       <div
                         key={`msg-${index}-${msg.$id}`}
                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`max-w-[75%] rounded-2xl p-4 ${
-                            msg.role === 'user'
+                          className={`max-w-[75%] rounded-2xl p-4 ${msg.role === 'user'
                               ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
                               : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
-                          }`}
+                            }`}
                         >
                           <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                          <div className={`flex items-center justify-end mt-2 text-xs ${
-                            msg.role === 'user' ? 'text-white/80' : 'text-gray-500'
-                          }`}>
+                          <div className={`flex items-center justify-end mt-2 text-xs ${msg.role === 'user' ? 'text-white/80' : 'text-gray-500'
+                            }`}>
                             {formatTime(msg.timestamp)}
                           </div>
                         </div>
                       </div>
                     );
-                  } else {
-                    const gift = item.data as ChatGiftMessage;
-                    return renderGiftMessage(gift, index);
                   }
                 })}
 
@@ -1570,41 +1805,41 @@ const sendWinkMessage = async (winkMessage: string) => {
                   </div>
                 )}
               </div>
-              
+
               <div ref={messagesEndRef} />
             </div>
 
             {/* Sticker Picker */}
             {/* Sticker Picker */}
-{showStickerPicker && (
-  <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 shadow-xl rounded-lg bg-white border border-gray-200" 
-       ref={stickerPickerRef}
-       style={{ width: '400px', maxHeight: '400px', overflowY: 'auto' }}>
-    <div className="p-4">
-      <h3 className="font-semibold text-gray-900 mb-3">Stickers</h3>
-      <div className="grid grid-cols-4 gap-2">
-        {stickers.map((sticker) => (
-          <button
-            key={sticker.id}
-            onClick={() => handleStickerClick(sticker)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-2xl flex items-center justify-center"
-            title={sticker.name}
-          >
-            {sticker.emoji}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-)}
+            {showStickerPicker && (
+              <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 shadow-xl rounded-lg bg-white border border-gray-200"
+                ref={stickerPickerRef}
+                style={{ width: '400px', maxHeight: '400px', overflowY: 'auto' }}>
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-900 mb-3">Stickers</h3>
+                  <div className="grid grid-cols-4 gap-2">
+                    {stickers.map((sticker) => (
+                      <button
+                        key={sticker.id}
+                        onClick={() => handleStickerClick(sticker)}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-2xl flex items-center justify-center"
+                        title={sticker.name}
+                      >
+                        {sticker.emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Emoji Picker */}
             {/* Emoji Picker */}
             {showEmojiPicker && (
               <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 shadow-xl rounded-lg" ref={emojiPickerRef}>
-                <EmojiPicker 
+                <EmojiPicker
                   onEmojiClick={handleEmojiSelect}
-                  theme={undefined} 
+                  theme={undefined}
                   height={350}
                   width={350}
                   searchDisabled={false}
@@ -1618,27 +1853,39 @@ const sendWinkMessage = async (winkMessage: string) => {
 
             {/* Input Area */}
             <div className="border-t border-gray-200 bg-white p-4 relative" style={{ zIndex: 10 }}>
-            <div className="max-w-3xl mx-auto">
+              <div className="max-w-3xl mx-auto">
                 <div className="flex items-center gap-2 mb-3">
-                  <button 
+                  <button
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm relative"
                   >
                     <Smile className="w-4 h-4" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => setShowStickerPicker(!showStickerPicker)}
                     className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm"
                   >
                     <ImageIcon className="w-4 h-4" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
                     className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm"
                   >
                     <Gift className="w-4 h-4" />
                   </button>
-                  <button 
+
+                  {/* NEW: Request Photo Button */}
+                  <button
+                    onClick={() => setShowPhotoRequestConfirm(true)}
+                    disabled={isRequestingPhoto || (currentUser ? currentUser.credits < 10 : false)}
+                    className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-purple-700 rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Request a photo (10 credits)"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span className="text-xs font-medium">Photo (10)</span>
+                  </button>
+
+                  <button
                     onClick={() => setIsMuted(!isMuted)}
                     className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm"
                   >
@@ -1674,9 +1921,9 @@ const sendWinkMessage = async (winkMessage: string) => {
                   <div className="flex items-center gap-2">
                     <Crown className="w-4 h-4 text-amber-500" />
                     <span className="font-medium text-gray-700">{currentUser?.credits || 0}</span>
-                    <span>credits • 1 message = 1 credit</span>
+                    <span>credits • 1 msg = 1 • photo = 10</span>
                   </div>
-                  <button 
+                  <button
                     onClick={handleBuyCredits}
                     className="text-[#5e17eb] hover:text-[#4a13c4] font-medium flex items-center gap-1"
                   >
@@ -1782,7 +2029,7 @@ const sendWinkMessage = async (winkMessage: string) => {
               </div>
 
               <div className="space-y-3">
-                <button 
+                <button
                   onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
                   className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all text-sm"
                 >
@@ -1825,7 +2072,7 @@ const sendWinkMessage = async (winkMessage: string) => {
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
-              
+
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
@@ -1842,7 +2089,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                     <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                   )}
                 </div>
-                
+
                 <div>
                   <div className="flex items-center gap-1">
                     <h2 className="font-bold text-gray-900 text-sm">
@@ -1935,28 +2182,31 @@ const sendWinkMessage = async (winkMessage: string) => {
               {getAllChatItems().map((item, index) => {
                 if (item.type === 'message') {
                   const msg = item.data as Message;
+
+                  // Check if this is a photo message
+                  if (msg.photoUrl && msg.role === 'bot') {
+                    return renderPhotoMessage(msg, index, false); // or true for mobile
+                  }
+
                   return (
                     <div
-                      key={`msg-mobile-${index}-${msg.$id}`}
+                      key={`msg-${index}-${msg.$id}`}
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-2xl p-3 ${
-                          msg.role === 'user'
+                        className={`max-w-[75%] rounded-2xl p-4 ${msg.role === 'user'
                             ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
                             : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
-                        }`}
+                          }`}
                       >
                         <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                        <div className={`text-xs mt-1 ${msg.role === 'user' ? 'text-white/80' : 'text-gray-500'}`}>
+                        <div className={`flex items-center justify-end mt-2 text-xs ${msg.role === 'user' ? 'text-white/80' : 'text-gray-500'
+                          }`}>
                           {formatTime(msg.timestamp)}
                         </div>
                       </div>
                     </div>
                   );
-                } else {
-                  const gift = item.data as ChatGiftMessage;
-                  return renderGiftMessage(gift, index, true);
                 }
               })}
 
@@ -1984,7 +2234,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                 </div>
               )}
             </div>
-            
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -1992,12 +2242,12 @@ const sendWinkMessage = async (winkMessage: string) => {
           <div className="border-t border-gray-200 bg-white pb-20" ref={mobileInputContainerRef}>
             {/* Sticker Picker - Fixed overlay */}
             {showStickerPicker && (
-              <div className="fixed inset-x-0 bottom-0 z-50 bg-white shadow-2xl border-t border-gray-300" 
-                   style={{ height: '50vh' }} 
-                   ref={stickerPickerRef}>
+              <div className="fixed inset-x-0 bottom-0 z-50 bg-white shadow-2xl border-t border-gray-300"
+                style={{ height: '50vh' }}
+                ref={stickerPickerRef}>
                 <div className="flex justify-between items-center p-3 border-b border-gray-200 bg-gray-50">
                   <h3 className="font-medium text-gray-700">Select Sticker</h3>
-                  <button 
+                  <button
                     onClick={() => setShowStickerPicker(false)}
                     className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200"
                   >
@@ -2023,12 +2273,12 @@ const sendWinkMessage = async (winkMessage: string) => {
 
             {/* Emoji Picker - Fixed overlay */}
             {showEmojiPicker && (
-              <div className="fixed inset-x-0 bottom-0 z-50 bg-white shadow-2xl border-t border-gray-300" 
-                   style={{ height: '50vh' }} 
-                   ref={emojiPickerRef}>
+              <div className="fixed inset-x-0 bottom-0 z-50 bg-white shadow-2xl border-t border-gray-300"
+                style={{ height: '50vh' }}
+                ref={emojiPickerRef}>
                 <div className="flex justify-between items-center p-3 border-b border-gray-200 bg-gray-50">
                   <h3 className="font-medium text-gray-700">Select Emoji</h3>
-                  <button 
+                  <button
                     onClick={() => setShowEmojiPicker(false)}
                     className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200"
                   >
@@ -2036,7 +2286,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                   </button>
                 </div>
                 <div className="h-full overflow-hidden">
-                  <EmojiPicker 
+                  <EmojiPicker
                     onEmojiClick={handleEmojiSelect}
                     theme={undefined}
                     height="100%"
@@ -2054,23 +2304,34 @@ const sendWinkMessage = async (winkMessage: string) => {
             {/* Input Container */}
             <div className="p-3">
               <div className="flex items-center gap-2 mb-2">
-                <button 
+                <button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation"
                 >
                   <Smile className="w-5 h-5" />
                 </button>
-                <button 
+                <button
                   onClick={() => setShowStickerPicker(!showStickerPicker)}
                   className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation"
                 >
                   <ImageIcon className="w-5 h-5" />
                 </button>
-                <button 
+                <button
                   onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
                   className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation"
                 >
                   <Gift className="w-5 h-5" />
+                </button>
+
+                {/* NEW: Request Photo Button - Mobile */}
+                <button
+                  onClick={() => setShowPhotoRequestConfirm(true)}
+                  disabled={isRequestingPhoto || (currentUser ? currentUser.credits < 10 : false)}
+                  className="flex items-center gap-1 px-2.5 py-2.5 bg-gradient-to-r from-purple-100 to-pink-100 active:from-purple-200 active:to-pink-200 text-purple-700 rounded-lg touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Request photo (10 credits)"
+                >
+                  <Camera className="w-5 h-5" />
+                  <span className="text-xs font-bold">10</span>
                 </button>
               </div>
 
@@ -2119,7 +2380,7 @@ const sendWinkMessage = async (winkMessage: string) => {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 animate-in slide-in-from-bottom">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-gray-900 text-lg">🎁 Gift Animation</h3>
-              <button 
+              <button
                 onClick={handleGiftAnimationClose}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -2165,14 +2426,14 @@ const sendWinkMessage = async (winkMessage: string) => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-gray-900 text-2xl">🎁 Animated Gift</h3>
-                <button 
+                <button
                   onClick={() => setShowGiftAnimationOverlay(null)}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              
+
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 mb-6">
                 <div className="w-64 h-64 mx-auto">
                   {showGiftAnimationOverlay.giftImage ? (
@@ -2188,7 +2449,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                   )}
                 </div>
               </div>
-              
+
               <div className="text-center">
                 <h4 className="font-bold text-xl text-gray-900 mb-2">{showGiftAnimationOverlay.giftName}</h4>
                 <p className="text-gray-600 mb-4">
@@ -2205,7 +2466,7 @@ const sendWinkMessage = async (winkMessage: string) => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="mt-8 text-center">
                 <button
                   onClick={() => setShowGiftAnimationOverlay(null)}
@@ -2213,6 +2474,140 @@ const sendWinkMessage = async (winkMessage: string) => {
                 >
                   Continue Chatting
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Photo Request Confirmation Modal */}
+      {showPhotoRequestConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 animate-in slide-in-from-bottom">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 flex items-center justify-center">
+                <Camera className="w-8 h-8 text-purple-600" />
+              </div>
+              <h3 className="font-bold text-xl text-gray-900 mb-2">Request a Photo?</h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Ask {botProfile?.username} to send you a photo
+              </p>
+
+              {/* Cost Display */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Crown className="w-5 h-5 text-amber-500" />
+                  <span className="text-2xl font-bold text-gray-900">10</span>
+                  <span className="text-gray-600">credits</span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Your balance: <span className="font-bold text-purple-600">{currentUser?.credits || 0}</span> credits
+                </p>
+              </div>
+
+              {/* Warning if low credits */}
+              {currentUser && currentUser.credits < 10 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-red-700 font-medium">
+                    ⚠️ Insufficient credits! You need 10 credits.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <button
+                onClick={requestPhoto}
+                disabled={!currentUser || currentUser.credits < 10}
+                className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isRequestingPhoto ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Requesting...
+                  </span>
+                ) : (
+                  'Yes, Request Photo'
+                )}
+              </button>
+              <button
+                onClick={() => setShowPhotoRequestConfirm(false)}
+                className="w-full py-3 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+
+            {currentUser && currentUser.credits < 10 && (
+              <button
+                onClick={() => {
+                  setShowPhotoRequestConfirm(false);
+                  router.push('/main/credits');
+                }}
+                className="w-full mt-3 py-2 text-sm text-[#5e17eb] hover:text-[#4a13c4] font-medium"
+              >
+                Get More Credits →
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {/* Photo Viewer Modal */}
+      {showPhotoViewer && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50">
+          <div className="relative max-w-4xl w-full">
+            {/* Close button */}
+            <button
+              onClick={() => setShowPhotoViewer(null)}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+            >
+              <X className="w-8 h-8" />
+            </button>
+
+            {/* Photo */}
+            <div className="bg-white rounded-lg overflow-hidden shadow-2xl">
+              <Image
+                src={showPhotoViewer.url}
+                alt={`Photo from ${botProfile?.username}`}
+                width={1200}
+                height={1200}
+                className="w-full h-auto object-contain max-h-[85vh]"
+                unoptimized={showPhotoViewer.url?.startsWith('http')}
+              />
+
+              {/* Photo info */}
+              <div className="p-4 bg-white border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200">
+                      <Image
+                        src={botProfile?.profilePic || '/default-avatar.png'}
+                        alt={botProfile?.username || 'User'}
+                        width={40}
+                        height={40}
+                        className="object-cover w-full h-full"
+                        unoptimized={botProfile?.profilePic?.startsWith('http')}
+                      />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{botProfile?.username}</p>
+                      <p className="text-xs text-gray-500">{formatTime(showPhotoViewer.message.timestamp)}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      // Optional: Add download functionality
+                      window.open(showPhotoViewer.url, '_blank');
+                    }}
+                    className="px-4 py-2 bg-[#5e17eb] text-white rounded-lg hover:bg-[#4a13c4] transition-colors text-sm"
+                  >
+                    Open in New Tab
+                  </button>
+                </div>
+
+                {showPhotoViewer.message.content && (
+                  <p className="mt-3 text-gray-700 text-sm">{showPhotoViewer.message.content}</p>
+                )}
               </div>
             </div>
           </div>
