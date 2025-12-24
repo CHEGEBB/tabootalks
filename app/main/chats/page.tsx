@@ -619,7 +619,7 @@ export default function ChatsPage() {
                               
                               {/* Delete Dropdown */}
                               {deleteConfirmId === conv.$id && (
-                                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-1000">
                                   <div className="p-3 border-b border-gray-100">
                                     <p className="text-sm font-medium text-gray-900">Delete this chat?</p>
                                     <p className="text-xs text-gray-500 mt-1">This action cannot be undone</p>

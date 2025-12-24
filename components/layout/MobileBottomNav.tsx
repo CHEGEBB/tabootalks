@@ -329,15 +329,24 @@ export default function MobileBottomNav({ activeTab, setActiveTab }: MobileBotto
                 }`}>
                   <item.icon size={22} className={isActive ? 'text-[#5e17eb]' : ''} />
                   
-                  {/* Dynamic Badge */}
-                  {showBadge && (
+                  {/* Dynamic Badge - ALWAYS show for chats, even when 0 */}
+                  {item.id === 'chats' && !statsLoading && (
+                    <span className={`absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs font-bold flex items-center justify-center text-white ${
+                      item.badge && item.badge > 0 ? 'bg-[#ff2e2e] animate-pulse' : 'bg-gray-400'
+                    }`}>
+                      {item.badge || 0}
+                    </span>
+                  )}
+                  
+                  {/* Show badge for other items only if > 0 */}
+                  {item.id !== 'chats' && showBadge && (
                     <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#ff2e2e] text-xs font-bold flex items-center justify-center text-white animate-pulse">
                       {item.badge}
                     </span>
                   )}
                   
                   {/* Loading indicator for stats */}
-                  {item.id === 'chats' && statsLoading && !showBadge && (
+                  {item.id === 'chats' && statsLoading && (
                     <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gray-300 flex items-center justify-center">
                       <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     </div>
