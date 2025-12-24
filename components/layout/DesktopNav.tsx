@@ -204,8 +204,17 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
                     }`}>
                       <item.icon size={24} className={isActive ? 'text-[#5e17eb]' : ''} />
                       
-                      {/* Dynamic Badge */}
-                      {showBadge && (
+                      {/* Dynamic Badge - ALWAYS show for chats, even when 0 */}
+                      {item.id === 'chats' && !statsLoading && (
+                        <span className={`absolute -top-1 -right-1 h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center text-white ${
+                          item.badge && item.badge > 0 ? 'bg-[#ff2e2e] animate-pulse' : 'bg-gray-400'
+                        }`}>
+                          {item.badge || 0}
+                        </span>
+                      )}
+                      
+                      {/* Show badge for other items only if > 0 */}
+                      {item.id !== 'chats' && showBadge && (
                         <span className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-[#ff2e2e] text-xs font-bold flex items-center justify-center text-white animate-pulse">
                           {item.badge}
                         </span>
