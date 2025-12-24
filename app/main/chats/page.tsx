@@ -13,7 +13,8 @@ import {
   Shield, Phone, Video, Heart, Send, Smile,
   ChevronLeft, Camera, Star, Paperclip, Clock,
   UserPlus, TrendingUp, Activity, Award, Clock4,
-  Target, BarChart3, RefreshCw, Trash2, AlertCircle
+  Target, BarChart3, RefreshCw, Trash2, AlertCircle,
+  X
 } from 'lucide-react';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import LayoutController from '@/components/layout/LayoutController';
@@ -66,7 +67,7 @@ export default function ChatsPage() {
   
   // Delete functionality states
   const [swipingId, setSwipingId] = useState<string | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState<{ [key: string]: number }>({});
   
@@ -244,7 +245,7 @@ export default function ChatsPage() {
       calculateStats(conversations.filter(conv => conv.$id !== conversationId));
       
       // Reset delete states
-      setDeleteConfirmId(null);
+      setShowDeleteModal(null);
       setSwipingId(null);
       setSwipeOffset(prev => ({ ...prev, [conversationId]: 0 }));
 
@@ -258,7 +259,7 @@ export default function ChatsPage() {
     }
   };
 
-  // SWIPE HANDLERS
+  // SWIPE HANDLERS - iPhone Style
   const handleSwipeStart = (e: React.TouchEvent | React.MouseEvent, conversationId: string) => {
     if ('touches' in e) {
       swipeStartX.current[conversationId] = e.touches[0].clientX;
@@ -284,9 +285,9 @@ export default function ChatsPage() {
   const handleSwipeEnd = (conversationId: string) => {
     const offset = swipeOffset[conversationId] || 0;
     
-    // If swiped more than 50px, show delete confirmation
-    if (offset > 50) {
-      setDeleteConfirmId(conversationId);
+    // If swiped more than 60px, show delete modal
+    if (offset > 60) {
+      setShowDeleteModal(conversationId);
     } else {
       // Reset swipe
       setSwipeOffset(prev => ({ ...prev, [conversationId]: 0 }));
@@ -298,7 +299,7 @@ export default function ChatsPage() {
 
   const resetSwipe = (conversationId: string) => {
     setSwipeOffset(prev => ({ ...prev, [conversationId]: 0 }));
-    setDeleteConfirmId(null);
+    setShowDeleteModal(null);
   };
 
   const startNewChat = async (botId: string) => {
@@ -391,12 +392,59 @@ export default function ChatsPage() {
     <div className="min-h-screen bg-white">
       <LayoutController />
       
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 animate-scale-in">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <Trash2 className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Conversation?</h3>
+              <p className="text-gray-600 mb-6">
+                This will permanently delete your conversation with{' '}
+                <span className="font-semibold">
+                  {conversations.find(c => c.$id === showDeleteModal)?.bot?.username || 'this user'}
+                </span>. This action cannot be undone.
+              </p>
+              
+              <div className="flex flex-col w-full gap-3">
+                <button
+                  onClick={() => deleteConversation(showDeleteModal)}
+                  disabled={isDeleting === showDeleteModal}
+                  className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isDeleting === showDeleteModal ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-5 h-5" />
+                      Yes, Delete
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowDeleteModal(null)}
+                  className="w-full py-3 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Desktop Layout */}
       <div className="hidden lg:flex h-[calc(200vh-64px)] w-full">
         <div className="w-full max-w-[1400px] mx-auto flex h-full">
           
           {/* Left Sidebar - Chat List */}
-          <div className="w-[400px] min-h-[1000px] flex-shrink-0 border-r border-l border-gray-200 overflow-hidden flex flex-col bg-white">            <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="w-[400px] min-h-[1000px] flex-shrink-0 border-r border-l border-gray-200 overflow-hidden flex flex-col bg-white">
+            <div className="bg-white border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-[#5e17eb]">{currentUser?.credits || 0}</span>
@@ -477,7 +525,6 @@ export default function ChatsPage() {
                     const botProfile = conv.bot;
                     const isSwiping = swipingId === conv.$id;
                     const offset = swipeOffset[conv.$id] || 0;
-                    const showDeleteConfirm = deleteConfirmId === conv.$id;
                     
                     return (
                       <div
@@ -485,27 +532,26 @@ export default function ChatsPage() {
                         className={`relative transition-all duration-200 ${isDeleting === conv.$id ? 'opacity-50' : ''}`}
                         style={{ transform: `translateX(-${offset}px)` }}
                       >
-                        {/* Delete Button (Hidden behind chat) */}
-                        <div className="absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center bg-red-500 rounded-r-lg">
-                          <button
-                            onClick={() => deleteConversation(conv.$id)}
-                            disabled={isDeleting === conv.$id}
-                            className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            {isDeleting === conv.$id ? (
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                              <>
-                                <Trash2 className="w-4 h-4" />
-                                <span className="text-xs font-medium">Delete</span>
-                              </>
-                            )}
-                          </button>
+                        {/* iPhone-style Delete Button (Red background that appears behind) */}
+                        <div 
+                          className="absolute right-0 top-0 bottom-0 flex items-center justify-center transition-all duration-200"
+                          style={{ 
+                            width: `${Math.min(offset, 80)}px`,
+                            backgroundColor: 'rgb(239, 68, 68)',
+                            opacity: offset > 20 ? 0.95 : 0
+                          }}
+                        >
+                          {offset > 40 && (
+                            <div className="flex flex-col items-center">
+                              <Trash2 className="w-5 h-5 text-white mb-1" />
+                              <span className="text-xs text-white font-medium">Delete</span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Chat Item */}
                         <div
-                          className={`relative bg-white ${showDeleteConfirm ? 'border-2 border-red-500' : 'border-b border-gray-100'}`}
+                          className="relative bg-white border-b border-gray-100"
                           onTouchStart={(e) => handleSwipeStart(e, conv.$id)}
                           onTouchMove={(e) => handleSwipeMove(e, conv.$id)}
                           onTouchEnd={() => handleSwipeEnd(conv.$id)}
@@ -522,7 +568,7 @@ export default function ChatsPage() {
                             href={`/main/chats/${conv.$id}`}
                             className="flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer transition-all"
                             onClick={(e) => {
-                              if (offset > 10 || showDeleteConfirm) {
+                              if (offset > 10) {
                                 e.preventDefault();
                                 resetSwipe(conv.$id);
                               }
@@ -575,23 +621,9 @@ export default function ChatsPage() {
                                   {conv.lastMessage || 'Start a conversation...'}
                                 </p>
                                 {conv.messageCount > 0 && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs bg-[#5e17eb]/10 text-[#5e17eb] px-2 py-0.5 rounded-full min-w-[40px] text-center">
-                                      {conv.messageCount} msg{conv.messageCount !== 1 ? 's' : ''}
-                                    </span>
-                                    {showDeleteConfirm && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          resetSwipe(conv.$id);
-                                        }}
-                                        className="text-xs text-gray-500 hover:text-gray-700"
-                                      >
-                                        Cancel
-                                      </button>
-                                    )}
-                                  </div>
+                                  <span className="text-xs bg-[#5e17eb]/10 text-[#5e17eb] px-2 py-0.5 rounded-full min-w-[40px] text-center">
+                                    {conv.messageCount} msg{conv.messageCount !== 1 ? 's' : ''}
+                                  </span>
                                 )}
                               </div>
                               
@@ -604,88 +636,27 @@ export default function ChatsPage() {
                               )}
                             </div>
 
-                            {/* Delete Menu Button (Desktop only) */}
+                            {/* Delete Icon Button (Desktop - Small) */}
                             <div className="relative group">
                               <button
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  setDeleteConfirmId(deleteConfirmId === conv.$id ? null : conv.$id);
+                                  setShowDeleteModal(conv.$id);
                                 }}
-                                className="p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100"
+                                className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors group"
+                                title="Delete chat"
                               >
-                                <MoreVertical className="w-5 h-5" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
-                              
-                              {/* Delete Dropdown */}
-                              {deleteConfirmId === conv.$id && (
-                                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-1000">
-                                  <div className="p-3 border-b border-gray-100">
-                                    <p className="text-sm font-medium text-gray-900">Delete this chat?</p>
-                                    <p className="text-xs text-gray-500 mt-1">This action cannot be undone</p>
-                                  </div>
-                                  <div className="p-2">
-                                    <button
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        deleteConversation(conv.$id);
-                                      }}
-                                      disabled={isDeleting === conv.$id}
-                                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-                                    >
-                                      {isDeleting === conv.$id ? (
-                                        <>
-                                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                          Deleting...
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Trash2 className="w-4 h-4" />
-                                          Yes, Delete Chat
-                                        </>
-                                      )}
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setDeleteConfirmId(null);
-                                      }}
-                                      className="w-full mt-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
+                              {/* Tooltip */}
+                              <div className="absolute right-0 top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                                  Delete chat
                                 </div>
-                              )}
+                              </div>
                             </div>
                           </Link>
-
-                          {/* Delete Confirmation Banner */}
-                          {showDeleteConfirm && (
-                            <div className="absolute top-0 left-0 right-0 bottom-0 bg-red-50 border border-red-200 flex items-center justify-between px-4">
-                              <div className="flex items-center gap-2">
-                                <AlertCircle className="w-5 h-5 text-red-600" />
-                                <span className="text-sm font-medium text-red-700">Swipe to delete</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => resetSwipe(conv.$id)}
-                                  className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  onClick={() => deleteConversation(conv.$id)}
-                                  disabled={isDeleting === conv.$id}
-                                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-                                >
-                                  {isDeleting === conv.$id ? 'Deleting...' : 'Delete'}
-                                </button>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
                     );
@@ -1220,7 +1191,6 @@ export default function ChatsPage() {
                 {filteredConversations.map((conv) => {
                   const isSwiping = swipingId === conv.$id;
                   const offset = swipeOffset[conv.$id] || 0;
-                  const showDeleteConfirm = deleteConfirmId === conv.$id;
                   
                   return (
                     <div
@@ -1228,24 +1198,26 @@ export default function ChatsPage() {
                       className="relative"
                       style={{ transform: `translateX(-${offset}px)` }}
                     >
-                      {/* Delete Button (Hidden behind chat) */}
-                      <div className="absolute right-0 top-0 bottom-0 w-16 flex items-center justify-center bg-red-500 rounded-r-lg">
-                        <button
-                          onClick={() => deleteConversation(conv.$id)}
-                          disabled={isDeleting === conv.$id}
-                          className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
-                        >
-                          {isDeleting === conv.$id ? (
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          ) : (
-                            <Trash2 className="w-5 h-5" />
-                          )}
-                        </button>
+                      {/* iPhone-style Delete Red Background */}
+                      <div 
+                        className="absolute right-0 top-0 bottom-0 flex items-center justify-center transition-all duration-200"
+                        style={{ 
+                          width: `${Math.min(offset, 80)}px`,
+                          backgroundColor: 'rgb(239, 68, 68)',
+                          opacity: offset > 20 ? 0.95 : 0
+                        }}
+                      >
+                        {offset > 40 && (
+                          <div className="flex flex-col items-center">
+                            <Trash2 className="w-5 h-5 text-white mb-1" />
+                            <span className="text-xs text-white font-medium">Delete</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Chat Item */}
                       <div
-                        className={`bg-white rounded-xl border ${showDeleteConfirm ? 'border-red-500' : 'border-gray-200'} overflow-hidden`}
+                        className={`bg-white rounded-xl border border-gray-200 overflow-hidden`}
                         onTouchStart={(e) => handleSwipeStart(e, conv.$id)}
                         onTouchMove={(e) => handleSwipeMove(e, conv.$id)}
                         onTouchEnd={() => handleSwipeEnd(conv.$id)}
@@ -1254,7 +1226,7 @@ export default function ChatsPage() {
                           href={`/main/chats/${conv.$id}`}
                           className="block p-4 hover:bg-gray-50 transition-all"
                           onClick={(e) => {
-                            if (offset > 10 || showDeleteConfirm) {
+                            if (offset > 10) {
                               e.preventDefault();
                               resetSwipe(conv.$id);
                             }
@@ -1307,35 +1279,21 @@ export default function ChatsPage() {
                                 )}
                               </div>
                             </div>
+                            
+                            {/* Mobile Delete Button (Small Icon) */}
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShowDeleteModal(conv.$id);
+                              }}
+                              className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50"
+                              title="Delete chat"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </Link>
-
-                        {/* Delete Confirmation Banner (Mobile) */}
-                        {showDeleteConfirm && (
-                          <div className="bg-red-50 border-t border-red-200 p-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <AlertCircle className="w-4 h-4 text-red-600" />
-                                <span className="text-xs font-medium text-red-700">Delete this chat?</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => resetSwipe(conv.$id)}
-                                  className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800"
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  onClick={() => deleteConversation(conv.$id)}
-                                  disabled={isDeleting === conv.$id}
-                                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
-                                >
-                                  {isDeleting === conv.$id ? 'Deleting...' : 'Delete'}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
