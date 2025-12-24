@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useEffect, useState, useRef } from 'react';
 import useAuth from '@/lib/hooks/useAuth';
-
+import useConversationStats from '@/lib/hooks/useConversationStats';
 
 interface MobileBottomNavProps {
     activeTab: string;
@@ -18,8 +18,9 @@ export default function MobileBottomNav({ activeTab, setActiveTab }: MobileBotto
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  // Fetch current user data
-  const { profile, loading, logout } = useAuth();
+  // Fetch current user data and conversation stats
+  const { profile, loading: authLoading, logout } = useAuth();
+  const { stats, loading: statsLoading, refreshStats } = useConversationStats();
 
   // Sync activeTab with current pathname
   useEffect(() => {
@@ -50,13 +51,20 @@ export default function MobileBottomNav({ activeTab, setActiveTab }: MobileBotto
     };
   }, []);
 
+  // Refresh stats when navigating to chats
+  useEffect(() => {
+    if (pathname.includes('/chats')) {
+      refreshStats();
+    }
+  }, [pathname, refreshStats]);
+
   const handleGift = () => {
     router.push(`/main/virtual-gifts`);
-};
+  };
 
-const handleDiscover= () =>{
-  router.push("/main/discover")
-}
+  const handleDiscover = () => {
+    router.push("/main/discover");
+  };
 
   const handleNavigation = (id: string) => {
     setActiveTab(id);
@@ -68,6 +76,8 @@ const handleDiscover= () =>{
         break;
       case 'chats':
         router.push('/main/chats');
+        // Refresh stats when navigating to chats
+        refreshStats();
         break;
       case 'discover':
         router.push('/main/discover');
@@ -128,14 +138,19 @@ const handleDiscover= () =>{
   // Correct order: Home, Chats, Discover, People, Credits
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'chats', label: 'Chats', icon: MessageCircle, badge: 3 },
+    { 
+      id: 'chats', 
+      label: 'Chats', 
+      icon: MessageCircle, 
+      badge: stats.activeChats // Dynamic badge from conversation stats
+    },
     { id: 'discover', label: 'Discover', icon: Search },
     { id: 'people', label: 'People', icon: Users },
     { id: 'credits', label: 'Credits', icon: CreditCard },
   ];
 
   // Show loading skeleton while fetching user
-  if (loading) {
+  if (authLoading) {
     return (
       <>
         {/* Top Bar Loading Skeleton */}
@@ -195,7 +210,7 @@ const handleDiscover= () =>{
               <Compass size={30} />
             </button>
             
-            {/* Notifications Button */}
+            {/* Notifications/Gift Button */}
             <button 
               onClick={handleGift}
               className="relative p-2 text-gray-600 hover:text-[#5e17eb] transition-colors rounded-full hover:bg-gray-100"
@@ -218,6 +233,7 @@ const handleDiscover= () =>{
                     width={40}
                     height={40}
                     className="object-cover"
+                    unoptimized={profile.profilePic.startsWith('http')}
                   />
                 ) : (
                   <div className="h-full w-full bg-gradient-to-br from-[#5e17eb] to-[#ff2e2e] flex items-center justify-center text-white font-bold text-sm">
@@ -234,6 +250,26 @@ const handleDiscover= () =>{
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="font-semibold text-gray-900 text-sm">{profile?.username || 'User'}</p>
                       <p className="text-xs text-gray-500">{profile?.email || 'Premium Member'}</p>
+                    </div>
+                    
+                    {/* Conversation Stats in Dropdown */}
+                    <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-pink-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-gray-600">Active Chats</span>
+                        {statsLoading ? (
+                          <div className="h-4 w-8 bg-gray-200 rounded animate-pulse"></div>
+                        ) : (
+                          <span className="text-sm font-bold text-[#5e17eb]">{stats.activeChats}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Total Messages</span>
+                        {statsLoading ? (
+                          <div className="h-4 w-8 bg-gray-200 rounded animate-pulse"></div>
+                        ) : (
+                          <span className="text-sm font-bold text-gray-900">{stats.totalMessages}</span>
+                        )}
+                      </div>
                     </div>
                     
                     {/* Menu Items */}
@@ -275,6 +311,8 @@ const handleDiscover= () =>{
         <div className="flex justify-around items-center h-full px-2">
           {navItems.map(item => {
             const isActive = activeTab === item.id;
+            const showBadge = item.badge && item.badge > 0;
+            
             return (
               <button
                 key={item.id}
@@ -290,10 +328,19 @@ const handleDiscover= () =>{
                     : ''
                 }`}>
                   <item.icon size={22} className={isActive ? 'text-[#5e17eb]' : ''} />
-                  {item.badge && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#ff2e2e] text-xs font-bold flex items-center justify-center text-white">
+                  
+                  {/* Dynamic Badge */}
+                  {showBadge && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#ff2e2e] text-xs font-bold flex items-center justify-center text-white animate-pulse">
                       {item.badge}
                     </span>
+                  )}
+                  
+                  {/* Loading indicator for stats */}
+                  {item.id === 'chats' && statsLoading && !showBadge && (
+                    <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gray-300 flex items-center justify-center">
+                      <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
                   )}
                 </div>
                 
