@@ -1,25 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// lib/services/authService.ts
+// lib/services/authService.ts - COMPLETE WITH AUTO EMAIL VERIFICATION
 import { account, databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/config';
 import { ID } from 'appwrite';
 import storageService from '@/lib/appwrite/storage';
 
-// Fixed UserProfile interface - consistent with useAuth.ts
 interface UserProfile {
-  $id?: string;  // Appwrite document ID
-  userId?: string;  // Optional for compatibility
+  $id?: string;
+  userId?: string;
   username: string;
   email: string;
-  age?: number;  // NUMBER not string
+  age?: number;
   gender?: string;
-  goals?: string;  // JSON string
+  goals?: string;
   bio?: string;
-  profilePic?: string | null;  // Allow null
+  profilePic?: string | null;
   credits: number;
   location?: string;
   createdAt: string;
   lastActive: string;
-  preferences: string;  // JSON string
+  preferences: string;
   birthday?: string;
   martialStatus?: string;
   fieldOfWork?: string;
@@ -51,7 +50,7 @@ interface LoginData {
 
 export const authService = {
   /**
-   * SIGNUP - Multi-step wizard
+   * SIGNUP - WITH AUTO EMAIL VERIFICATION
    */
   async signup(signupData: SignupData): Promise<{ user: any; profile: UserProfile }> {
     try {
@@ -74,7 +73,6 @@ export const authService = {
         signupData.password,
         signupData.name
       );
-
       console.log('✅ Auth account created:', authUser.$id);
 
       // 3. Create user profile document
@@ -115,13 +113,24 @@ export const authService = {
         authUser.$id,
         userProfile
       );
-
       console.log('✅ User profile created:', profileDoc.$id);
 
       // 4. Auto-login after signup
       await account.createEmailPasswordSession(signupData.email, signupData.password);
+      console.log('✅ Session created');
 
-      // 5. Create welcome credit transaction
+      // 5. 🔥 SEND VERIFICATION EMAIL AUTOMATICALLY AFTER SIGNUP
+      try {
+        const verificationUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/verify-email`;
+        await account.createVerification(verificationUrl);
+        console.log('✅ Verification email sent to:', signupData.email);
+        console.log('📧 Check your inbox for the verification link!');
+      } catch (emailError: any) {
+        console.warn('⚠️ Failed to send verification email:', emailError.message);
+        // Don't fail signup if email sending fails
+      }
+
+      // 6. Create welcome credit transaction
       await databases.createDocument(
         DATABASE_ID,
         COLLECTIONS.TRANSACTIONS,
@@ -161,14 +170,11 @@ export const authService = {
    */
   async login(loginData: LoginData): Promise<{ user: any; profile: UserProfile }> {
     try {
-      // 1. Create session
       await account.createEmailPasswordSession(loginData.email, loginData.password);
       console.log('✅ Session created');
 
-      // 2. Get user data
       const authUser = await account.get();
       
-      // 3. Get profile
       const profileDoc = await databases.getDocument(
         DATABASE_ID,
         COLLECTIONS.USERS,
@@ -204,10 +210,7 @@ export const authService = {
         isPremium: profileDoc.isPremium || false
       };
 
-      return {
-        user: authUser,
-        profile
-      };
+      return { user: authUser, profile };
     } catch (error: any) {
       console.error('❌ Login error:', error);
       
@@ -220,26 +223,22 @@ export const authService = {
   },
 
   /**
-   * UPDATE PROFILE - FIXED
+   * UPDATE PROFILE
    */
   async updateProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
     try {
       console.log('🔄 Updating profile for user:', userId);
-      console.log('📝 Updates to apply:', updates);
 
       const updateData: Record<string, any> = {
         lastActive: new Date().toISOString(),
       };
 
-      // Handle each field properly
       Object.entries(updates).forEach(([key, value]) => {
-        // Skip undefined, empty strings, and internal fields
         if (value === undefined || value === '' || key === '$id') {
           return;
         }
 
         if (key === 'languages' || key === 'interests' || key === 'personalityTraits') {
-          // Arrays - ensure they're arrays
           if (Array.isArray(value)) {
             updateData[key] = value;
           } else if (typeof value === 'string') {
@@ -248,18 +247,13 @@ export const authService = {
             updateData[key] = [];
           }
         } else if (key === 'goals') {
-          // Goals stored as JSON string
           updateData[key] = Array.isArray(value) ? JSON.stringify(value) : value;
         } else if (key === 'age') {
-          // Age as number
           updateData[key] = typeof value === 'string' ? parseInt(value) : value;
         } else {
-          // Everything else
           updateData[key] = value;
         }
       });
-
-      console.log('📦 Prepared update data:', updateData);
 
       const updatedProfile = await databases.updateDocument(
         DATABASE_ID,
@@ -300,8 +294,71 @@ export const authService = {
       };
     } catch (error: any) {
       console.error('❌ Update profile error:', error);
-      console.error('Error details:', error.response || error.message);
       throw new Error(error.message || 'Failed to update profile');
+    }
+  },
+
+  /**
+   * UPDATE EMAIL
+   */
+  async updateEmail(newEmail: string): Promise<void> {
+    try {
+      console.log('🔄 Updating email to:', newEmail);
+      
+      await account.updateEmail(newEmail, '');
+      
+      const authUser = await account.get();
+      
+      await databases.updateDocument(
+        DATABASE_ID,
+        COLLECTIONS.USERS,
+        authUser.$id,
+        {
+          email: newEmail,
+          isVerified: false,
+          lastActive: new Date().toISOString()
+        }
+      );
+
+      // Send verification email for new email
+      try {
+        const verificationUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/verify-email`;
+        await account.createVerification(verificationUrl);
+        console.log('✅ Verification email sent to new address');
+      } catch (emailError) {
+        console.warn('⚠️ Failed to send verification email');
+      }
+      
+      console.log('✅ Email updated successfully');
+    } catch (error: any) {
+      console.error('❌ Update email error:', error);
+      
+      if (error.code === 409) {
+        throw new Error('This email is already in use');
+      }
+      
+      throw new Error(error.message || 'Failed to update email');
+    }
+  },
+
+  /**
+   * UPDATE PASSWORD
+   */
+  async updatePassword(newPassword: string, oldPassword: string): Promise<void> {
+    try {
+      console.log('🔄 Updating password...');
+      
+      await account.updatePassword(newPassword, oldPassword);
+      
+      console.log('✅ Password updated successfully');
+    } catch (error: any) {
+      console.error('❌ Update password error:', error);
+      
+      if (error.code === 401) {
+        throw new Error('Current password is incorrect');
+      }
+      
+      throw new Error(error.message || 'Failed to update password');
     }
   },
 
@@ -351,10 +408,7 @@ export const authService = {
         isPremium: profileDoc.isPremium || false
       };
 
-      return {
-        user: authUser,
-        profile
-      };
+      return { user: authUser, profile };
     } catch (error) {
       console.error('❌ Get current user error:', error);
       return null;
@@ -381,7 +435,7 @@ export const authService = {
     try {
       await account.createRecovery(
         email,
-        `${window.location.origin}/reset-password`
+        `${typeof window !== 'undefined' ? window.location.origin : ''}/reset-password`
       );
       console.log('✅ Password recovery email sent');
     } catch (error: any) {
@@ -413,28 +467,84 @@ export const authService = {
   },
 
   /**
-   * VERIFY EMAIL
+   * SEND VERIFICATION EMAIL - MANUAL TRIGGER
    */
   async sendVerificationEmail(): Promise<void> {
     try {
-      await account.createVerification(`${window.location.origin}/verify-email`);
-      console.log('✅ Verification email sent');
+      console.log('📧 Sending verification email...');
+      
+      const verificationUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/verify-email`;
+      await account.createVerification(verificationUrl);
+      
+      console.log('✅ Verification email sent - Check your inbox!');
     } catch (error: any) {
       console.error('❌ Send verification error:', error);
+      
+      if (error.code === 429) {
+        throw new Error('Too many requests. Please wait a few minutes before trying again.');
+      }
+      
+      if (error.message?.includes('already verified')) {
+        throw new Error('Your email is already verified!');
+      }
+      
       throw new Error(error.message || 'Failed to send verification email');
     }
   },
 
   /**
-   * CONFIRM EMAIL VERIFICATION
+   * VERIFY EMAIL - CONFIRM VERIFICATION
    */
   async verifyEmail(userId: string, secret: string): Promise<void> {
     try {
+      console.log('🔍 Verifying email for user:', userId);
+      
+      // Verify with Appwrite
       await account.updateVerification(userId, secret);
-      console.log('✅ Email verified');
+      console.log('✅ Email verified with Appwrite');
+      
+      // Update database
+      try {
+        await databases.updateDocument(
+          DATABASE_ID,
+          COLLECTIONS.USERS,
+          userId,
+          {
+            isVerified: true,
+            lastActive: new Date().toISOString()
+          }
+        );
+        console.log('✅ Database updated - isVerified = true');
+      } catch (dbError) {
+        console.warn('⚠️ Database update failed:', dbError);
+      }
+      
+      console.log('🎉 Email verification complete!');
     } catch (error: any) {
       console.error('❌ Verify email error:', error);
-      throw new Error(error.message || 'Failed to verify email');
+      
+      if (error.code === 401) {
+        throw new Error('Invalid or expired verification link. Please request a new one.');
+      }
+      
+      if (error.message?.includes('already verified')) {
+        throw new Error('Your email is already verified!');
+      }
+      
+      throw new Error(error.message || 'Failed to verify email. The link may have expired.');
+    }
+  },
+
+  /**
+   * CHECK IF EMAIL IS VERIFIED
+   */
+  async isEmailVerified(): Promise<boolean> {
+    try {
+      const user = await account.get();
+      return user.emailVerification || false;
+    } catch (error) {
+      console.error('❌ Check verification error:', error);
+      return false;
     }
   },
 
@@ -443,11 +553,8 @@ export const authService = {
    */
   async deleteAccount(userId: string): Promise<void> {
     try {
-      // Delete user profile document
       await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USERS, userId);
-
-      // Delete auth account
-      await account.updateStatus();
+      await account.deleteSession('current');
       
       console.log('✅ Account deleted');
     } catch (error: any) {
