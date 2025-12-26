@@ -439,7 +439,7 @@ export default function ChatsPage() {
       )}
 
       {/* Desktop Layout */}
-      <div className="hidden lg:flex h-[calc(200vh-64px)] w-full">
+      <div className="hidden lg:flex h-[calc(250vh-64px)] w-full">
         <div className="w-full max-w-[1400px] mx-auto flex h-full">
           
           {/* Left Sidebar - Chat List */}

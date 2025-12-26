@@ -13,7 +13,128 @@ interface CreditTransaction extends Models.Document {
   timestamp: string;
 }
 
+// Credit handler function URL
+const CREDIT_HANDLER_URL = process.env.NEXT_PUBLIC_APPWRITE_FUNCTION_CREDIT_HANDLER || 'https://693bd2ed00102f4a9a90.fra.appwrite.run';
+
 class CreditService {
+  
+  // ==========================================
+  // STRIPE PAYMENT METHODS
+  // ==========================================
+
+  /**
+   * Create a Stripe Checkout session for purchasing credits
+   */
+  async createStripeCheckout(userId: string, credits: number): Promise<{
+    success: boolean;
+    sessionId?: string;
+    checkoutUrl?: string;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(CREDIT_HANDLER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'create_checkout',
+          userId: userId,
+          credits: credits,
+          successUrl: `${window.location.origin}/main/credits?success=true`,
+          cancelUrl: `${window.location.origin}/main/credits?canceled=true`
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        console.error('Failed to create checkout:', data.error);
+        return {
+          success: false,
+          error: data.error || 'Failed to create checkout session'
+        };
+      }
+
+      return {
+        success: true,
+        sessionId: data.sessionId,
+        checkoutUrl: data.checkoutUrl || data.url
+      };
+
+    } catch (error: any) {
+      console.error('Error creating Stripe checkout:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  }
+
+  /**
+   * Verify Stripe payment and add credits to user account
+   */
+  async verifyStripePayment(sessionId: string): Promise<{
+    success: boolean;
+    creditsAdded?: number;
+    newBalance?: number;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(CREDIT_HANDLER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'verify_payment',
+          sessionId: sessionId
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        console.error('Payment verification failed:', data.error);
+        return {
+          success: false,
+          error: data.error || 'Payment verification failed'
+        };
+      }
+
+      return {
+        success: true,
+        creditsAdded: data.creditsAdded,
+        newBalance: data.newBalance
+      };
+
+    } catch (error: any) {
+      console.error('Error verifying payment:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  }
+
+  /**
+   * Redirect user to Stripe Checkout
+   */
+  async purchaseCreditsWithStripe(userId: string, credits: number): Promise<void> {
+    const result = await this.createStripeCheckout(userId, credits);
+    
+    if (result.success && result.checkoutUrl) {
+      // Redirect to Stripe Checkout
+      window.location.href = result.checkoutUrl;
+    } else {
+      throw new Error(result.error || 'Failed to create checkout');
+    }
+  }
+
+  // ==========================================
+  // EXISTING CREDIT METHODS
+  // ==========================================
+
   async getCurrentBalance(userId: string): Promise<number> {
     try {
       // FIRST TRY: Get by document ID (since that's how you fetch in chat page)
@@ -73,97 +194,38 @@ class CreditService {
     metadata?: Record<string, any>
   ): Promise<number> {
     try {
-      // 1. Get current balance
-      const currentBalance = await this.getCurrentBalance(userId);
-      const newBalance = Math.max(0, currentBalance + amount); // Ensure never negative
-
-      // 2. Try multiple ways to find and update user document
-      let userDocId = userId; // Default to using userId as document ID
-      
-      // First try to get the document directly
-      try {
-        await databases.updateDocument(
-          DATABASE_ID,
-          COLLECTIONS.USERS,
-          userId, // Try userId as document ID
-          {
-            credits: newBalance,
-            lastActive: new Date().toISOString()
-          }
-        );
-      } catch (updateError: any) {
-        // If that fails, try to find document by userId field
-        if (updateError.code === 404 || updateError.message?.includes('not found')) {
-          console.log('Document not found with ID, searching by userId field...');
-          
-          const response = await databases.listDocuments(
-            DATABASE_ID,
-            COLLECTIONS.USERS,
-            [Query.equal('userId', userId), Query.limit(1)]
-          );
-          
-          if (response.documents.length > 0) {
-            userDocId = response.documents[0].$id;
-            await databases.updateDocument(
-              DATABASE_ID,
-              COLLECTIONS.USERS,
-              userDocId,
-              {
-                credits: newBalance,
-                lastActive: new Date().toISOString()
-              }
-            );
-          } else {
-            // Last try: find by $id field
-            const response2 = await databases.listDocuments(
-              DATABASE_ID,
-              COLLECTIONS.USERS,
-              [Query.equal('$id', userId), Query.limit(1)]
-            );
-            
-            if (response2.documents.length > 0) {
-              userDocId = response2.documents[0].$id;
-              await databases.updateDocument(
-                DATABASE_ID,
-                COLLECTIONS.USERS,
-                userDocId,
-                {
-                  credits: newBalance,
-                  lastActive: new Date().toISOString()
-                }
-              );
-            } else {
-              throw new Error(`User document not found for userId: ${userId}`);
-            }
-          }
-        } else {
-          throw updateError;
-        }
-      }
-
-      // 3. Add transaction record
-      await this.addTransaction({
-        userId: userId,
-        type,
-        amount,
-        description,
-        balanceBefore: currentBalance,
-        balanceAfter: newBalance,
-        timestamp: new Date().toISOString()
+      // Call credit handler function
+      const response = await fetch(CREDIT_HANDLER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: amount > 0 ? 'add' : 'deduct',
+          userId: userId,
+          amount: Math.abs(amount),
+          description: description,
+          referenceId: metadata?.referenceId || ''
+        })
       });
 
-      // Log for debugging
-      console.log('Credits updated:', {
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to update credits');
+      }
+
+      console.log('Credits updated via function:', {
         userId,
         amount,
         type,
         description,
-        oldBalance: currentBalance,
-        newBalance,
+        oldBalance: data.previousCredits,
+        newBalance: data.newCredits,
         metadata
       });
 
-      return newBalance;
+      return data.newCredits;
     } catch (error) {
       console.error('Error updating credits:', error);
       throw error;
@@ -181,18 +243,34 @@ class CreditService {
         return false;
       }
 
-      // Use negative amount to deduct
-      await this.updateCredits(
-        userId,
-        -amount, // Negative amount for deduction
-        'CREDIT_USAGE',
-        description,
-        metadata
-      );
+      // Call credit handler to deduct
+      const response = await fetch(CREDIT_HANDLER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'deduct',
+          userId: userId,
+          amount: amount,
+          description: description,
+          referenceId: metadata?.referenceId || ''
+        })
+      });
 
-      // Verify deduction worked
-      const updatedBalance = await this.getCurrentBalance(userId);
-      console.log('After deduction:', { updatedBalance, expected: currentBalance - amount });
+      const data = await response.json();
+      
+      if (!data.success) {
+        console.error('Failed to deduct credits:', data.error);
+        return false;
+      }
+
+      console.log('Credits deducted:', {
+        userId,
+        amount,
+        oldBalance: data.previousCredits,
+        newBalance: data.newCredits
+      });
       
       return true;
     } catch (error) {
@@ -310,6 +388,35 @@ class CreditService {
   // Add a method to force refresh user data in chat
   async forceRefreshUser(userId: string): Promise<number> {
     return this.getCurrentBalance(userId);
+  }
+
+  /**
+   * Check credit balance via API call
+   */
+  async checkBalance(userId: string): Promise<number> {
+    try {
+      const response = await fetch(CREDIT_HANDLER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'check',
+          userId: userId
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        return data.credits || 0;
+      }
+      
+      return 0;
+    } catch (error) {
+      console.error('Error checking balance:', error);
+      return 0;
+    }
   }
 }
 
