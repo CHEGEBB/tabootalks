@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import localFont from "next/font/local";
 import Script from "next/script";
+import { ThemeProvider } from "@/lib/context/ThemeContext";
 
 const dmSans = localFont({
   src: [
@@ -194,7 +195,9 @@ export default function RootLayout({
         />
       </head>
       <body className={dmSans.className}>
+        <ThemeProvider>
         {children}
+        </ThemeProvider>
       </body>
     </html>
   );

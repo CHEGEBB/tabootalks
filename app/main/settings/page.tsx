@@ -57,28 +57,15 @@ export default function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [language, setLanguage] = useState('English');
   
   // Processing states
   const [processing, setProcessing] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Initialize language from Google Translate
-  useEffect(() => {
-    const checkLanguage = () => {
-      const translateElement = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-      if (translateElement) {
-        const currentLang = translateElement.value;
-        setLanguage(currentLang === 'de' ? 'German' : 'English');
-      }
-    };
-    
-    checkLanguage();
-    const interval = setInterval(checkLanguage, 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  //font states
+  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
+
 
   // Handle verification email
   const handleSendVerificationEmail = async () => {
@@ -189,16 +176,17 @@ export default function SettingsPage() {
     }
   };
 
-  // Handle language change
-  const handleLanguageChange = (lang: string) => {
-    setLanguage(lang);
-    
-    // Trigger Google Translate
-    const translateElement = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-    if (translateElement) {
-      translateElement.value = lang === 'German' ? 'de' : 'en';
-      translateElement.dispatchEvent(new Event('change'));
-    }
+  useEffect(() => {
+    const savedSize = localStorage.getItem('fontSize') as 'small' | 'medium' | 'large';
+    if (savedSize) setFontSize(savedSize);
+  }, []);
+
+  const handleFontSizeChange = (size: 'small' | 'medium' | 'large') => {
+    setFontSize(size);
+    localStorage.setItem('fontSize', size);
+    document.documentElement.style.fontSize = size === 'small' ? '14px' : size === 'large' ? '18px' : '16px';
+    setSuccessMessage(`Font size changed to ${size}`);
+    setTimeout(() => setSuccessMessage(''), 3000);
   };
 
   // Handle theme change
@@ -457,35 +445,45 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
-
-      {/* Language */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6">Language</h3>
-        
-        <div className="space-y-3">
-          {['English', 'German'].map((lang) => (
-            <button
-              key={lang}
-              onClick={() => handleLanguageChange(lang)}
-              className={`w-full flex items-center justify-between p-4 rounded-lg transition-colors ${
-                language === lang
-                  ? 'bg-purple-50 border border-purple-200'
-                  : 'bg-gray-50 hover:bg-gray-100'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
-                  <Globe className="w-4 h-4 text-purple-600" />
-                </div>
-                <span className="font-medium text-gray-900">{lang}</span>
-              </div>
-              {language === lang && (
-                <Check className="w-5 h-5 text-purple-600" />
-              )}
-            </button>
-          ))}
+      {/* Font Size */}
+<div className="bg-white border border-gray-200 rounded-xl p-6">
+  <h3 className="text-lg font-bold text-gray-900 mb-6">Text Size</h3>
+  
+  <div className="space-y-3">
+    {[
+      { value: 'small', label: 'Small', example: 'Compact view for more content' },
+      { value: 'medium', label: 'Medium', example: 'Standard comfortable reading' },
+      { value: 'large', label: 'Large', example: 'Easier reading experience' }
+    ].map((option) => (
+      <button
+        key={option.value}
+        onClick={() => handleFontSizeChange(option.value as 'small' | 'medium' | 'large')}
+        className={`w-full flex items-center justify-between p-4 rounded-lg transition-colors ${
+          fontSize === option.value
+            ? 'bg-purple-50 border border-purple-200'
+            : 'bg-gray-50 hover:bg-gray-100'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
+            <span className={`font-bold text-purple-600 ${
+              option.value === 'small' ? 'text-xs' : option.value === 'large' ? 'text-lg' : 'text-sm'
+            }`}>
+              Aa
+            </span>
+          </div>
+          <div className="text-left">
+            <div className="font-medium text-gray-900">{option.label}</div>
+            <div className="text-xs text-gray-600">{option.example}</div>
+          </div>
         </div>
-      </div>
+        {fontSize === option.value && (
+          <Check className="w-5 h-5 text-purple-600" />
+        )}
+      </button>
+    ))}
+  </div>
+</div>
     </div>
   );
 
