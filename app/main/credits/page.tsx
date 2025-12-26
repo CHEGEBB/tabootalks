@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/main/credits/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -37,7 +36,7 @@ import creditService from '@/lib/services/creditService';
 import { databases } from '@/lib/appwrite/config';
 import { DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/config';
 import { Query } from 'appwrite';
-import { useSearchParams } from 'next/navigation';
+// import { useSearchParams } from 'next/navigation';
 
 // Credit packages with Stripe Price IDs
 const CREDIT_PACKAGES = [
@@ -145,7 +144,8 @@ const FAQ_ITEMS = [
 
 export default function CreditsPage() {
   const { user, profile, loading: authLoading } = useAuth();
-  const searchParams = useSearchParams();
+  // Remove useSearchParams and use window.location instead
+  // const searchParams = useSearchParams();
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(CREDIT_PACKAGES[1]);
   const [userCredits, setUserCredits] = useState({
@@ -192,9 +192,14 @@ export default function CreditsPage() {
 
   // Check for Stripe redirect (success or cancel)
   useEffect(() => {
-    const success = searchParams?.get('success');
-    const canceled = searchParams?.get('canceled');
-    const sessionId = searchParams?.get('session_id');
+    // Only run in browser environment
+    if (typeof window === 'undefined') return;
+
+    // Get URL search parameters manually instead of using useSearchParams
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const canceled = urlParams.get('canceled');
+    const sessionId = urlParams.get('session_id');
 
     if (success === 'true' && sessionId) {
       // Payment successful, verify and add credits
@@ -203,7 +208,7 @@ export default function CreditsPage() {
       setPurchaseError('Payment was canceled. No charges were made.');
       setTimeout(() => setPurchaseError(''), 5000);
     }
-  }, [searchParams]);
+  }, []);
 
   // Verify Stripe payment
   const verifyPayment = async (sessionId: string) => {
