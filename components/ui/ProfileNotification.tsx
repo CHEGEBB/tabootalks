@@ -3,9 +3,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowRight, ChevronDown, Bell, User, Sparkles } from 'lucide-react';
+import { X, ArrowRight, ChevronDown, Bell, CheckCircle, Crown } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useTheme } from '@/lib/context/ThemeContext';
 import personaService, { ParsedPersonaProfile, UserProfile } from '@/lib/services/personaService';
 
 // Placeholder image for fallback
@@ -48,6 +49,7 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
   position = 'top-center',
   currentUser = null
 }) => {
+  const { colors, isDark } = useTheme();
   const [isVisible, setIsVisible] = useState(false);
   const [currentNotification, setCurrentNotification] = useState<CurrentNotification | null>(null);
   const [progress, setProgress] = useState(100);
@@ -67,7 +69,7 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
     isVisibleRef.current = isVisible;
   }, [isVisible]);
 
-  // Fetch random profiles based on user preferences
+  // Fetch random profiles based on user preferences with STRICT gender filtering
   const fetchRandomProfiles = async () => {
     try {
       console.log('🔍 Fetching random profiles for notifications...');
@@ -85,26 +87,84 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
 
       console.log('👤 Using user preferences for notifications:', {
         username: currentUser.username,
-        genderPreference: currentUser.gender
+        genderPreference: currentUser.gender // "women", "men", or "both"
       });
 
-      // Use smartFetchPersonas to respect user's gender preferences
+      // 🔥 Use smartFetchPersonas - it already filters by gender preference
       const filteredProfiles = await personaService.smartFetchPersonas(currentUser, {
-        limit: 20
+        limit: 50 // Get more to have variety
       });
+
+      console.log(`📦 smartFetchPersonas returned ${filteredProfiles.length} profiles`);
 
       // Filter out profiles without required data
-      const validProfiles = filteredProfiles.filter(profile => 
-        profile.profilePic && profile.username
+      let validProfiles = filteredProfiles.filter(profile => 
+        profile.profilePic && 
+        profile.username &&
+        profile.$id !== currentUser.$id // Don't show current user
       );
 
-      console.log(`✅ Fetched ${validProfiles.length} valid profiles based on user preferences`);
+      console.log(`✅ After validation: ${validProfiles.length} valid profiles`);
+
+      // TRIPLE CHECK: Additional gender validation for absolute certainty
+      const userPreference = currentUser.gender?.toLowerCase().trim();
+      
+      if (userPreference === 'women' || userPreference === 'woman') {
+        // User wants WOMEN → keep only FEMALE personas
+        validProfiles = validProfiles.filter(profile => {
+          const profileGender = profile.gender?.toLowerCase().trim();
+          const isFemale = profileGender === 'female' || profileGender === 'woman' || profileGender === 'women' || profileGender === 'f';
+          
+          if (!isFemale) {
+            console.log(`🚫 BLOCKED ${profile.username} - Gender: ${profileGender}, User wants: women`);
+          }
+          
+          return isFemale;
+        });
+        console.log(`💃 Final count: ${validProfiles.length} FEMALE profiles`);
+        
+      } else if (userPreference === 'men' || userPreference === 'man') {
+        // User wants MEN → keep only MALE personas
+        validProfiles = validProfiles.filter(profile => {
+          const profileGender = profile.gender?.toLowerCase().trim();
+          const isMale = profileGender === 'male' || profileGender === 'man' || profileGender === 'men' || profileGender === 'm';
+          
+          if (!isMale) {
+            console.log(`🚫 BLOCKED ${profile.username} - Gender: ${profileGender}, User wants: men`);
+          }
+          
+          return isMale;
+        });
+        console.log(`🕺 Final count: ${validProfiles.length} MALE profiles`);
+        
+      } else if (userPreference === 'both') {
+        // User wants BOTH → keep all
+        console.log(`🌈 User wants both genders - keeping all ${validProfiles.length} profiles`);
+      }
+
+      console.log(`✅ Final valid profiles for notifications: ${validProfiles.length}`);
       
       setProfiles(validProfiles);
       return validProfiles;
       
     } catch (error) {
       console.error('❌ Error fetching profiles for notifications:', error);
+      
+      // Fallback: try to use smartFetchPersonas even on error
+      if (currentUser) {
+        try {
+          const fallbackProfiles = await personaService.smartFetchPersonas(currentUser, { limit: 20 });
+          const validFallback = fallbackProfiles.filter(profile => 
+            profile.profilePic && profile.username && profile.$id !== currentUser.$id
+          );
+          setProfiles(validFallback);
+          return validFallback;
+        } catch (fallbackError) {
+          console.error('❌ Fallback also failed:', fallbackError);
+        }
+      }
+      
+      // Last resort: random profiles
       const randomProfiles = await personaService.getRandomPersonas(10);
       const validProfiles = randomProfiles.filter(profile => 
         profile.profilePic && profile.username
@@ -126,7 +186,7 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
         return 'top-4 left-4 sm:top-6 sm:left-6';
       case 'top-center':
       default:
-        return 'top-4 left-1/2 -translate-x-1/2';
+        return 'top-4 left-1/2 -translate-x-1/2 sm:top-6';
     }
   };
 
@@ -134,7 +194,7 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
     return NOTIFICATION_MESSAGES[Math.floor(Math.random() * NOTIFICATION_MESSAGES.length)];
   };
 
-  // Show notification
+  // Show notification with STRICT gender validation
   const showNotification = async () => {
     if (isVisibleRef.current || hasClickedRef.current || hasSeenRef.current) {
       scheduleNextNotification();
@@ -152,7 +212,20 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
       return;
     }
 
+    // Pick a random profile
     const randomProfile = profilesToUse[Math.floor(Math.random() * profilesToUse.length)];
+    
+    // FINAL GENDER CHECK before showing
+    if (currentUser && currentUser.gender && currentUser.gender !== 'all') {
+      const profileGender = randomProfile.gender?.toLowerCase();
+      const preferredGender = currentUser.gender.toLowerCase();
+      
+      if (profileGender !== preferredGender) {
+        console.log(`🚫 BLOCKED notification - Gender mismatch: ${profileGender} !== ${preferredGender}`);
+        scheduleNextNotification();
+        return;
+      }
+    }
     
     if (!randomProfile.username || !randomProfile.profilePic) {
       console.log('⚠️ Selected profile missing required data');
@@ -162,6 +235,8 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
 
     const message = getRandomMessage();
     const isOnline = Math.random() > 0.3;
+    
+    console.log(`✅ Showing notification for ${randomProfile.username} (${randomProfile.gender})`);
     
     setCurrentNotification({
       profile: randomProfile,
@@ -316,69 +391,169 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ y: -100, opacity: 0, scale: 0.95 }}
+          initial={{ y: -120, opacity: 0, scale: 0.9 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
-          exit={{ y: -100, opacity: 0, scale: 0.95 }}
+          exit={{ y: -120, opacity: 0, scale: 0.9 }}
           transition={{
             type: "spring",
-            damping: 25,
-            stiffness: 400,
-            mass: 1.2
+            damping: 20,
+            stiffness: 300,
+            mass: 1
           }}
-          className={`fixed ${getPositionClass()} z-50 w-[calc(100%-2rem)] max-w-md`}
+          className={`fixed ${getPositionClass()} z-[9999] w-[calc(100%-2rem)] max-w-md px-2 sm:px-0`}
           role="alert"
           aria-live="assertive"
           aria-label="New match notification"
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
         >
+          {/* Bounce indicator */}
           <motion.div 
-            className="absolute -top-2 left-1/2 transform -translate-x-1/2"
-            animate={{ y: [0, 4, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
+            className="absolute -top-3 left-1/2 transform -translate-x-1/2"
+            animate={{ 
+              y: [0, 6, 0],
+              opacity: [0.6, 1, 0.6]
+            }}
+            transition={{ 
+              repeat: Infinity, 
+              duration: 1.2,
+              ease: "easeInOut"
+            }}
           >
-            <ChevronDown className="w-5 h-5 text-purple-400" />
+            <ChevronDown className="w-6 h-6" style={{ color: colors.secondary }} />
           </motion.div>
 
-          <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl shadow-2xl overflow-hidden border-2 border-purple-500/30 backdrop-blur-xl bg-opacity-95">
-            <div className="px-4 pt-3 pb-2 border-b border-gray-700 flex items-center gap-2">
-              <div className="p-1.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-600">
-                <Bell className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-sm font-semibold text-white">New Match Alert!</span>
-              <div className="ml-auto flex items-center gap-1">
+          <motion.div 
+            className="rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl relative"
+            style={{ 
+              backgroundColor: isDark ? colors.cardBackground : colors.background,
+              border: `2px solid ${colors.secondary}40`
+            }}
+            animate={{
+              boxShadow: [
+                `0 10px 40px ${colors.secondary}30`,
+                `0 15px 50px ${colors.secondary}50`,
+                `0 10px 40px ${colors.secondary}30`
+              ]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
+            {/* Header */}
+            <div 
+              className="px-4 py-3 flex items-center gap-2"
+              style={{ 
+                backgroundColor: isDark ? colors.panelBackground : colors.hoverBackground,
+                borderBottom: `1px solid ${colors.border}`
+              }}
+            >
+              <motion.div 
+                className="p-2 rounded-full"
+                style={{ 
+                  backgroundColor: `${colors.secondary}20`
+                }}
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ 
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <Bell className="w-4 h-4" style={{ color: colors.secondary }} />
+              </motion.div>
+              
+              <span 
+                className="text-sm font-bold"
+                style={{ color: colors.primaryText }}
+              >
+                New Match Alert! 🔥
+              </span>
+              
+              <div className="ml-auto flex items-center gap-2">
                 {isProfileVerified() && (
-                  <div className="p-1 rounded-full bg-blue-500/20" title="Verified">
-                    <User className="w-3 h-3 text-blue-400" />
-                  </div>
+                  <motion.div 
+                    className="p-1 rounded-full"
+                    style={{ backgroundColor: '#3b82f620' }}
+                    title="Verified"
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    <CheckCircle className="w-4 h-4 text-blue-500" />
+                  </motion.div>
                 )}
                 {isProfilePremium() && (
-                  <div className="p-1 rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20" title="Premium">
-                    <Sparkles className="w-3 h-3 text-yellow-400" />
-                  </div>
+                  <motion.div 
+                    className="p-1 rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20"
+                    title="Premium Member"
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    <Crown className="w-4 h-4 text-yellow-500" />
+                  </motion.div>
                 )}
                 {isHovering && (
-                  <span className="text-xs text-gray-400 animate-pulse">Paused</span>
+                  <span 
+                    className="text-xs animate-pulse font-medium"
+                    style={{ color: colors.secondaryText }}
+                  >
+                    Paused
+                  </span>
                 )}
-                <button
+                <motion.button
                   onClick={handleClose}
-                  className="p-1 rounded-full hover:bg-gray-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="p-1.5 rounded-full transition-all"
+                  style={{ backgroundColor: colors.hoverBackground }}
+                  whileHover={{ 
+                    scale: 1.1,
+                    backgroundColor: colors.danger + '20'
+                  }}
+                  whileTap={{ scale: 0.95 }}
                   aria-label="Close notification"
                 >
-                  <X className="w-4 h-4 text-gray-300" />
-                </button>
+                  <X className="w-4 h-4" style={{ color: colors.iconColor }} />
+                </motion.button>
               </div>
             </div>
 
+            {/* Content */}
             <div className="p-4 flex items-center gap-4">
+              {/* Profile Image */}
               <motion.div 
                 className="relative flex-shrink-0"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring" }}
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ 
+                  delay: 0.2, 
+                  type: "spring",
+                  stiffness: 200
+                }}
               >
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden ring-2 ring-white/20 ring-offset-2 ring-offset-purple-900/30">
-                  <div className="relative w-full h-full bg-gradient-to-br from-purple-900/30 to-pink-900/30">
+                <motion.div 
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden relative"
+                  style={{ 
+                    border: `3px solid ${colors.secondary}`,
+                    boxShadow: `0 0 20px ${colors.secondary}50`
+                  }}
+                  animate={{
+                    boxShadow: [
+                      `0 0 20px ${colors.secondary}50`,
+                      `0 0 30px ${colors.secondary}80`,
+                      `0 0 20px ${colors.secondary}50`
+                    ]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity
+                  }}
+                >
+                  <div 
+                    className="relative w-full h-full"
+                    style={{ backgroundColor: colors.hoverBackground }}
+                  >
                     <Image
                       src={getProfileImage()}
                       alt={`Profile picture of ${profile.username}`}
@@ -389,49 +564,89 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
                       unoptimized={true}
                     />
                   </div>
-                </div>
+                </motion.div>
+                
+                {/* Online Badge */}
                 {isOnline && (
-                  <div 
-                    className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-400 rounded-full border-2 border-gray-900 flex items-center justify-center"
+                  <motion.div 
+                    className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center"
+                    style={{ 
+                      border: `2px solid ${isDark ? colors.cardBackground : colors.background}`,
+                      boxShadow: '0 0 10px rgba(34, 197, 94, 0.5)'
+                    }}
+                    animate={{
+                      scale: [1, 1.2, 1],
+                      boxShadow: [
+                        '0 0 10px rgba(34, 197, 94, 0.5)',
+                        '0 0 20px rgba(34, 197, 94, 0.8)',
+                        '0 0 10px rgba(34, 197, 94, 0.5)'
+                      ]
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity
+                    }}
                     aria-label="Online now"
                   >
                     <span className="text-[10px] font-bold text-white">●</span>
-                  </div>
+                  </motion.div>
                 )}
+                
+                {/* Location Badge */}
                 {profile.location && (
-                  <div className="absolute -bottom-1 -left-1 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-xs rounded-full border border-gray-700 max-w-[80px] truncate">
+                  <div 
+                    className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 px-2 py-0.5 backdrop-blur-sm text-xs rounded-full max-w-[90px] truncate text-center"
+                    style={{ 
+                      backgroundColor: isDark ? colors.panelBackground + 'CC' : colors.cardBackground + 'CC',
+                      color: colors.primaryText,
+                      border: `1px solid ${colors.border}`
+                    }}
+                  >
                     {profile.location.split(',')[0]}
                   </div>
                 )}
               </motion.div>
 
+              {/* Profile Info */}
               <div className="flex-1 min-w-0">
                 <motion.div 
-                  className="flex items-center gap-2 mb-1"
+                  className="flex items-center gap-2 mb-1 flex-wrap"
                   initial={{ x: 20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.3 }}
                 >
-                  <h3 className="text-white font-bold text-lg truncate bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
+                  <h3 
+                    className="font-bold text-base sm:text-lg truncate"
+                    style={{ color: colors.primaryText }}
+                  >
                     {getProfileName()}
                   </h3>
                   {isOnline && (
-                    <div className="flex items-center gap-1 px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full">
+                    <motion.div 
+                      className="flex items-center gap-1 px-2 py-0.5 bg-green-500/20 text-green-500 text-xs rounded-full"
+                      animate={{ opacity: [0.7, 1, 0.7] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                      <span>Online</span>
-                    </div>
+                      <span className="font-medium">Online</span>
+                    </motion.div>
                   )}
                 </motion.div>
+                
                 <motion.p 
-                  className="text-gray-300 text-sm mb-3"
+                  className="text-sm mb-3"
+                  style={{ color: colors.secondaryText }}
                   initial={{ x: 20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <span className="font-medium text-purple-300">{profile.username}</span>{' '}
+                  <span className="font-semibold" style={{ color: colors.secondary }}>
+                    {profile.username}
+                  </span>{' '}
                   {getNotificationMessage()}
                 </motion.p>
                 
+                {/* Interests */}
                 {profile.interests && profile.interests.length > 0 && (
                   <motion.div 
                     className="flex flex-wrap gap-1 mb-3"
@@ -440,41 +655,68 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
                     transition={{ delay: 0.5 }}
                   >
                     {profile.interests.slice(0, 2).map((interest, index) => (
-                      <span key={index} className="px-2 py-0.5 bg-purple-900/30 text-purple-300 text-xs rounded-full border border-purple-700/30">
+                      <span 
+                        key={index} 
+                        className="px-2 py-0.5 text-xs rounded-full font-medium"
+                        style={{ 
+                          backgroundColor: `${colors.secondary}20`,
+                          color: colors.secondary,
+                          border: `1px solid ${colors.secondary}30`
+                        }}
+                      >
                         {interest}
                       </span>
                     ))}
                     {profile.interests.length > 2 && (
-                      <span className="px-2 py-0.5 bg-gray-800/50 text-gray-400 text-xs rounded-full">
+                      <span 
+                        className="px-2 py-0.5 text-xs rounded-full"
+                        style={{ 
+                          backgroundColor: colors.hoverBackground,
+                          color: colors.tertiaryText
+                        }}
+                      >
                         +{profile.interests.length - 2}
                       </span>
                     )}
                   </motion.div>
                 )}
                 
+                {/* Action Button */}
                 <motion.button
                   onClick={handleViewProfile}
-                  className="w-full bg-gradient-to-r from-[#8b5cf6] via-[#7c3aed] to-[#6d28d9] hover:from-[#7c3aed] hover:to-[#5b21b6] text-white font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 shadow-lg hover:shadow-purple-500/30"
+                  className="w-full font-bold py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg"
+                  style={{ 
+                    backgroundColor: colors.secondary,
+                    color: 'white'
+                  }}
                   aria-label={`View ${profile.username}'s profile`}
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.6 }}
                   whileHover={{ 
-                    scale: 1.05,
-                    transition: { type: "spring", stiffness: 400 }
+                    scale: 1.03,
+                    boxShadow: `0 10px 30px ${colors.secondary}50`
                   }}
-                  whileTap={{ scale: 0.98 }}
+                  whileTap={{ scale: 0.97 }}
                 >
-                  <span className="font-bold">View Profile Now</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span className="text-sm sm:text-base">View Profile Now</span>
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </motion.button>
               </div>
             </div>
 
-            <div className="h-2 bg-gray-800/50 relative overflow-hidden" role="presentation">
+            {/* Progress Bar */}
+            <div 
+              className="h-2 relative overflow-hidden" 
+              role="presentation"
+              style={{ backgroundColor: colors.hoverBackground }}
+            >
               <motion.div
-                className="h-full bg-gradient-to-r from-[#8b5cf6] via-[#7c3aed] to-[#6d28d9] relative"
-                style={{ width: `${progress}%` }}
+                className="h-full relative"
+                style={{ 
+                  width: `${progress}%`,
+                  backgroundColor: colors.secondary
+                }}
                 initial={{ width: '100%' }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.1, ease: "linear" }}
@@ -485,13 +727,22 @@ const ProfileNotification: React.FC<ProfileNotificationProps> = ({
                   transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
                 />
               </motion.div>
-              <div className="absolute right-2 -top-6 text-xs text-gray-400">
+              <div 
+                className="absolute right-2 -top-6 text-xs font-medium"
+                style={{ color: colors.tertiaryText }}
+              >
                 {Math.round((progress / 100) * (notificationDuration / 1000))}s
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-purple-500/20 to-transparent blur-xl opacity-50" />
+          {/* Glow Effect */}
+          <div 
+            className="absolute inset-0 -z-10 blur-2xl opacity-40"
+            style={{ 
+              background: `radial-gradient(circle, ${colors.secondary}40 0%, transparent 70%)`
+            }}
+          />
         </motion.div>
       )}
     </AnimatePresence>

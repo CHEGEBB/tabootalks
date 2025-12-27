@@ -19,6 +19,7 @@ import LayoutController from '@/components/layout/LayoutController';
 import dynamic from 'next/dynamic';
 import giftHandlerService, { ChatGiftMessage as ImportedChatGiftMessage } from '@/lib/services/giftHandlerService';
 import giftService from '@/lib/services/giftService';
+import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
 // Dynamically import emoji picker to avoid SSR issues
 const EmojiPicker = dynamic(
@@ -100,6 +101,7 @@ export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
   const conversationId = params.id as string;
+  const colors = useThemeColors();
 
   // State
   const [messages, setMessages] = useState<Message[]>([]);
@@ -242,9 +244,6 @@ export default function ChatPage() {
       documentId: giftDoc.$id
     };
   };
-
-  // ============ REMOVED: Gift response polling ============
-  // The backend will handle all gift responses automatically
 
   // Close emoji/sticker picker when clicking outside
   useEffect(() => {
@@ -828,9 +827,6 @@ export default function ChatPage() {
     }
   };
 
-  // ============ REMOVED: sendGiftResponseToAI function ============
-  // The backend handles gift responses automatically through giftService
-
   const sendMessage = async () => {
     if (!inputMessage.trim() || !currentUser) {
       return;
@@ -1242,12 +1238,19 @@ export default function ChatPage() {
   const renderGiftMessage = (giftData: ChatGiftMessage, index: number, isMobile = false) => {
     return (
       <div key={`gift-${index}`} className="flex justify-end">
-        <div className={`${isMobile ? 'max-w-[85%] p-3' : 'max-w-[75%] p-4'} rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200`}>
+        <div 
+          className={`${isMobile ? 'max-w-[85%] p-3' : 'max-w-[75%] p-4'} rounded-2xl border`}
+          style={{
+            background: `linear-gradient(to right, ${colors.cardBackground}, ${colors.panelBackground})`,
+            borderColor: colors.borderLight
+          }}
+        >
           <div className={`flex items-start gap-${isMobile ? '2' : '3'}`}>
             {/* Gift Preview */}
             <div
               onClick={() => giftData.isAnimated && setShowGiftAnimationOverlay(giftData)}
-              className={`${isMobile ? 'w-10 h-10 p-1' : 'w-12 h-12 p-2'} rounded-lg overflow-hidden bg-white flex-shrink-0 cursor-pointer hover:scale-105 transition-transform`}
+              className={`${isMobile ? 'w-10 h-10 p-1' : 'w-12 h-12 p-2'} rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:scale-105 transition-transform`}
+              style={{ backgroundColor: colors.cardBackground }}
             >
               {giftData.giftImage ? (
                 <Image
@@ -1258,22 +1261,31 @@ export default function ChatPage() {
                   className="object-contain w-full h-full"
                 />
               ) : (
-                <Gift className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-amber-500 mx-auto`} />
+                <Gift className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'}`} style={{ color: colors.secondary }} />
               )}
             </div>
 
             <div className="flex-1">
               <div className={`flex items-center gap-${isMobile ? '1' : '2'} mb-1`}>
-                <span className={`font-bold text-gray-900 ${isMobile ? 'text-sm' : ''}`}>🎁 Gift Sent!</span>
-                <span className={`${isMobile ? 'text-xs px-1 py-0.5' : 'text-xs px-2 py-0.5'} bg-amber-100 text-amber-800 rounded-full`}>
+                <span className={`font-bold ${isMobile ? 'text-sm' : ''}`} style={{ color: colors.primaryText }}>
+                  🎁 Gift Sent!
+                </span>
+                <span 
+                  className={`${isMobile ? 'text-xs px-1 py-0.5' : 'text-xs px-2 py-0.5'} rounded-full`}
+                  style={{ backgroundColor: `${colors.secondary}20`, color: colors.secondary }}
+                >
                   {giftData.price} credits
                 </span>
               </div>
-              <p className={`font-semibold text-gray-800 mb-1 ${isMobile ? 'text-sm' : ''}`}>{giftData.giftName}</p>
+              <p className={`font-semibold mb-1 ${isMobile ? 'text-sm' : ''}`} style={{ color: colors.primaryText }}>
+                {giftData.giftName}
+              </p>
               {giftData.message && (
-                <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm'} italic mb-${isMobile ? '1' : '2'}`}>&ldquo;{giftData.message}&rdquo;</p>
+                <p className={`italic mb-${isMobile ? '1' : '2'} ${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: colors.secondaryText }}>
+                  &ldquo;{giftData.message}&rdquo;
+                </p>
               )}
-              <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500`}>
+              <div className={`${isMobile ? 'text-xs' : 'text-xs'}`} style={{ color: colors.tertiaryText }}>
                 {formatTime(giftData.timestamp)}
               </div>
             </div>
@@ -1289,11 +1301,19 @@ export default function ChatPage() {
 
     return (
       <div key={`photo-${index}`} className="flex justify-start">
-        <div className={`${isMobile ? 'max-w-[85%]' : 'max-w-[75%]'} rounded-2xl overflow-hidden bg-white border border-gray-200 shadow-sm`}>
+        <div 
+          className={`${isMobile ? 'max-w-[85%]' : 'max-w-[75%]'} rounded-2xl overflow-hidden border shadow-sm`}
+          style={{
+            backgroundColor: colors.cardBackground,
+            borderColor: colors.border
+          }}
+        >
           {/* Message text (if any) */}
           {msg.content && (
             <div className="p-3">
-              <p className="text-sm text-gray-900 whitespace-pre-wrap">{msg.content}</p>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: colors.primaryText }}>
+                {msg.content}
+              </p>
             </div>
           )}
 
@@ -1312,15 +1332,15 @@ export default function ChatPage() {
             />
             {/* Overlay hint */}
             <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors flex items-center justify-center">
-              <div className="opacity-0 hover:opacity-100 transition-opacity bg-white/90 px-3 py-2 rounded-full">
-                <span className="text-xs font-medium text-gray-700">Click to view</span>
+              <div className="opacity-0 hover:opacity-100 transition-opacity px-3 py-2 rounded-full" style={{ backgroundColor: colors.cardBackground + 'E6' }}>
+                <span className="text-xs font-medium" style={{ color: colors.primaryText }}>Click to view</span>
               </div>
             </div>
           </div>
 
           {/* Timestamp */}
           <div className="px-3 pb-2">
-            <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="flex items-center justify-between text-xs" style={{ color: colors.tertiaryText }}>
               <span>{formatTime(msg.timestamp)}</span>
               <span className="flex items-center gap-1">
                 <Camera className="w-3 h-3" />
@@ -1379,12 +1399,15 @@ export default function ChatPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div style={{ backgroundColor: colors.background }} className="min-h-screen">
         <LayoutController />
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-white">
+        <div 
+          className="flex items-center justify-center min-h-screen" 
+          style={{ background: `linear-gradient(to bottom right, ${colors.background}, ${colors.panelBackground})` }}
+        >
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-[#5e17eb] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-            <p className="text-gray-600 font-medium">Loading conversation...</p>
+            <div className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-6" style={{ borderColor: colors.secondary, borderTopColor: 'transparent' }}></div>
+            <p className="font-medium" style={{ color: colors.secondaryText }}>Loading conversation...</p>
           </div>
         </div>
       </div>
@@ -1394,25 +1417,30 @@ export default function ChatPage() {
   // Error state - bot not found or access denied
   if (error && !botProfile) {
     return (
-      <div className="min-h-screen bg-white">
+      <div style={{ backgroundColor: colors.background }} className="min-h-screen">
         <LayoutController />
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-white p-4">
+        <div 
+          className="flex items-center justify-center min-h-screen p-4" 
+          style={{ background: `linear-gradient(to bottom right, ${colors.background}, ${colors.panelBackground})` }}
+        >
           <div className="text-center max-w-md">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-red-100 to-pink-100 flex items-center justify-center mx-auto mb-6">
+            <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: `linear-gradient(to bottom right, ${colors.cardBackground}, ${colors.panelBackground})` }}>
               <div className="text-4xl">💬</div>
             </div>
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">Chat Not Found</h2>
-            <p className="text-gray-600 mb-8">{error}</p>
+            <h2 className="text-2xl font-bold mb-4" style={{ color: colors.primaryText }}>Chat Not Found</h2>
+            <p className="mb-8" style={{ color: colors.secondaryText }}>{error}</p>
             <div className="space-y-3">
               <button
                 onClick={() => router.push('/main/chats')}
-                className="w-full px-6 py-3.5 bg-[#5e17eb] text-white font-medium rounded-xl hover:bg-[#4a13c4] transition-colors"
+                className="w-full px-6 py-3.5 font-medium rounded-xl transition-colors"
+                style={{ backgroundColor: colors.secondary, color: '#ffffff' }}
               >
                 ← Back to Chats
               </button>
               <button
                 onClick={() => router.push('/main/people')}
-                className="w-full px-6 py-3.5 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                className="w-full px-6 py-3.5 border font-medium rounded-xl transition-colors"
+                style={{ borderColor: colors.border, color: colors.secondaryText, backgroundColor: colors.cardBackground }}
               >
                 Discover People
               </button>
@@ -1424,30 +1452,37 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div style={{ backgroundColor: colors.background }} className="min-h-screen">
       <LayoutController />
 
-      <div className="flex h-screen bg-white">
+      <div className="flex h-screen" style={{ backgroundColor: colors.background }}>
         {/* Desktop: 3-Column Layout */}
         <div className="hidden lg:flex w-full max-w-[1400px] mx-auto">
-
           {/* Left Sidebar - Chat List */}
-          <div className="w-[400px] flex-shrink-0 border border-gray-200 h-full overflow-hidden flex flex-col bg-white scrollbar-thin">
+          <div 
+            className="w-[400px] flex-shrink-0 h-full overflow-hidden flex flex-col scrollbar-thin"
+            style={{ 
+              backgroundColor: colors.background,
+              borderRight: `1px solid ${colors.border}`
+            }}
+          >
             {/* Fixed Header */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="px-6 py-4" style={{ borderBottom: `1px solid ${colors.border}`, backgroundColor: colors.background }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-[#5e17eb]">{currentUser?.credits || 0}</span>
+                  <span className="text-lg font-bold" style={{ color: colors.secondary }}>{currentUser?.credits || 0}</span>
                   <button
                     onClick={handleBuyCredits}
-                    className="px-3 py-1 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white text-sm rounded-lg hover:from-[#4a13c4] hover:to-[#7238ff] transition-all shadow-sm"
+                    className="px-3 py-1 text-white text-sm rounded-lg transition-all shadow-sm"
+                    style={{ background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})` }}
                   >
                     Add Credits
                   </button>
                 </div>
                 <button
                   onClick={() => router.push('/main')}
-                  className="text-gray-600 hover:text-[#5e17eb] transition-colors"
+                  style={{ color: colors.secondaryText }}
+                  className="hover:text-[#5e17eb] transition-colors"
                 >
                   <Home className="w-5 h-5" />
                 </button>
@@ -1455,13 +1490,19 @@ export default function ChatPage() {
 
               {/* Search Bar */}
               <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{ color: colors.tertiaryText }} />
                 <input
                   type="text"
                   placeholder="Search chats..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 focus:border-[#5e17eb] transition-all text-gray-900"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 transition-all"
+                  style={{
+                    backgroundColor: colors.inputBackground,
+                    border: `1px solid ${colors.border}`,
+                    color: colors.primaryText,
+                    '--tw-ring-color': `${colors.secondary}20`
+                  } as any}
                 />
               </div>
 
@@ -1470,21 +1511,33 @@ export default function ChatPage() {
                 <button
                   onClick={() => setActiveFilter('all')}
                   className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${activeFilter === 'all'
-                      ? 'bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'text-white shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-200'
                     }`}
+                  style={activeFilter === 'all' ? {
+                    background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})`
+                  } : {
+                    backgroundColor: colors.inputBackground,
+                    color: colors.secondaryText
+                  }}
                 >
                   All Chats
                 </button>
                 <button
                   onClick={() => setActiveFilter('active')}
                   className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all relative ${activeFilter === 'active'
-                      ? 'bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'text-white shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-200'
                     }`}
+                  style={activeFilter === 'active' ? {
+                    background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})`
+                  } : {
+                    backgroundColor: colors.inputBackground,
+                    color: colors.secondaryText
+                  }}
                 >
                   Active Now
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  <span className="absolute -top-1 -right-1 text-white bg-red-500 text-xs px-1.5 py-0.5 rounded-full" >
                     {conversations.filter(c => c.isActive).length}
                   </span>
                 </button>
@@ -1492,28 +1545,29 @@ export default function ChatPage() {
             </div>
 
             {/* Chat List - Scrollable */}
-            <div className="flex-1 overflow-y-auto bg-white scrollbar-thin">
+            <div className="flex-1 overflow-y-auto scrollbar-thin" style={{ backgroundColor: colors.background }}>
               {isLoadingConversations ? (
                 <div className="p-8 text-center">
-                  <div className="w-8 h-8 border-2 border-[#5e17eb] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading conversations...</p>
+                  <div className="w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: colors.secondary, borderTopColor: 'transparent' }}></div>
+                  <p style={{ color: colors.secondaryText }}>Loading conversations...</p>
                 </div>
               ) : conversations.length === 0 ? (
                 <div className="p-8 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
-                    <MessageCircle className="w-8 h-8 text-gray-400" />
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: `linear-gradient(to right, ${colors.panelBackground}, ${colors.inputBackground})` }}>
+                    <MessageCircle className="w-8 h-8" style={{ color: colors.tertiaryText }} />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No conversations yet</h3>
-                  <p className="text-gray-600 mb-4">Start chatting with someone!</p>
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: colors.primaryText }}>No conversations yet</h3>
+                  <p className="mb-4" style={{ color: colors.secondaryText }}>Start chatting with someone!</p>
                   <button
                     onClick={goToDiscoverPage}
-                    className="px-4 py-2 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white rounded-lg hover:from-[#4a13c4] hover:to-[#7238ff] shadow-sm"
+                    className="px-4 py-2 text-white rounded-lg shadow-sm"
+                    style={{ background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})` }}
                   >
                     Discover People
                   </button>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y" style={{ borderColor: colors.borderLight }}>
                   {filteredConversations.map(conv => {
                     const botProfile = conv.bot;
 
@@ -1521,12 +1575,17 @@ export default function ChatPage() {
                       <div
                         key={conv.$id}
                         onClick={() => router.push(`/main/chats/${conv.$id}`)}
-                        className={`flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer transition-all border-b border-gray-100 ${conversationId === conv.$id ? 'bg-purple-50 hover:bg-purple-50' : ''
-                          }`}
+                        className={`flex items-center gap-3 p-4 cursor-pointer transition-all ${conversationId === conv.$id ? '' : 'hover:bg-gray-50'}`}
+                        style={conversationId === conv.$id ? {
+                          backgroundColor: `${colors.secondary}10`
+                        } : {
+                          borderBottom: `1px solid ${colors.borderLight}`,
+                          backgroundColor: conversationId === conv.$id ? `${colors.secondary}10` : colors.background
+                        }}
                       >
                         {/* Profile Image */}
                         <div className="relative flex-shrink-0">
-                          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                          <div className="w-12 h-12 rounded-full overflow-hidden" style={{ border: `2px solid ${colors.background}`, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                             {botProfile?.profilePic ? (
                               <Image
                                 src={botProfile.profilePic}
@@ -1537,14 +1596,14 @@ export default function ChatPage() {
                                 unoptimized={botProfile.profilePic?.startsWith('http')}
                               />
                             ) : (
-                              <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
-                                <UserPlus className="w-6 h-6 text-gray-500" />
+                              <div className="w-full h-full flex items-center justify-center" style={{ background: `linear-gradient(to right, ${colors.panelBackground}, ${colors.inputBackground})` }}>
+                                <UserPlus className="w-6 h-6" style={{ color: colors.tertiaryText }} />
                               </div>
                             )}
                           </div>
                           {/* Online Status */}
                           {conv.isActive && (
-                            <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-green-500"></div>
+                            <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full" style={{ border: `2px solid ${colors.background}`, backgroundColor: colors.success }}></div>
                           )}
                         </div>
 
@@ -1553,30 +1612,30 @@ export default function ChatPage() {
                           {/* Top row: Username + age + verified + time */}
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2 min-w-0">
-                              <h4 className="font-semibold text-gray-900 truncate">
+                              <h4 className="font-semibold truncate" style={{ color: colors.primaryText }}>
                                 {botProfile?.username || 'Unknown'}
                               </h4>
                               {botProfile?.isVerified && (
                                 <CheckCircle className="w-4 h-4 text-blue-500 fill-blue-100 flex-shrink-0" />
                               )}
                               {botProfile?.age && (
-                                <span className="text-xs text-gray-500 flex-shrink-0">
+                                <span className="text-xs flex-shrink-0" style={{ color: colors.tertiaryText }}>
                                   , {botProfile.age}
                                 </span>
                               )}
                             </div>
-                            <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0 ml-2">
+                            <span className="text-xs whitespace-nowrap flex-shrink-0 ml-2" style={{ color: colors.tertiaryText }}>
                               {formatTime(conv.lastMessageAt)}
                             </span>
                           </div>
                         
                           {/* Middle row: Last message + message count badge */}
                           <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm text-gray-600 truncate flex-1 min-w-0">
+                            <p className="text-sm truncate flex-1 min-w-0" style={{ color: colors.secondaryText }}>
                               {conv.lastMessage || 'Start a conversation...'}
                             </p>
                             {conv.messageCount > 0 && (
-                              <span className="flex-shrink-0 px-3 py-1 text-xs font-medium text-[#5e17eb] bg-[#5e17eb]/10 rounded-full min-w-[52px] text-center">
+                              <span className="flex-shrink-0 px-3 py-1 text-xs font-medium rounded-full min-w-[52px] text-center" style={{ color: colors.secondary, backgroundColor: `${colors.secondary}10` }}>
                                 {conv.messageCount} {conv.messageCount === 1 ? 'msg' : 'msgs'}
                               </span>
                             )}
@@ -1585,8 +1644,8 @@ export default function ChatPage() {
                           {/* Bottom row: Location */}
                           {botProfile?.location && (
                             <div className="flex items-center gap-1 mt-1">
-                              <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                              <span className="text-xs text-gray-500 truncate">
+                              <MapPin className="w-3 h-3 flex-shrink-0" style={{ color: colors.tertiaryText }} />
+                              <span className="text-xs truncate" style={{ color: colors.tertiaryText }}>
                                 {botProfile.location}
                               </span>
                             </div>
@@ -1600,10 +1659,10 @@ export default function ChatPage() {
             </div>
 
             {/* Sidebar Footer */}
-            <div className="border-t border-gray-200 bg-white p-4">
+            <div className="p-4" style={{ borderTop: `1px solid ${colors.border}`, backgroundColor: colors.background }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-500">
+                  <div className="w-10 h-10 rounded-full overflow-hidden" style={{ background: `linear-gradient(to bottom right, ${colors.secondary}, ${colors.linkColor})` }}>
                     {currentUser?.profilePic ? (
                       <Image
                         src={currentUser.profilePic}
@@ -1620,14 +1679,14 @@ export default function ChatPage() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 text-sm">{currentUser?.username}</p>
-                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <p className="font-medium text-sm" style={{ color: colors.primaryText }}>{currentUser?.username}</p>
+                    <p className="text-xs flex items-center gap-1" style={{ color: colors.tertiaryText }}>
                       <Zap className="w-3 h-3" />
-                      <span className="font-semibold text-[#5e17eb]">{currentUser?.credits || 0}</span> credits
+                      <span className="font-semibold" style={{ color: colors.secondary }}>{currentUser?.credits || 0}</span> credits
                     </p>
                   </div>
                 </div>
-                <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <button className="p-2 rounded-lg transition-colors" style={{ color: colors.tertiaryText, '&:hover': { backgroundColor: colors.hoverBackground } } as any}>
                   <MoreVertical className="w-5 h-5" />
                 </button>
               </div>
@@ -1637,11 +1696,12 @@ export default function ChatPage() {
           {/* Center - Messages Area */}
           <div className="flex-1 flex flex-col">
             {/* Header */}
-            <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+            <div className="px-6 py-3 flex items-center justify-between" style={{ borderBottom: `1px solid ${colors.border}`, backgroundColor: colors.background }}>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => router.push('/main/chats')}
-                  className="flex items-center gap-2 text-gray-600 hover:text-[#5e17eb] transition-colors"
+                  className="flex items-center gap-2 transition-colors"
+                  style={{ color: colors.secondaryText }}
                 >
                   <ArrowLeft className="w-5 h-5" />
                   <span className="font-medium">All Chats</span>
@@ -1649,7 +1709,7 @@ export default function ChatPage() {
 
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                    <div className="w-10 h-10 rounded-full overflow-hidden" style={{ border: `2px solid ${colors.background}`, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                       <Image
                         src={botProfile?.profilePic || '/default-avatar.png'}
                         alt={botProfile?.username || 'User'}
@@ -1660,20 +1720,20 @@ export default function ChatPage() {
                       />
                     </div>
                     {botProfile?.isOnline && (
-                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                      <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full" style={{ border: `2px solid ${colors.background}`, backgroundColor: colors.success }}></div>
                     )}
                   </div>
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="font-bold text-gray-900">
+                      <h2 className="font-bold" style={{ color: colors.primaryText }}>
                         {botProfile?.username}
                       </h2>
                       {botProfile?.isVerified && (
                         <CheckCircle className="w-4 h-4 text-blue-500 fill-blue-100" />
                       )}
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs" style={{ color: colors.tertiaryText }}>
                       {botProfile?.isOnline ? 'Online now' : 'Last active recently'}
                     </p>
                   </div>
@@ -1681,28 +1741,29 @@ export default function ChatPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-gradient-to-r from-[#5e17eb]/10 to-purple-500/10 px-3 py-2 rounded-lg">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: `linear-gradient(to right, ${colors.secondary}10, ${colors.linkColor}10)` }}>
                   <Crown className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-bold text-gray-900">{currentUser?.credits || 0}</span>
+                  <span className="text-sm font-bold" style={{ color: colors.primaryText }}>{currentUser?.credits || 0}</span>
                 </div>
               </div>
             </div>
 
             {/* Credit Warning */}
             {currentUser && currentUser.credits < 10 && (
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-y border-amber-200 px-4 py-3">
+              <div className="px-4 py-3" style={{ borderTop: `1px solid ${colors.warning}30`, borderBottom: `1px solid ${colors.warning}30`, background: `linear-gradient(to right, ${colors.warning}10, ${colors.warning}05)` }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Zap className="w-5 h-5 text-amber-600" />
+                    <Zap className="w-5 h-5" style={{ color: colors.warning }} />
                     <div>
-                      <p className="text-sm font-medium text-amber-800">
+                      <p className="text-sm font-medium" style={{ color: colors.warning }}>
                         ⚡ Low credits! Only {currentUser.credits} left
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={handleBuyCredits}
-                    className="px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors"
+                    className="px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors"
+                    style={{ backgroundColor: colors.warning }}
                   >
                     Get Credits
                   </button>
@@ -1711,14 +1772,17 @@ export default function ChatPage() {
             )}
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-white to-gray-50 scrollbar-thin">
+            <div 
+              className="flex-1 overflow-y-auto p-6 scrollbar-thin"
+              style={{ background: `linear-gradient(to bottom, ${colors.background}, ${colors.panelBackground})` }}
+            >
               {isNewConversation && (
                 <div className="text-center mb-8">
-                  <div className="inline-flex items-center gap-3 bg-gradient-to-r from-[#5e17eb]/10 to-purple-500/10 px-6 py-4 rounded-2xl border border-[#5e17eb]/20">
+                  <div className="inline-flex items-center gap-3 px-6 py-4 rounded-2xl border" style={{ background: `linear-gradient(to right, ${colors.secondary}10, ${colors.linkColor}10)`, borderColor: `${colors.secondary}20` }}>
                     <MessageCircleHeart className="w-6 h-6 text-amber-500" />
                     <div className="text-left">
-                      <h3 className="font-bold text-gray-900">Start a new conversation</h3>
-                      <p className="text-sm text-gray-600">Send your first message to {botProfile?.username}!</p>
+                      <h3 className="font-bold" style={{ color: colors.primaryText }}>Start a new conversation</h3>
+                      <p className="text-sm" style={{ color: colors.secondaryText }}>Send your first message to {botProfile?.username}!</p>
                     </div>
                   </div>
                 </div>
@@ -1726,9 +1790,9 @@ export default function ChatPage() {
 
               {error && botProfile && (
                 <div className="mb-6">
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center justify-between">
+                  <div className="px-4 py-3 rounded-xl flex items-center justify-between" style={{ backgroundColor: `${colors.danger}10`, border: `1px solid ${colors.danger}20`, color: colors.danger }}>
                     <span className="text-sm">{error}</span>
-                    <button onClick={() => setError('')} className="text-red-500 hover:text-red-700">×</button>
+                    <button onClick={() => setError('')} style={{ color: colors.danger }}>×</button>
                   </div>
                 </div>
               )}
@@ -1736,7 +1800,7 @@ export default function ChatPage() {
               <div className="space-y-4 max-w-3xl mx-auto">
                 {messages.length === 0 && giftsInChat.length === 0 && !streamingText && botProfile && (
                   <div className="text-center py-12">
-                    <div className="w-24 h-24 mx-auto mb-6 rounded-full overflow-hidden border-4 border-white shadow-xl">
+                    <div className="w-24 h-24 mx-auto mb-6 rounded-full overflow-hidden" style={{ border: `4px solid ${colors.background}`, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
                       <Image
                         src={botProfile.profilePic || '/default-avatar.png'}
                         alt={botProfile.username}
@@ -1746,10 +1810,10 @@ export default function ChatPage() {
                         unoptimized={botProfile.profilePic?.startsWith('http')}
                       />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">
+                    <h3 className="text-xl font-bold mb-3" style={{ color: colors.primaryText }}>
                       Chat with {botProfile.username}
                     </h3>
-                    <p className="text-gray-600 max-w-md mx-auto">
+                    <p className="max-w-md mx-auto" style={{ color: colors.secondaryText }}>
                       {botProfile.bio}
                     </p>
                   </div>
@@ -1762,7 +1826,7 @@ export default function ChatPage() {
 
                     // Check if this is a photo message
                     if (msg.photoUrl && msg.role === 'bot') {
-                      return renderPhotoMessage(msg, index, false); // or true for mobile
+                      return renderPhotoMessage(msg, index, false);
                     }
 
                     return (
@@ -1772,13 +1836,21 @@ export default function ChatPage() {
                       >
                         <div
                           className={`max-w-[75%] rounded-2xl p-4 ${msg.role === 'user'
-                              ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
-                              : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
+                              ? 'text-white rounded-br-none'
+                              : 'rounded-bl-none shadow-sm'
                             }`}
+                          style={msg.role === 'user' ? {
+                            background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})`
+                          } : {
+                            backgroundColor: colors.cardBackground,
+                            color: colors.primaryText,
+                            border: `1px solid ${colors.border}`
+                          }}
                         >
                           <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                          <div className={`flex items-center justify-end mt-2 text-xs ${msg.role === 'user' ? 'text-white/80' : 'text-gray-500'
-                            }`}>
+                          <div className={`flex items-center justify-end mt-2 text-xs ${msg.role === 'user' ? 'text-white/80' : ''}`}
+                            style={msg.role !== 'user' ? { color: colors.tertiaryText } : {}}
+                          >
                             {formatTime(msg.timestamp)}
                           </div>
                         </div>
@@ -1789,11 +1861,11 @@ export default function ChatPage() {
 
                 {(typingIndicator || isSending) && !streamingText && (
                   <div className="flex justify-start">
-                    <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-4 shadow-sm">
+                    <div className="rounded-2xl rounded-bl-none p-4 shadow-sm" style={{ backgroundColor: colors.cardBackground, border: `1px solid ${colors.border}` }}>
                       <div className="flex gap-2">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: colors.tertiaryText }}></div>
+                        <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: colors.tertiaryText, animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: colors.tertiaryText, animationDelay: '0.2s' }}></div>
                       </div>
                     </div>
                   </div>
@@ -1801,9 +1873,9 @@ export default function ChatPage() {
 
                 {streamingText && (
                   <div className="flex justify-start">
-                    <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-4 shadow-sm max-w-[75%]">
-                      <p className="whitespace-pre-wrap text-sm">{streamingText}</p>
-                      <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                    <div className="rounded-2xl rounded-bl-none p-4 shadow-sm max-w-[75%]" style={{ backgroundColor: colors.cardBackground, border: `1px solid ${colors.border}` }}>
+                      <p className="whitespace-pre-wrap text-sm" style={{ color: colors.primaryText }}>{streamingText}</p>
+                      <div className="flex items-center gap-1 mt-2 text-xs" style={{ color: colors.tertiaryText }}>
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                         typing...
                       </div>
@@ -1816,13 +1888,14 @@ export default function ChatPage() {
             </div>
 
             {/* Sticker Picker */}
-            {/* Sticker Picker */}
             {showStickerPicker && (
-              <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 shadow-xl rounded-lg bg-white border border-gray-200"
+              <div 
+                className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 shadow-xl rounded-lg"
+                style={{ backgroundColor: colors.cardBackground, border: `1px solid ${colors.border}`, width: '400px', maxHeight: '400px', overflowY: 'auto' }}
                 ref={stickerPickerRef}
-                style={{ width: '400px', maxHeight: '400px', overflowY: 'auto' }}>
+              >
                 <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">Stickers</h3>
+                  <h3 className="font-semibold mb-3" style={{ color: colors.primaryText }}>Stickers</h3>
                   <div className="grid grid-cols-4 gap-2">
                     {stickers.map((sticker) => (
                       <button
@@ -1830,6 +1903,7 @@ export default function ChatPage() {
                         onClick={() => handleStickerClick(sticker)}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-2xl flex items-center justify-center"
                         title={sticker.name}
+                        style={{ '&:hover': { backgroundColor: colors.hoverBackground } } as any}
                       >
                         {sticker.emoji}
                       </button>
@@ -1839,7 +1913,6 @@ export default function ChatPage() {
               </div>
             )}
 
-            {/* Emoji Picker */}
             {/* Emoji Picker */}
             {showEmojiPicker && (
               <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 shadow-xl rounded-lg" ref={emojiPickerRef}>
@@ -1858,24 +1931,27 @@ export default function ChatPage() {
             )}
 
             {/* Input Area */}
-            <div className="border-t border-gray-200 bg-white p-4 relative" style={{ zIndex: 10 }}>
+            <div className="p-4 relative" style={{ borderTop: `1px solid ${colors.border}`, backgroundColor: colors.background, zIndex: 10 }}>
               <div className="max-w-3xl mx-auto">
                 <div className="flex items-center gap-2 mb-3">
                   <button
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm relative"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl transition-colors text-sm relative"
+                    style={{ backgroundColor: colors.inputBackground, color: colors.secondaryText }}
                   >
                     <Smile className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setShowStickerPicker(!showStickerPicker)}
-                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl transition-colors text-sm"
+                    style={{ backgroundColor: colors.inputBackground, color: colors.secondaryText }}
                   >
                     <ImageIcon className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
-                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl transition-colors text-sm"
+                    style={{ backgroundColor: colors.inputBackground, color: colors.secondaryText }}
                   >
                     <Gift className="w-4 h-4" />
                   </button>
@@ -1884,8 +1960,9 @@ export default function ChatPage() {
                   <button
                     onClick={() => setShowPhotoRequestConfirm(true)}
                     disabled={isRequestingPhoto || (currentUser ? currentUser.credits < 10 : false)}
-                    className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-purple-700 rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Request a photo (10 credits)"
+                    style={{ background: `linear-gradient(to right, ${colors.secondary}10, ${colors.linkColor}10)`, color: colors.secondary }}
                   >
                     <Camera className="w-4 h-4" />
                     <span className="text-xs font-medium">Photo (10)</span>
@@ -1893,7 +1970,8 @@ export default function ChatPage() {
 
                   <button
                     onClick={() => setIsMuted(!isMuted)}
-                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl transition-colors text-sm"
+                    style={{ backgroundColor: colors.inputBackground, color: colors.secondaryText }}
                   >
                     {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                   </button>
@@ -1907,13 +1985,21 @@ export default function ChatPage() {
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder={`Message ${botProfile?.username}...`}
-                    className="flex-1 px-5 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 focus:border-[#5e17eb] text-sm transition-all"
+                    className="flex-1 px-5 py-3 rounded-xl text-sm transition-all"
                     disabled={isSending}
+                    style={{
+                      backgroundColor: colors.inputBackground,
+                      border: `1px solid ${colors.border}`,
+                      color: colors.primaryText,
+                      '--tw-ring-color': `${colors.secondary}20`,
+                      '&::placeholder': { color: colors.placeholderText }
+                    } as any}
                   />
                   <button
                     onClick={sendMessage}
                     disabled={isSending || !inputMessage.trim()}
-                    className="px-5 py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                    className="px-5 py-3 text-white font-medium rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                    style={{ background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})` }}
                   >
                     {isSending ? (
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -1923,15 +2009,16 @@ export default function ChatPage() {
                   </button>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-                  <div className="flex items-center gap-2">
+                <div className="mt-3 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2" style={{ color: colors.tertiaryText }}>
                     <Crown className="w-4 h-4 text-amber-500" />
-                    <span className="font-medium text-gray-700">{currentUser?.credits || 0}</span>
+                    <span className="font-medium" style={{ color: colors.secondaryText }}>{currentUser?.credits || 0}</span>
                     <span>credits • 1 msg = 1 • photo = 10</span>
                   </div>
                   <button
                     onClick={handleBuyCredits}
-                    className="text-[#5e17eb] hover:text-[#4a13c4] font-medium flex items-center gap-1"
+                    className="font-medium flex items-center gap-1"
+                    style={{ color: colors.secondary }}
                   >
                     Get more
                     <ChevronRight className="w-4 h-4" />
@@ -1942,10 +2029,16 @@ export default function ChatPage() {
           </div>
 
           {/* Right Sidebar - Profile Info */}
-          <div className="w-[320px] flex-shrink-0 border-l border-gray-200 bg-white overflow-y-auto scrollbar-thin">
+          <div 
+            className="w-[320px] flex-shrink-0 overflow-y-auto scrollbar-thin"
+            style={{ 
+              backgroundColor: colors.background,
+              borderLeft: `1px solid ${colors.border}`
+            }}
+          >
             <div className="p-6">
               <div className="mb-6">
-                <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-white shadow-xl">
+                <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden" style={{ border: `4px solid ${colors.background}`, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
                   <Image
                     src={botProfile?.profilePic || '/default-avatar.png'}
                     alt={botProfile?.username || 'User'}
@@ -1956,43 +2049,49 @@ export default function ChatPage() {
                   />
                 </div>
                 <div className="text-center mt-4">
-                  <h3 className="text-xl font-bold text-gray-900">{botProfile?.username}</h3>
-                  <div className="flex items-center justify-center gap-2 mt-2 text-sm">
-                    <span className="text-gray-600">{botProfile?.age} years</span>
-                    <span className="text-gray-300">•</span>
-                    <span className="text-gray-600">{botProfile?.gender}</span>
+                  <h3 className="text-xl font-bold" style={{ color: colors.primaryText }}>{botProfile?.username}</h3>
+                  <div className="flex items-center justify-center gap-2 mt-2 text-sm" style={{ color: colors.secondaryText }}>
+                    <span>{botProfile?.age} years</span>
+                    <span style={{ color: colors.border }}>•</span>
+                    <span>{botProfile?.gender}</span>
                   </div>
                 </div>
               </div>
 
               <div className="mb-6">
-                <div className={`flex items-center justify-center gap-2 px-4 py-2 rounded-full ${botProfile?.isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                <div className={`flex items-center justify-center gap-2 px-4 py-2 rounded-full ${botProfile?.isOnline ? 'text-green-800' : 'text-gray-800'}`}
+                  style={botProfile?.isOnline ? { backgroundColor: `${colors.success}20` } : { backgroundColor: colors.inputBackground, color: colors.secondaryText }}
+                >
                   <div className={`w-2 h-2 rounded-full ${botProfile?.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                   <span className="font-medium text-sm">{botProfile?.isOnline ? 'Online Now' : 'Online'}</span>
                 </div>
               </div>
 
               <div className="mb-6">
-                <h4 className="font-bold text-gray-900 mb-2 text-sm">About</h4>
-                <p className="text-gray-600 text-sm">{botProfile?.bio}</p>
+                <h4 className="font-bold mb-2 text-sm" style={{ color: colors.primaryText }}>About</h4>
+                <p className="text-sm" style={{ color: colors.secondaryText }}>{botProfile?.bio}</p>
               </div>
 
               {botProfile?.location && (
                 <div className="mb-6">
-                  <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-sm">
-                    <MapPin className="w-4 h-4 text-gray-400" />
+                  <h4 className="font-bold mb-2 flex items-center gap-2 text-sm" style={{ color: colors.primaryText }}>
+                    <MapPin className="w-4 h-4" style={{ color: colors.tertiaryText }} />
                     Location
                   </h4>
-                  <p className="text-gray-600 text-sm">{botProfile.location}</p>
+                  <p className="text-sm" style={{ color: colors.secondaryText }}>{botProfile.location}</p>
                 </div>
               )}
 
               {botProfile?.interests && botProfile.interests.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-bold text-gray-900 mb-3 text-sm">Interests</h4>
+                  <h4 className="font-bold mb-3 text-sm" style={{ color: colors.primaryText }}>Interests</h4>
                   <div className="flex flex-wrap gap-2">
                     {botProfile.interests.map((interest, idx) => (
-                      <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs">
+                      <span 
+                        key={idx} 
+                        className="px-2 py-1 rounded-lg text-xs"
+                        style={{ backgroundColor: colors.inputBackground, color: colors.secondaryText }}
+                      >
                         {interest}
                       </span>
                     ))}
@@ -2002,10 +2101,14 @@ export default function ChatPage() {
 
               {botProfile?.personalityTraits && botProfile.personalityTraits.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-bold text-gray-900 mb-3 text-sm">Personality</h4>
+                  <h4 className="font-bold mb-3 text-sm" style={{ color: colors.primaryText }}>Personality</h4>
                   <div className="flex flex-wrap gap-2">
                     {botProfile.personalityTraits.map((trait, idx) => (
-                      <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs">
+                      <span 
+                        key={idx} 
+                        className="px-2 py-1 rounded-lg text-xs"
+                        style={{ backgroundColor: `${colors.secondary}20`, color: colors.secondary }}
+                      >
                         {trait}
                       </span>
                     ))}
@@ -2014,49 +2117,54 @@ export default function ChatPage() {
               )}
 
               <div className="grid grid-cols-3 gap-3 mb-6">
-                <div className="bg-gray-50 p-3 rounded-xl text-center">
-                  <div className="text-lg font-bold text-[#5e17eb]">
+                <div className="p-3 rounded-xl text-center" style={{ backgroundColor: colors.inputBackground }}>
+                  <div className="text-lg font-bold" style={{ color: colors.secondary }}>
                     {botProfile?.totalChats || 0}
                   </div>
-                  <div className="text-xs text-gray-600">Chats</div>
+                  <div className="text-xs" style={{ color: colors.secondaryText }}>Chats</div>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-xl text-center">
-                  <div className="text-lg font-bold text-green-500">
+                <div className="p-3 rounded-xl text-center" style={{ backgroundColor: colors.inputBackground }}>
+                  <div className="text-lg font-bold" style={{ color: colors.success }}>
                     {botProfile?.totalMatches || 0}
                   </div>
-                  <div className="text-xs text-gray-600">Matches</div>
+                  <div className="text-xs" style={{ color: colors.secondaryText }}>Matches</div>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-xl text-center">
-                  <div className="text-lg font-bold text-amber-500">
+                <div className="p-3 rounded-xl text-center" style={{ backgroundColor: colors.inputBackground }}>
+                  <div className="text-lg font-bold" style={{ color: colors.warning }}>
                     {botProfile?.followingCount || 0}
                   </div>
-                  <div className="text-xs text-gray-600">Followers</div>
+                  <div className="text-xs" style={{ color: colors.secondaryText }}>Followers</div>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <button
                   onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
-                  className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all text-sm"
+                  className="w-full py-3 text-white font-medium rounded-xl hover:shadow-md transition-all text-sm"
+                  style={{ background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})` }}
                 >
                   <Gift className="w-4 h-4 inline mr-2" />
                   Send Virtual Gift
                 </button>
-                <button className="w-full py-3 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm">
+                <button className="w-full py-3 border font-medium rounded-xl transition-colors text-sm"
+                  style={{ borderColor: colors.border, color: colors.secondaryText, backgroundColor: colors.cardBackground }}
+                >
                   Report User
                 </button>
-                <button className="w-full py-3 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm">
+                <button className="w-full py-3 border font-medium rounded-xl transition-colors text-sm"
+                  style={{ borderColor: colors.border, color: colors.secondaryText, backgroundColor: colors.cardBackground }}
+                >
                   Block User
                 </button>
               </div>
 
               {botProfile?.isVerified && (
-                <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                <div className="mt-6 p-4 rounded-xl" style={{ backgroundColor: `${colors.secondary}10`, border: `1px solid ${colors.secondary}20` }}>
                   <div className="flex items-center gap-3">
-                    <Shield className="w-6 h-6 text-blue-500" />
+                    <Shield className="w-6 h-6" style={{ color: colors.secondary }} />
                     <div>
-                      <h4 className="font-bold text-blue-800 text-sm">Verified Profile</h4>
-                      <p className="text-xs text-blue-700 mt-1">
+                      <h4 className="font-bold text-sm" style={{ color: colors.secondary }}>Verified Profile</h4>
+                      <p className="text-xs mt-1" style={{ color: colors.secondary }}>
                         This user has been verified by our team
                       </p>
                     </div>
@@ -2070,18 +2178,19 @@ export default function ChatPage() {
         {/* Mobile Layout */}
         <div className="lg:hidden flex flex-col h-screen w-full">
           {/* Mobile Header */}
-          <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: `1px solid ${colors.border}`, backgroundColor: colors.background }}>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push('/main/chats')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: colors.secondaryText }}
               >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
+                <ArrowLeft className="w-5 h-5" />
               </button>
 
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                  <div className="w-10 h-10 rounded-full overflow-hidden" style={{ border: `2px solid ${colors.background}`, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                     <Image
                       src={botProfile?.profilePic || '/default-avatar.png'}
                       alt={botProfile?.username || 'User'}
@@ -2092,20 +2201,20 @@ export default function ChatPage() {
                     />
                   </div>
                   {botProfile?.isOnline && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                    <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full" style={{ border: `2px solid ${colors.background}`, backgroundColor: colors.success }}></div>
                   )}
                 </div>
 
                 <div>
                   <div className="flex items-center gap-1">
-                    <h2 className="font-bold text-gray-900 text-sm">
+                    <h2 className="font-bold text-sm" style={{ color: colors.primaryText }}>
                       {botProfile?.username}
                     </h2>
                     {botProfile?.isVerified && (
                       <CheckCircle className="w-3 h-3 text-blue-500 fill-blue-100" />
                     )}
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs" style={{ color: colors.tertiaryText }}>
                     {botProfile?.isOnline ? 'Online' : 'Offline'}
                   </p>
                 </div>
@@ -2113,25 +2222,26 @@ export default function ChatPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 bg-gradient-to-r from-[#5e17eb]/10 to-purple-500/10 px-2 py-1 rounded-lg">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: `linear-gradient(to right, ${colors.secondary}10, ${colors.linkColor}10)` }}>
                 <Crown className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-bold text-gray-900">{currentUser?.credits || 0}</span>
+                <span className="text-sm font-bold" style={{ color: colors.primaryText }}>{currentUser?.credits || 0}</span>
               </div>
             </div>
           </div>
 
           {currentUser && currentUser.credits < 10 && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 px-4 py-3">
+            <div className="px-4 py-3" style={{ borderBottom: `1px solid ${colors.warning}30`, background: `linear-gradient(to right, ${colors.warning}10, ${colors.warning}05)` }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-amber-600" />
-                  <p className="text-xs font-medium text-amber-800">
+                  <Zap className="w-4 h-4" style={{ color: colors.warning }} />
+                  <p className="text-xs font-medium" style={{ color: colors.warning }}>
                     Low credits: {currentUser.credits}
                   </p>
                 </div>
                 <button
                   onClick={handleBuyCredits}
-                  className="px-3 py-1 bg-amber-500 text-white text-xs font-medium rounded-lg"
+                  className="px-3 py-1 text-white text-xs font-medium rounded-lg"
+                  style={{ backgroundColor: colors.warning }}
                 >
                   Get More
                 </button>
@@ -2140,14 +2250,14 @@ export default function ChatPage() {
           )}
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 pb-24 bg-gradient-to-b from-white to-gray-50">
+          <div className="flex-1 overflow-y-auto p-4 pb-24" style={{ background: `linear-gradient(to bottom, ${colors.background}, ${colors.panelBackground})` }}>
             {isNewConversation && (
               <div className="text-center mb-6">
-                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#5e17eb]/10 to-purple-500/10 px-4 py-3 rounded-xl border border-[#5e17eb]/20">
+                <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border" style={{ background: `linear-gradient(to right, ${colors.secondary}10, ${colors.linkColor}10)`, borderColor: `${colors.secondary}20` }}>
                   <Sparkles className="w-5 h-5 text-amber-500" />
                   <div className="text-left">
-                    <h3 className="font-bold text-gray-900 text-sm">New conversation</h3>
-                    <p className="text-xs text-gray-600">Say hi to {botProfile?.username}!</p>
+                    <h3 className="font-bold text-sm" style={{ color: colors.primaryText }}>New conversation</h3>
+                    <p className="text-xs" style={{ color: colors.secondaryText }}>Say hi to {botProfile?.username}!</p>
                   </div>
                 </div>
               </div>
@@ -2155,7 +2265,9 @@ export default function ChatPage() {
 
             {error && botProfile && (
               <div className="mb-4">
-                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg flex items-center justify-between text-sm">
+                <div className="px-3 py-2 rounded-lg flex items-center justify-between text-sm"
+                  style={{ backgroundColor: `${colors.danger}10`, border: `1px solid ${colors.danger}20`, color: colors.danger }}
+                >
                   <span>{error}</span>
                   <button onClick={() => setError('')}>×</button>
                 </div>
@@ -2165,7 +2277,7 @@ export default function ChatPage() {
             <div className="space-y-3">
               {messages.length === 0 && giftsInChat.length === 0 && !streamingText && botProfile && (
                 <div className="text-center py-8">
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white shadow-xl">
+                  <div className="w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden" style={{ border: `4px solid ${colors.background}`, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
                     <Image
                       src={botProfile.profilePic || '/default-avatar.png'}
                       alt={botProfile.username}
@@ -2175,10 +2287,10 @@ export default function ChatPage() {
                       unoptimized={botProfile.profilePic?.startsWith('http')}
                     />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  <h3 className="text-lg font-bold mb-2" style={{ color: colors.primaryText }}>
                     {botProfile.username}
                   </h3>
-                  <p className="text-gray-600 text-sm">
+                  <p className="text-sm" style={{ color: colors.secondaryText }}>
                     {botProfile.bio}
                   </p>
                 </div>
@@ -2191,7 +2303,7 @@ export default function ChatPage() {
 
                   // Check if this is a photo message
                   if (msg.photoUrl && msg.role === 'bot') {
-                    return renderPhotoMessage(msg, index, false); // or true for mobile
+                    return renderPhotoMessage(msg, index, false);
                   }
 
                   return (
@@ -2201,13 +2313,21 @@ export default function ChatPage() {
                     >
                       <div
                         className={`max-w-[75%] rounded-2xl p-4 ${msg.role === 'user'
-                            ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white rounded-br-none'
-                            : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
+                            ? 'text-white rounded-br-none'
+                            : 'rounded-bl-none shadow-sm'
                           }`}
+                        style={msg.role === 'user' ? {
+                          background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})`
+                        } : {
+                          backgroundColor: colors.cardBackground,
+                          color: colors.primaryText,
+                          border: `1px solid ${colors.border}`
+                        }}
                       >
                         <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                        <div className={`flex items-center justify-end mt-2 text-xs ${msg.role === 'user' ? 'text-white/80' : 'text-gray-500'
-                          }`}>
+                        <div className={`flex items-center justify-end mt-2 text-xs ${msg.role === 'user' ? 'text-white/80' : ''}`}
+                          style={msg.role !== 'user' ? { color: colors.tertiaryText } : {}}
+                        >
                           {formatTime(msg.timestamp)}
                         </div>
                       </div>
@@ -2218,11 +2338,11 @@ export default function ChatPage() {
 
               {(typingIndicator || isSending) && !streamingText && (
                 <div className="flex justify-start">
-                  <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-3 shadow-sm">
+                  <div className="rounded-2xl rounded-bl-none p-3 shadow-sm" style={{ backgroundColor: colors.cardBackground, border: `1px solid ${colors.border}` }}>
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: colors.tertiaryText }}></div>
+                      <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: colors.tertiaryText, animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: colors.tertiaryText, animationDelay: '0.2s' }}></div>
                     </div>
                   </div>
                 </div>
@@ -2230,9 +2350,9 @@ export default function ChatPage() {
 
               {streamingText && (
                 <div className="flex justify-start">
-                  <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none p-3 shadow-sm max-w-[85%]">
-                    <p className="whitespace-pre-wrap text-sm">{streamingText}</p>
-                    <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                  <div className="rounded-2xl rounded-bl-none p-3 shadow-sm max-w-[85%]" style={{ backgroundColor: colors.cardBackground, border: `1px solid ${colors.border}` }}>
+                    <p className="whitespace-pre-wrap text-sm" style={{ color: colors.primaryText }}>{streamingText}</p>
+                    <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: colors.tertiaryText }}>
                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
                       typing...
                     </div>
@@ -2245,17 +2365,20 @@ export default function ChatPage() {
           </div>
 
           {/* Input Area - Fixed at bottom */}
-          <div className="border-t border-gray-200 bg-white pb-20" ref={mobileInputContainerRef}>
+          <div style={{ borderTop: `1px solid ${colors.border}`, backgroundColor: colors.background, paddingBottom: '80px' }} ref={mobileInputContainerRef}>
             {/* Sticker Picker - Fixed overlay */}
             {showStickerPicker && (
-              <div className="fixed inset-x-0 bottom-0 z-50 bg-white shadow-2xl border-t border-gray-300"
-                style={{ height: '50vh' }}
-                ref={stickerPickerRef}>
-                <div className="flex justify-between items-center p-3 border-b border-gray-200 bg-gray-50">
-                  <h3 className="font-medium text-gray-700">Select Sticker</h3>
+              <div 
+                className="fixed inset-x-0 bottom-0 z-50 shadow-2xl"
+                style={{ height: '50vh', backgroundColor: colors.cardBackground, borderTop: `1px solid ${colors.border}` }}
+                ref={stickerPickerRef}
+              >
+                <div className="flex justify-between items-center p-3" style={{ borderBottom: `1px solid ${colors.border}`, backgroundColor: colors.panelBackground }}>
+                  <h3 className="font-medium" style={{ color: colors.secondaryText }}>Select Sticker</h3>
                   <button
                     onClick={() => setShowStickerPicker(false)}
-                    className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200"
+                    className="p-2 rounded-full hover:bg-gray-200"
+                    style={{ color: colors.secondaryText }}
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -2268,6 +2391,7 @@ export default function ChatPage() {
                         onClick={() => handleStickerClick(sticker)}
                         className="p-3 hover:bg-gray-100 rounded-lg transition-colors text-3xl flex items-center justify-center"
                         title={sticker.name}
+                        style={{ '&:hover': { backgroundColor: colors.hoverBackground } } as any}
                       >
                         {sticker.emoji}
                       </button>
@@ -2279,14 +2403,17 @@ export default function ChatPage() {
 
             {/* Emoji Picker - Fixed overlay */}
             {showEmojiPicker && (
-              <div className="fixed inset-x-0 bottom-0 z-50 bg-white shadow-2xl border-t border-gray-300"
-                style={{ height: '50vh' }}
-                ref={emojiPickerRef}>
-                <div className="flex justify-between items-center p-3 border-b border-gray-200 bg-gray-50">
-                  <h3 className="font-medium text-gray-700">Select Emoji</h3>
+              <div 
+                className="fixed inset-x-0 bottom-0 z-50 shadow-2xl"
+                style={{ height: '50vh', backgroundColor: colors.cardBackground, borderTop: `1px solid ${colors.border}` }}
+                ref={emojiPickerRef}
+              >
+                <div className="flex justify-between items-center p-3" style={{ borderBottom: `1px solid ${colors.border}`, backgroundColor: colors.panelBackground }}>
+                  <h3 className="font-medium" style={{ color: colors.secondaryText }}>Select Emoji</h3>
                   <button
                     onClick={() => setShowEmojiPicker(false)}
-                    className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200"
+                    className="p-2 rounded-full hover:bg-gray-200"
+                    style={{ color: colors.secondaryText }}
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -2312,19 +2439,22 @@ export default function ChatPage() {
               <div className="flex items-center gap-2 mb-2">
                 <button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation"
+                  className="p-2.5 rounded-lg active:bg-gray-300 touch-manipulation"
+                  style={{ backgroundColor: colors.inputBackground, color: colors.secondaryText }}
                 >
                   <Smile className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setShowStickerPicker(!showStickerPicker)}
-                  className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation"
+                  className="p-2.5 rounded-lg active:bg-gray-300 touch-manipulation"
+                  style={{ backgroundColor: colors.inputBackground, color: colors.secondaryText }}
                 >
                   <ImageIcon className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => router.push(`/main/virtual-gifts/${botProfile?.$id}`)}
-                  className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 touch-manipulation"
+                  className="p-2.5 rounded-lg active:bg-gray-300 touch-manipulation"
+                  style={{ backgroundColor: colors.inputBackground, color: colors.secondaryText }}
                 >
                   <Gift className="w-5 h-5" />
                 </button>
@@ -2333,8 +2463,9 @@ export default function ChatPage() {
                 <button
                   onClick={() => setShowPhotoRequestConfirm(true)}
                   disabled={isRequestingPhoto || (currentUser ? currentUser.credits < 10 : false)}
-                  className="flex items-center gap-1 px-2.5 py-2.5 bg-gradient-to-r from-purple-100 to-pink-100 active:from-purple-200 active:to-pink-200 text-purple-700 rounded-lg touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 px-2.5 py-2.5 active:from-purple-200 active:to-pink-200 rounded-lg touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Request photo (10 credits)"
+                  style={{ background: `linear-gradient(to right, ${colors.secondary}10, ${colors.linkColor}10)`, color: colors.secondary }}
                 >
                   <Camera className="w-5 h-5" />
                   <span className="text-xs font-bold">10</span>
@@ -2349,14 +2480,21 @@ export default function ChatPage() {
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder={`Message ${botProfile?.username}...`}
-                  className="flex-1 px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 text-base touch-manipulation"
+                  className="flex-1 px-4 py-3 rounded-xl text-base touch-manipulation"
                   disabled={isSending}
-                  style={{ fontSize: '16px' }}
+                  style={{
+                    fontSize: '16px',
+                    backgroundColor: colors.inputBackground,
+                    border: `1px solid ${colors.border}`,
+                    color: colors.primaryText,
+                    '--tw-ring-color': `${colors.secondary}20`
+                  } as any}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={isSending || !inputMessage.trim()}
-                  className="px-5 py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl disabled:opacity-50 active:opacity-90 touch-manipulation min-w-[60px] flex items-center justify-center"
+                  className="px-5 py-3 text-white font-medium rounded-xl disabled:opacity-50 active:opacity-90 touch-manipulation min-w-[60px] flex items-center justify-center"
+                  style={{ background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})` }}
                 >
                   {isSending ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -2366,12 +2504,12 @@ export default function ChatPage() {
                 </button>
               </div>
 
-              <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-                <span className="flex items-center gap-1">
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1" style={{ color: colors.tertiaryText }}>
                   <Crown className="w-3 h-3 text-amber-500" />
                   {currentUser?.credits || 0} credits
                 </span>
-                <button onClick={handleBuyCredits} className="text-[#5e17eb] font-medium">
+                <button onClick={handleBuyCredits} className="font-medium" style={{ color: colors.secondary }}>
                   Get more
                 </button>
               </div>
@@ -2382,19 +2520,19 @@ export default function ChatPage() {
 
       {/* Gift Animation Modal */}
       {showGiftAnimation && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 animate-in slide-in-from-bottom">
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div className="rounded-2xl max-w-md w-full p-6 animate-in slide-in-from-bottom" style={{ backgroundColor: colors.cardBackground }}>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-gray-900 text-lg">🎁 Gift Animation</h3>
+              <h3 className="font-bold text-lg" style={{ color: colors.primaryText }}>🎁 Gift Animation</h3>
               <button
                 onClick={handleGiftAnimationClose}
-                className="text-gray-400 hover:text-gray-600"
+                style={{ color: colors.tertiaryText }}
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="text-center mb-6">
-              <div className="w-48 h-48 mx-auto mb-4 rounded-xl overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+              <div className="w-48 h-48 mx-auto mb-4 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: `linear-gradient(to bottom right, ${colors.secondary}20, ${colors.linkColor}20)` }}>
                 {showGiftAnimation.giftImage ? (
                   <Image
                     src={showGiftAnimation.giftImage}
@@ -2404,21 +2542,22 @@ export default function ChatPage() {
                     className="object-contain w-full h-full p-4"
                   />
                 ) : (
-                  <Gift className="w-24 h-24 text-purple-400" />
+                  <Gift className="w-24 h-24" style={{ color: colors.secondary }} />
                 )}
               </div>
-              <h4 className="font-bold text-xl text-gray-900 mb-2">{showGiftAnimation.giftName}</h4>
-              <p className="text-gray-600">
+              <h4 className="font-bold text-xl mb-2" style={{ color: colors.primaryText }}>{showGiftAnimation.giftName}</h4>
+              <p style={{ color: colors.secondaryText }}>
                 An animated gift has been delivered to {botProfile?.username}!
               </p>
               {showGiftAnimation.message && (
-                <p className="text-gray-700 mt-2 italic">&ldquo;{showGiftAnimation.message}&rdquo;</p>
+                <p className="mt-2 italic" style={{ color: colors.primaryText }}>&ldquo;{showGiftAnimation.message}&rdquo;</p>
               )}
             </div>
             <div className="text-center">
               <button
                 onClick={handleGiftAnimationClose}
-                className="px-6 py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all"
+                className="px-6 py-3 text-white font-medium rounded-xl hover:shadow-md transition-all"
+                style={{ background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})` }}
               >
                 Continue Chatting
               </button>
@@ -2427,20 +2566,20 @@ export default function ChatPage() {
         </div>
       )}
       {showGiftAnimationOverlay && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div className="rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl" style={{ backgroundColor: colors.cardBackground }}>
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-gray-900 text-2xl">🎁 Animated Gift</h3>
+                <h3 className="font-bold text-2xl" style={{ color: colors.primaryText }}>🎁 Animated Gift</h3>
                 <button
                   onClick={() => setShowGiftAnimationOverlay(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  style={{ color: colors.tertiaryText }}
                 >
                   <X className="w-6 h-6" />
                 </button>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 mb-6">
+              <div className="rounded-2xl p-8 mb-6" style={{ background: `linear-gradient(to bottom right, ${colors.secondary}10, ${colors.linkColor}10)` }}>
                 <div className="w-64 h-64 mx-auto">
                   {showGiftAnimationOverlay.giftImage ? (
                     <Image
@@ -2451,24 +2590,24 @@ export default function ChatPage() {
                       className="object-contain w-full h-full"
                     />
                   ) : (
-                    <Gift className="w-32 h-32 text-purple-400 mx-auto" />
+                    <Gift className="w-32 h-32 mx-auto" style={{ color: colors.secondary }} />
                   )}
                 </div>
               </div>
 
               <div className="text-center">
-                <h4 className="font-bold text-xl text-gray-900 mb-2">{showGiftAnimationOverlay.giftName}</h4>
-                <p className="text-gray-600 mb-4">
+                <h4 className="font-bold text-xl mb-2" style={{ color: colors.primaryText }}>{showGiftAnimationOverlay.giftName}</h4>
+                <p className="mb-4" style={{ color: colors.secondaryText }}>
                   You sent this animated gift to {botProfile?.username}
                 </p>
                 {showGiftAnimationOverlay.message && (
-                  <p className="text-gray-700 text-lg italic mb-6">&ldquo;{showGiftAnimationOverlay.message}&rdquo;</p>
+                  <p className="text-lg italic mb-6" style={{ color: colors.primaryText }}>&ldquo;{showGiftAnimationOverlay.message}&rdquo;</p>
                 )}
                 <div className="flex items-center justify-center gap-3">
-                  <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-3 rounded-xl border border-amber-200">
+                  <div className="flex items-center gap-2 px-6 py-3 rounded-xl border" style={{ background: `linear-gradient(to right, ${colors.secondary}10, ${colors.linkColor}10)`, borderColor: colors.border }}>
                     <Crown className="w-5 h-5 text-amber-500" />
-                    <span className="text-xl font-bold text-gray-900">{showGiftAnimationOverlay.price}</span>
-                    <span className="text-gray-600">credits</span>
+                    <span className="text-xl font-bold" style={{ color: colors.primaryText }}>{showGiftAnimationOverlay.price}</span>
+                    <span style={{ color: colors.secondaryText }}>credits</span>
                   </div>
                 </div>
               </div>
@@ -2476,7 +2615,8 @@ export default function ChatPage() {
               <div className="mt-8 text-center">
                 <button
                   onClick={() => setShowGiftAnimationOverlay(null)}
-                  className="px-8 py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all"
+                  className="px-8 py-3 text-white font-medium rounded-xl hover:shadow-md transition-all"
+                  style={{ background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})` }}
                 >
                   Continue Chatting
                 </button>
@@ -2487,33 +2627,33 @@ export default function ChatPage() {
       )}
       {/* Photo Request Confirmation Modal */}
       {showPhotoRequestConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 animate-in slide-in-from-bottom">
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="rounded-2xl max-w-sm w-full p-6 animate-in slide-in-from-bottom" style={{ backgroundColor: colors.cardBackground }}>
             <div className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 flex items-center justify-center">
-                <Camera className="w-8 h-8 text-purple-600" />
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: `linear-gradient(to right, ${colors.secondary}10, ${colors.linkColor}10)` }}>
+                <Camera className="w-8 h-8" style={{ color: colors.secondary }} />
               </div>
-              <h3 className="font-bold text-xl text-gray-900 mb-2">Request a Photo?</h3>
-              <p className="text-gray-600 text-sm mb-4">
+              <h3 className="font-bold text-xl mb-2" style={{ color: colors.primaryText }}>Request a Photo?</h3>
+              <p className="text-sm mb-4" style={{ color: colors.secondaryText }}>
                 Ask {botProfile?.username} to send you a photo
               </p>
 
               {/* Cost Display */}
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4 mb-4">
+              <div className="rounded-xl p-4 mb-4" style={{ background: `linear-gradient(to right, ${colors.secondary}10, ${colors.linkColor}10)`, border: `1px solid ${colors.border}` }}>
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Crown className="w-5 h-5 text-amber-500" />
-                  <span className="text-2xl font-bold text-gray-900">10</span>
-                  <span className="text-gray-600">credits</span>
+                  <span className="text-2xl font-bold" style={{ color: colors.primaryText }}>10</span>
+                  <span style={{ color: colors.secondaryText }}>credits</span>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Your balance: <span className="font-bold text-purple-600">{currentUser?.credits || 0}</span> credits
+                <p className="text-xs" style={{ color: colors.tertiaryText }}>
+                  Your balance: <span className="font-bold" style={{ color: colors.secondary }}>{currentUser?.credits || 0}</span> credits
                 </p>
               </div>
 
               {/* Warning if low credits */}
               {currentUser && currentUser.credits < 10 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-red-700 font-medium">
+                <div className="rounded-lg p-3 mb-4" style={{ backgroundColor: `${colors.danger}10`, border: `1px solid ${colors.danger}20` }}>
+                  <p className="text-xs font-medium" style={{ color: colors.danger }}>
                     ⚠️ Insufficient credits! You need 10 credits.
                   </p>
                 </div>
@@ -2524,7 +2664,8 @@ export default function ChatPage() {
               <button
                 onClick={requestPhoto}
                 disabled={!currentUser || currentUser.credits < 10}
-                className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white font-medium rounded-xl hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 text-white font-medium rounded-xl hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ background: `linear-gradient(to right, ${colors.secondary}, ${colors.linkColor})` }}
               >
                 {isRequestingPhoto ? (
                   <span className="flex items-center justify-center gap-2">
@@ -2537,7 +2678,8 @@ export default function ChatPage() {
               </button>
               <button
                 onClick={() => setShowPhotoRequestConfirm(false)}
-                className="w-full py-3 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                className="w-full py-3 border font-medium rounded-xl transition-colors"
+                style={{ borderColor: colors.border, color: colors.secondaryText, backgroundColor: colors.cardBackground }}
               >
                 Cancel
               </button>
@@ -2549,7 +2691,8 @@ export default function ChatPage() {
                   setShowPhotoRequestConfirm(false);
                   router.push('/main/credits');
                 }}
-                className="w-full mt-3 py-2 text-sm text-[#5e17eb] hover:text-[#4a13c4] font-medium"
+                className="w-full mt-3 py-2 text-sm font-medium"
+                style={{ color: colors.secondary }}
               >
                 Get More Credits →
               </button>
@@ -2574,7 +2717,7 @@ export default function ChatPage() {
       </button>
       
       {/* Photo Container */}
-      <div className="bg-white rounded-lg overflow-hidden shadow-2xl">
+      <div className="rounded-lg overflow-hidden shadow-2xl" style={{ backgroundColor: colors.cardBackground }}>
         {/* Photo */}
         <div className="relative bg-black">
           <Image
@@ -2588,10 +2731,10 @@ export default function ChatPage() {
         </div>
         
         {/* Photo Info Footer */}
-        <div className="p-4 bg-white border-t border-gray-200">
+        <div className="p-4 border-t" style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200">
+              <div className="w-10 h-10 rounded-full overflow-hidden" style={{ border: `2px solid ${colors.border}` }}>
                 <Image
                   src={botProfile?.profilePic || '/default-avatar.png'}
                   alt={botProfile?.username || 'User'}
@@ -2602,15 +2745,16 @@ export default function ChatPage() {
                 />
               </div>
               <div>
-                <p className="font-semibold text-gray-900">{botProfile?.username}</p>
-                <p className="text-xs text-gray-500">{formatTime(showPhotoViewer.message.timestamp)}</p>
+                <p className="font-semibold" style={{ color: colors.primaryText }}>{botProfile?.username}</p>
+                <p className="text-xs" style={{ color: colors.tertiaryText }}>{formatTime(showPhotoViewer.message.timestamp)}</p>
               </div>
             </div>
             
             <div className="flex items-center gap-2">
               <button
                 onClick={() => window.open(showPhotoViewer.url, '_blank')}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm flex items-center gap-2"
+                className="px-4 py-2 rounded-lg transition-colors text-sm flex items-center gap-2"
+                style={{ backgroundColor: colors.inputBackground, color: colors.secondaryText }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -2619,7 +2763,8 @@ export default function ChatPage() {
               </button>
               <button
                 onClick={() => setShowPhotoViewer(null)}
-                className="px-4 py-2 bg-[#5e17eb] hover:bg-[#4a13c4] text-white rounded-lg transition-colors text-sm"
+                className="px-4 py-2 text-white rounded-lg transition-colors text-sm"
+                style={{ backgroundColor: colors.secondary }}
               >
                 Close
               </button>
@@ -2627,7 +2772,7 @@ export default function ChatPage() {
           </div>
           
           {showPhotoViewer.message.content && (
-            <p className="mt-3 text-gray-700 text-sm">{showPhotoViewer.message.content}</p>
+            <p className="mt-3 text-sm" style={{ color: colors.primaryText }}>{showPhotoViewer.message.content}</p>
           )}
         </div>
       </div>

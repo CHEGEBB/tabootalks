@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import LayoutController from '@/components/layout/LayoutController';
+import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
 // Types
 interface Conversation {
@@ -47,6 +48,7 @@ interface SuggestedBot extends ParsedPersonaProfile {
 }
 
 export default function ChatsPage() {
+  const colors = useThemeColors();
   const [conversations, setConversations] = useState<ConversationWithBot[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -376,12 +378,18 @@ export default function ChatsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
         <LayoutController />
         <div className="flex items-center justify-center h-[calc(100vh-64px)]">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-[#5e17eb] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading conversations...</p>
+            <div 
+              className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4"
+              style={{ 
+                borderColor: colors.secondary,
+                borderTopColor: 'transparent'
+              }}
+            ></div>
+            <p style={{ color: colors.secondaryText }}>Loading conversations...</p>
           </div>
         </div>
       </div>
@@ -389,21 +397,32 @@ export default function ChatsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
       <LayoutController />
       
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 animate-scale-in">
+          <div 
+            className="rounded-2xl max-w-md w-full p-6 animate-scale-in"
+            style={{ 
+              backgroundColor: colors.cardBackground,
+              border: `1px solid ${colors.border}`
+            }}
+          >
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                <Trash2 className="w-8 h-8 text-red-600" />
+              <div 
+                className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
+              >
+                <Trash2 className="w-8 h-8" style={{ color: colors.danger }} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Conversation?</h3>
-              <p className="text-gray-600 mb-6">
+              <h3 className="text-xl font-bold mb-2" style={{ color: colors.primaryText }}>
+                Delete Conversation?
+              </h3>
+              <p className="mb-6" style={{ color: colors.secondaryText }}>
                 This will permanently delete your conversation with{' '}
-                <span className="font-semibold">
+                <span className="font-semibold" style={{ color: colors.primaryText }}>
                   {conversations.find(c => c.$id === showDeleteModal)?.bot?.username || 'this user'}
                 </span>. This action cannot be undone.
               </p>
@@ -412,7 +431,11 @@ export default function ChatsPage() {
                 <button
                   onClick={() => deleteConversation(showDeleteModal)}
                   disabled={isDeleting === showDeleteModal}
-                  className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  style={{ 
+                    backgroundColor: colors.danger,
+                    color: 'white'
+                  }}
                 >
                   {isDeleting === showDeleteModal ? (
                     <>
@@ -428,7 +451,12 @@ export default function ChatsPage() {
                 </button>
                 <button
                   onClick={() => setShowDeleteModal(null)}
-                  className="w-full py-3 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                  className="w-full py-3 font-medium rounded-xl transition-colors"
+                  style={{ 
+                    border: `1px solid ${colors.border}`,
+                    color: colors.primaryText,
+                    backgroundColor: 'transparent'
+                  }}
                 >
                   Cancel
                 </button>
@@ -443,21 +471,40 @@ export default function ChatsPage() {
         <div className="w-full max-w-[1400px] mx-auto flex h-full">
           
           {/* Left Sidebar - Chat List */}
-          <div className="w-[400px] min-h-[1000px] flex-shrink-0 border-r border-l border-gray-200 overflow-hidden flex flex-col bg-white">
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div 
+            className="w-[400px] min-h-[1000px] flex-shrink-0 overflow-hidden flex flex-col"
+            style={{ 
+              backgroundColor: colors.background,
+              borderRight: `1px solid ${colors.border}`,
+              borderLeft: `1px solid ${colors.border}`
+            }}
+          >
+            <div 
+              className="px-6 py-4"
+              style={{ 
+                backgroundColor: colors.background,
+                borderBottom: `1px solid ${colors.border}`
+              }}
+            >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-[#5e17eb]">{currentUser?.credits || 0}</span>
+                  <span className="text-lg font-bold" style={{ color: colors.secondary }}>
+                    {currentUser?.credits || 0}
+                  </span>
                   <button 
                     onClick={handleBuyCredits}
-                    className="px-3 py-1 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white text-sm rounded-lg hover:from-[#4a13c4] hover:to-[#7238ff] transition-all shadow-sm"
+                    className="px-3 py-1 text-white text-sm rounded-lg transition-all shadow-sm"
+                    style={{ 
+                      background: `linear-gradient(to right, ${colors.secondary}, ${colors.primary})`
+                    }}
                   >
                     Add Credits
                   </button>
                 </div>
                 <button 
                   onClick={() => router.push('/main')}
-                  className="text-gray-600 hover:text-[#5e17eb] transition-colors"
+                  style={{ color: colors.secondaryText }}
+                  className="hover:opacity-80 transition-colors"
                 >
                   <Home className="w-5 h-5" />
                 </button>
@@ -465,13 +512,21 @@ export default function ChatsPage() {
               
               {/* Search Bar */}
               <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" 
+                  style={{ color: colors.placeholderText }}
+                />
                 <input
                   type="text"
                   placeholder="Search chats..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 focus:border-[#5e17eb] transition-all text-gray-900"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl focus:outline-none transition-all"
+                  style={{
+                    backgroundColor: colors.inputBackground,
+                    border: `1px solid ${colors.border}`,
+                    color: colors.primaryText
+                  }}
                 />
               </div>
               
@@ -480,23 +535,35 @@ export default function ChatsPage() {
                 <button
                   onClick={() => setActiveFilter('all')}
                   className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-                    activeFilter === 'all'
-                      ? 'bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    activeFilter === 'all' ? 'text-white shadow-sm' : ''
                   }`}
+                  style={
+                    activeFilter === 'all' 
+                      ? { background: `linear-gradient(to right, ${colors.secondary}, ${colors.primary})` }
+                      : {
+                          backgroundColor: colors.panelBackground,
+                          color: colors.secondaryText
+                        }
+                  }
                 >
                   All Chats
                 </button>
                 <button
                   onClick={() => setActiveFilter('active')}
-                  className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all relative ${
-                    activeFilter === 'active'
-                      ? 'bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  className={`flex-1py-2.5 px-4 rounded-lg text-sm font-medium transition-all relative ${
+                    activeFilter === 'active' ? 'text-white shadow-sm' : ''
                   }`}
+                  style={
+                    activeFilter === 'active'
+                      ? { background: `linear-gradient(to right, ${colors.secondary}, ${colors.primary})` }
+                      : {
+                          backgroundColor: colors.panelBackground,
+                          color: colors.secondaryText
+                        }
+                  }
                 >
                   Active Now
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  <span className="absolute -top-1 -right-1 text-white bg-red-500  text-xs px-1.5 py-0.5 rounded-full">
                     {conversations.filter(c => c.isActive).length}
                   </span>
                 </button>
@@ -504,23 +571,29 @@ export default function ChatsPage() {
             </div>
 
             {/* Chat List - Scrollable */}
-            <div className="flex-1 overflow-y-auto bg-white">
+            <div className="flex-1 overflow-y-auto" style={{ backgroundColor: colors.background }}>
               {conversations.length === 0 ? (
                 <div className="p-8 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
-                    <MessageCircle className="w-8 h-8 text-gray-400" />
+                  <div 
+                    className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                    style={{ background: `linear-gradient(135deg, ${colors.panelBackground}, ${colors.inputBackground})` }}
+                  >
+                    <MessageCircle className="w-8 h-8" style={{ color: colors.secondaryText }} />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No conversations yet</h3>
-                  <p className="text-gray-600 mb-4">Start chatting with someone!</p>
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: colors.primaryText }}>
+                    No conversations yet
+                  </h3>
+                  <p className="mb-4" style={{ color: colors.secondaryText }}>Start chatting with someone!</p>
                   <button
                     onClick={goToDiscoverPage}
-                    className="px-4 py-2 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white rounded-lg hover:from-[#4a13c4] hover:to-[#7238ff] shadow-sm"
+                    className="px-4 py-2 text-white rounded-lg shadow-sm"
+                    style={{ background: `linear-gradient(to right, ${colors.secondary}, ${colors.primary})` }}
                   >
                     Discover People
                   </button>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y" style={{ borderColor: colors.borderLight }}>
                   {filteredConversations.map(conv => {
                     const botProfile = conv.bot;
                     const isSwiping = swipingId === conv.$id;
@@ -537,7 +610,7 @@ export default function ChatsPage() {
                           className="absolute right-0 top-0 bottom-0 flex items-center justify-center transition-all duration-200"
                           style={{ 
                             width: `${Math.min(offset, 80)}px`,
-                            backgroundColor: 'rgb(239, 68, 68)',
+                            backgroundColor: colors.danger,
                             opacity: offset > 20 ? 0.95 : 0
                           }}
                         >
@@ -551,7 +624,11 @@ export default function ChatsPage() {
 
                         {/* Chat Item */}
                         <div
-                          className="relative bg-white border-b border-gray-100"
+                          className="relative"
+                          style={{ 
+                            backgroundColor: colors.background,
+                            borderBottom: `1px solid ${colors.borderLight}`
+                          }}
                           onTouchStart={(e) => handleSwipeStart(e, conv.$id)}
                           onTouchMove={(e) => handleSwipeMove(e, conv.$id)}
                           onTouchEnd={() => handleSwipeEnd(conv.$id)}
@@ -566,7 +643,8 @@ export default function ChatsPage() {
                         >
                           <Link
                             href={`/main/chats/${conv.$id}`}
-                            className="flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer transition-all"
+                            className="flex items-center gap-3 p-4 cursor-pointer transition-all"
+                            style={{ backgroundColor: colors.hoverBackground }}
                             onClick={(e) => {
                               if (offset > 10) {
                                 e.preventDefault();
@@ -576,7 +654,10 @@ export default function ChatsPage() {
                           >
                             {/* Profile Image */}
                             <div className="relative flex-shrink-0">
-                              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                              <div 
+                                className="w-12 h-12 rounded-full overflow-hidden shadow-sm"
+                                style={{ border: `2px solid ${colors.background}` }}
+                              >
                                 {botProfile?.profilePic ? (
                                   <Image
                                     src={botProfile.profilePic}
@@ -587,13 +668,22 @@ export default function ChatsPage() {
                                     unoptimized={botProfile.profilePic?.startsWith('http')}
                                   />
                                 ) : (
-                                  <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
-                                    <UserPlus className="w-6 h-6 text-gray-500" />
+                                  <div 
+                                    className="w-full h-full flex items-center justify-center"
+                                    style={{ background: `linear-gradient(135deg, ${colors.panelBackground}, ${colors.inputBackground})` }}
+                                  >
+                                    <UserPlus className="w-6 h-6" style={{ color: colors.secondaryText }} />
                                   </div>
                                 )}
                               </div>
                               {conv.isActive && (
-                                <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-green-500"></div>
+                                <div 
+                                  className="absolute bottom-0 right-0 w-3 h-3 rounded-full"
+                                  style={{ 
+                                    border: `2px solid ${colors.background}`,
+                                    backgroundColor: colors.success
+                                  }}
+                                ></div>
                               )}
                             </div>
 
@@ -601,27 +691,33 @@ export default function ChatsPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2">
-                                  <h4 className="font-semibold text-gray-900 truncate">
+                                  <h4 className="font-semibold truncate" style={{ color: colors.primaryText }}>
                                     {botProfile?.username || 'Unknown'}
                                   </h4>
                                   {botProfile?.isVerified && (
                                     <CheckCircle className="w-4 h-4 text-blue-500 fill-blue-100 flex-shrink-0" />
                                   )}
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-xs" style={{ color: colors.tertiaryText }}>
                                     {botProfile?.age ? `, ${botProfile.age}` : ''}
                                   </span>
                                 </div>
-                                <span className="text-xs text-gray-500 whitespace-nowrap">
+                                <span className="text-xs whitespace-nowrap" style={{ color: colors.tertiaryText }}>
                                   {formatTime(conv.lastMessageAt)}
                                 </span>
                               </div>
                               
                               <div className="flex items-center justify-between">
-                                <p className="text-sm text-gray-600 truncate max-w-[200px]">
+                                <p className="text-sm truncate max-w-[200px]" style={{ color: colors.secondaryText }}>
                                   {conv.lastMessage || 'Start a conversation...'}
                                 </p>
                                 {conv.messageCount > 0 && (
-                                  <span className="text-xs bg-[#5e17eb]/10 text-[#5e17eb] px-2 py-0.5 rounded-full min-w-[40px] text-center">
+                                  <span 
+                                    className="text-xs px-2 py-0.5 rounded-full min-w-[40px] text-center"
+                                    style={{ 
+                                      backgroundColor: `${colors.secondary}10`,
+                                      color: colors.secondary
+                                    }}
+                                  >
                                     {conv.messageCount} msg{conv.messageCount !== 1 ? 's' : ''}
                                   </span>
                                 )}
@@ -630,8 +726,10 @@ export default function ChatsPage() {
                               {/* Location */}
                               {botProfile?.location && (
                                 <div className="flex items-center gap-1 mt-1">
-                                  <MapPin className="w-3 h-3 text-gray-400" />
-                                  <span className="text-xs text-gray-500">{botProfile.location}</span>
+                                  <MapPin className="w-3 h-3" style={{ color: colors.tertiaryText }} />
+                                  <span className="text-xs" style={{ color: colors.tertiaryText }}>
+                                    {botProfile.location}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -644,14 +742,21 @@ export default function ChatsPage() {
                                   e.stopPropagation();
                                   setShowDeleteModal(conv.$id);
                                 }}
-                                className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors group"
+                                className="p-2 rounded-full transition-colors group"
+                                style={{ color: colors.secondaryText }}
                                 title="Delete chat"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
                               {/* Tooltip */}
                               <div className="absolute right-0 top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                                <div className="text-xs px-2 py-1 rounded whitespace-nowrap"
+                                  style={{ 
+                                    backgroundColor: colors.cardBackground,
+                                    color: colors.primaryText,
+                                    border: `1px solid ${colors.border}`
+                                  }}
+                                >
                                   Delete chat
                                 </div>
                               </div>
@@ -666,10 +771,19 @@ export default function ChatsPage() {
             </div>
 
             {/* Sidebar Footer */}
-            <div className="border-t border-gray-200 bg-white p-4">
+            <div 
+              className="p-4"
+              style={{ 
+                borderTop: `1px solid ${colors.border}`,
+                backgroundColor: colors.background
+              }}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-500">
+                  <div 
+                    className="w-10 h-10 rounded-full overflow-hidden"
+                    style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}
+                  >
                     {currentUser?.profilePic ? (
                       <Image
                         src={currentUser.profilePic}
@@ -686,10 +800,14 @@ export default function ChatsPage() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 text-sm">{currentUser?.username}</p>
-                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <p className="font-medium text-sm" style={{ color: colors.primaryText }}>
+                      {currentUser?.username}
+                    </p>
+                    <p className="text-xs flex items-center gap-1" style={{ color: colors.secondaryText }}>
                       <Zap className="w-3 h-3" />
-                      <span className="font-semibold text-[#5e17eb]">{currentUser?.credits || 0}</span> credits
+                      <span className="font-semibold" style={{ color: colors.secondary }}>
+                        {currentUser?.credits || 0}
+                      </span> credits
                     </p>
                   </div>
                 </div>
@@ -702,11 +820,18 @@ export default function ChatsPage() {
             {/* Error Message */}
             {error && (
               <div className="mx-6 mt-6">
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center justify-between">
+                <div 
+                  className="px-4 py-3 rounded-xl flex items-center justify-between"
+                  style={{ 
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: `1px solid rgba(239, 68, 68, 0.2)`,
+                    color: colors.danger
+                  }}
+                >
                   <span className="text-sm">{error}</span>
                   <button 
                     onClick={() => setError('')}
-                    className="text-red-500 hover:text-red-700"
+                    className="hover:opacity-70"
                   >
                     ×
                   </button>
@@ -719,27 +844,40 @@ export default function ChatsPage() {
               <div className="flex-1 flex flex-col p-8">
                 {/* Welcome Header */}
                 <div className="text-center mb-10">
-                  <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-[#5e17eb]/10 to-pink-500/10 mb-6">
-                    <MessageCircle className="w-12 h-12 text-[#5e17eb]" />
+                  <div 
+                    className="inline-flex items-center justify-center w-24 h-24 rounded-full mb-6"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${colors.secondary}10, rgba(236, 72, 153, 0.1))`
+                    }}
+                  >
+                    <MessageCircle className="w-12 h-12" style={{ color: colors.secondary }} />
                   </div>
-                  <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                  <h1 className="text-2xl font-bold mb-4" style={{ color: colors.primaryText }}>
                     Welcome to TabooTalks
                   </h1>
-                  <p className="text-gray-600 max-w-2xl mx-auto mb-6">
+                  <p className="max-w-2xl mx-auto mb-6" style={{ color: colors.secondaryText }}>
                     Connect with interesting people from around the world. Every message brings you closer to new friends and experiences.
                   </p>
                   
                   <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-2xl mx-auto">
                     <button
                       onClick={goToDiscoverPage}
-                      className="px-6 py-3 bg-[#5e17eb] text-white font-medium rounded-xl hover:bg-[#4a13c4] transition-all hover:scale-105 flex items-center justify-center gap-2"
+                      className="px-6 py-3 font-medium rounded-xl transition-all hover:scale-105 flex items-center justify-center gap-2"
+                      style={{ 
+                        backgroundColor: colors.secondary,
+                        color: 'white'
+                      }}
                     >
                       <Users className="w-5 h-5" />
                       Discover People
                     </button>
                     <button
                       onClick={handleBuyCredits}
-                      className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium rounded-xl hover:opacity-90 transition-all hover:scale-105 flex items-center justify-center gap-2"
+                      className="px-6 py-3 font-medium rounded-xl transition-all hover:scale-105 flex items-center justify-center gap-2"
+                      style={{ 
+                        background: 'linear-gradient(to right, #f59e0b, #f97316)',
+                        color: 'white'
+                      }}
                     >
                       <CreditCard className="w-5 h-5" />
                       Get Credits
@@ -749,43 +887,76 @@ export default function ChatsPage() {
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                  <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <div 
+                    className="p-6 rounded-xl border shadow-sm"
+                    style={{ 
+                      backgroundColor: colors.cardBackground,
+                      borderColor: colors.border
+                    }}
+                  >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-[#5e17eb]/10 flex items-center justify-center">
-                        <Users className="w-5 h-5 text-[#5e17eb]" />
+                      <div 
+                        className="w-10 h-10 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: `${colors.secondary}10` }}
+                      >
+                        <Users className="w-5 h-5" style={{ color: colors.secondary }} />
                       </div>
                       <div>
-                        <div className="text-xl font-bold text-gray-900">250+</div>
-                        <div className="text-sm text-gray-600">Active Users</div>
+                        <div className="text-xl font-bold" style={{ color: colors.primaryText }}>250+</div>
+                        <div className="text-sm" style={{ color: colors.secondaryText }}>Active Users</div>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600">Real people ready to chat right now</p>
+                    <p className="text-sm" style={{ color: colors.secondaryText }}>
+                      Real people ready to chat right now
+                    </p>
                   </div>
                   
-                  <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <div 
+                    className="p-6 rounded-xl border shadow-sm"
+                    style={{ 
+                      backgroundColor: colors.cardBackground,
+                      borderColor: colors.border
+                    }}
+                  >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                        <MessageCircle className="w-5 h-5 text-green-600" />
+                      <div 
+                        className="w-10 h-10 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
+                      >
+                        <MessageCircle className="w-5 h-5" style={{ color: colors.success }} />
                       </div>
                       <div>
-                        <div className="text-xl font-bold text-gray-900">99%</div>
-                        <div className="text-sm text-gray-600">Response Rate</div>
+                        <div className="text-xl font-bold" style={{ color: colors.primaryText }}>99%</div>
+                        <div className="text-sm" style={{ color: colors.secondaryText }}>Response Rate</div>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600">Fast replies from engaged users</p>
+                    <p className="text-sm" style={{ color: colors.secondaryText }}>
+                      Fast replies from engaged users
+                    </p>
                   </div>
                   
-                  <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <div 
+                    className="p-6 rounded-xl border shadow-sm"
+                    style={{ 
+                      backgroundColor: colors.cardBackground,
+                      borderColor: colors.border
+                    }}
+                  >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                        <Shield className="w-5 h-5 text-purple-600" />
+                      <div 
+                        className="w-10 h-10 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
+                      >
+                        <Shield className="w-5 h-5" style={{ color: colors.secondary }} />
                       </div>
                       <div>
-                        <div className="text-xl font-bold text-gray-900">100%</div>
-                        <div className="text-sm text-gray-600">Verified Profiles</div>
+                        <div className="text-xl font-bold" style={{ color: colors.primaryText }}>100%</div>
+                        <div className="text-sm" style={{ color: colors.secondaryText }}>Verified Profiles</div>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600">Authentic connections guaranteed</p>
+                    <p className="text-sm" style={{ color: colors.secondaryText }}>
+                      Authentic connections guaranteed
+                    </p>
                   </div>
                 </div>
 
@@ -793,15 +964,18 @@ export default function ChatsPage() {
                 <div className="w-full">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-amber-500" />
+                      <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: colors.primaryText }}>
+                        <Sparkles className="w-5 h-5" style={{ color: colors.warning }} />
                         Suggested People
                       </h2>
-                      <p className="text-gray-600 text-sm mt-1">Based on your interests and location</p>
+                      <p className="text-sm mt-1" style={{ color: colors.secondaryText }}>
+                        Based on your interests and location
+                      </p>
                     </div>
                     <button
                       onClick={loadSuggestedBots}
-                      className="text-[#5e17eb] hover:text-[#4a13c4] font-medium flex items-center gap-2 text-sm mt-2 sm:mt-0"
+                      className="font-medium flex items-center gap-2 text-sm mt-2 sm:mt-0"
+                      style={{ color: colors.secondary }}
                     >
                       <RefreshCw className="w-4 h-4" />
                       Refresh
@@ -813,7 +987,11 @@ export default function ChatsPage() {
                       {suggestedBots.map((bot) => (
                         <div
                           key={bot.$id}
-                          className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group"
+                          className="rounded-xl border overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group"
+                          style={{ 
+                            backgroundColor: colors.cardBackground,
+                            borderColor: colors.border
+                          }}
                         >
                           {/* Profile Image */}
                           <div className="relative h-48 overflow-hidden">
@@ -827,13 +1005,19 @@ export default function ChatsPage() {
                             />
                             <div className="absolute top-3 right-3 flex flex-col gap-1">
                               {bot.isVerified && (
-                                <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                                <div 
+                                  className="text-white text-xs px-2 py-1 rounded-full flex items-center gap-1"
+                                  style={{ backgroundColor: colors.secondary }}
+                                >
                                   <CheckCircle className="w-3 h-3" />
                                   <span className="hidden sm:inline">Verified</span>
                                 </div>
                               )}
                               {bot.isOnline && (
-                                <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                                <div 
+                                  className="text-white text-xs px-2 py-1 rounded-full flex items-center gap-1"
+                                  style={{ backgroundColor: colors.success }}
+                                >
                                   <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                                   <span className="hidden sm:inline">Online</span>
                                 </div>
@@ -852,7 +1036,7 @@ export default function ChatsPage() {
 
                           {/* Profile Info */}
                           <div className="p-4">
-                            <p className="text-gray-600 text-sm mb-3 line-clamp-2 min-h-[40px]">
+                            <p className="text-sm mb-3 line-clamp-2 min-h-[40px]" style={{ color: colors.secondaryText }}>
                               &ldquo;{bot.bio}&rdquo;
                             </p>
 
@@ -861,13 +1045,23 @@ export default function ChatsPage() {
                                 {bot.interests.slice(0, 2).map((interest, idx) => (
                                   <span 
                                     key={idx} 
-                                    className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-lg hover:bg-gray-200 transition-colors"
+                                    className="px-2 py-1 text-xs rounded-lg transition-colors"
+                                    style={{ 
+                                      backgroundColor: colors.panelBackground,
+                                      color: colors.secondaryText
+                                    }}
                                   >
                                     {interest}
                                   </span>
                                 ))}
                                 {bot.interests.length > 2 && (
-                                  <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-lg">
+                                  <span 
+                                    className="px-2 py-1 text-xs rounded-lg"
+                                    style={{ 
+                                      backgroundColor: colors.panelBackground,
+                                      color: colors.secondaryText
+                                    }}
+                                  >
                                     +{bot.interests.length - 2}
                                   </span>
                                 )}
@@ -877,7 +1071,11 @@ export default function ChatsPage() {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => startNewChat(bot.$id)}
-                                className="flex-1 py-2.5 bg-[#5e17eb] text-white font-medium rounded-xl hover:bg-[#4a13c4] transition-colors flex items-center justify-center gap-2 text-sm"
+                                className="flex-1 py-2.5 font-medium rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+                                style={{ 
+                                  backgroundColor: colors.secondary,
+                                  color: 'white'
+                                }}
                               >
                                 <MessageCircle className="w-4 h-4" />
                                 <span className="hidden sm:inline">Start Chat</span>
@@ -885,7 +1083,12 @@ export default function ChatsPage() {
                               </button>
                               <button
                                 onClick={() => router.push(`/main/profile/${bot.$id}`)}
-                                className="px-3 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                                className="px-3 py-2.5 font-medium rounded-xl transition-colors"
+                                style={{ 
+                                  border: `1px solid ${colors.border}`,
+                                  color: colors.secondaryText,
+                                  backgroundColor: 'transparent'
+                                }}
                                 title="View Profile"
                               >
                                 <Eye className="w-4 h-4" />
@@ -896,15 +1099,25 @@ export default function ChatsPage() {
                       ))}
                     </div>
                   ) : !isLoadingSuggestions ? (
-                    <div className="text-center py-8 bg-gray-50 rounded-xl">
-                      <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No suggestions available</h3>
-                      <p className="text-gray-600 text-sm mb-6 max-w-md mx-auto">
+                    <div 
+                      className="text-center py-8 rounded-xl"
+                      style={{ backgroundColor: colors.panelBackground }}
+                    >
+                      <MessageCircle className="w-12 h-12 mx-auto mb-4" style={{ color: colors.tertiaryText }} />
+                      <h3 className="text-lg font-semibold mb-2" style={{ color: colors.primaryText }}>
+                        No suggestions available
+                      </h3>
+                      <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: colors.secondaryText }}>
                         Check back later or try refreshing for new suggestions
                       </p>
                       <button
                         onClick={loadSuggestedBots}
-                        className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm"
+                        className="px-6 py-2.5 font-medium rounded-xl transition-colors text-sm"
+                        style={{ 
+                          border: `1px solid ${colors.border}`,
+                          color: colors.secondaryText,
+                          backgroundColor: 'transparent'
+                        }}
                       >
                         Try Again
                       </button>
@@ -915,25 +1128,40 @@ export default function ChatsPage() {
                 {/* Credit Warning */}
                 {currentUser && currentUser.credits < 20 && (
                   <div className="mt-8 w-full max-w-4xl">
-                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6">
+                    <div 
+                      className="rounded-xl p-6"
+                      style={{ 
+                        background: 'linear-gradient(to right, rgba(251, 191, 36, 0.1), rgba(249, 115, 22, 0.1))',
+                        border: `1px solid rgba(251, 191, 36, 0.2)`
+                      }}
+                    >
                       <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 flex items-center justify-center">
-                            <Zap className="w-6 h-6 text-amber-600" />
+                          <div 
+                            className="w-12 h-12 rounded-full flex items-center justify-center"
+                            style={{ background: 'linear-gradient(to right, rgba(251, 191, 36, 0.2), rgba(249, 115, 22, 0.2))' }}
+                          >
+                            <Zap className="w-6 h-6" style={{ color: colors.warning }} />
                           </div>
                           <div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">
+                            <h3 className="text-lg font-bold mb-1" style={{ color: colors.primaryText }}>
                               ⚡ Don&apos;t Lose Your Connection!
                             </h3>
-                            <p className="text-gray-700 text-sm">
-                              You have <span className="font-bold text-[#5e17eb]">{currentUser.credits}</span> credits left. 
+                            <p className="text-sm" style={{ color: colors.secondaryText }}>
+                              You have <span className="font-bold" style={{ color: colors.secondary }}>
+                                {currentUser.credits}
+                              </span> credits left. 
                               Top up now to keep chatting.
                             </p>
                           </div>
                         </div>
                         <button
                           onClick={handleBuyCredits}
-                          className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl hover:opacity-90 transition-all hover:scale-105 whitespace-nowrap text-sm"
+                          className="px-6 py-3 font-bold rounded-xl transition-all hover:scale-105 whitespace-nowrap text-sm"
+                          style={{ 
+                            background: 'linear-gradient(to right, #f59e0b, #f97316)',
+                            color: 'white'
+                          }}
                         >
                           Get Credits Now 🔴
                         </button>
@@ -950,22 +1178,36 @@ export default function ChatsPage() {
                 {/* Left Content */}
                 <div className="flex-1 flex flex-col">
                   {/* Desktop Header */}
-                  <div className="bg-white border-b border-gray-200 px-6 py-4">
+                  <div 
+                    className="px-6 py-4"
+                    style={{ 
+                      backgroundColor: colors.background,
+                      borderBottom: `1px solid ${colors.border}`
+                    }}
+                  >
                     <div className="flex items-center justify-between">
                       <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Your Conversations</h1>
-                        <p className="text-gray-600 text-sm mt-1">
+                        <h1 className="text-2xl font-bold" style={{ color: colors.primaryText }}>
+                          Your Conversations
+                        </h1>
+                        <p className="text-sm mt-1" style={{ color: colors.secondaryText }}>
                           {filteredConversations.length} chats • {conversations.filter(c => c.bot?.isOnline).length} online now
                         </p>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="text-sm text-gray-600">Available Credits</p>
-                          <p className="text-xl font-bold text-[#5e17eb]">{currentUser?.credits || 0}</p>
+                          <p className="text-sm" style={{ color: colors.secondaryText }}>Available Credits</p>
+                          <p className="text-xl font-bold" style={{ color: colors.secondary }}>
+                            {currentUser?.credits || 0}
+                          </p>
                         </div>
                         <button
                           onClick={goToDiscoverPage}
-                          className="px-6 py-3 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white font-medium rounded-xl hover:from-[#4a13c4] hover:to-[#7238ff] transition-all shadow-sm flex items-center gap-2"
+                          className="px-6 py-3 font-medium rounded-xl transition-all shadow-sm flex items-center gap-2"
+                          style={{ 
+                            background: `linear-gradient(to right, ${colors.secondary}, ${colors.primary})`,
+                            color: 'white'
+                          }}
                         >
                           <Plus className="w-5 h-5" />
                           Start New Chat
@@ -977,25 +1219,40 @@ export default function ChatsPage() {
                   {/* Credit Warning Banner */}
                   {currentUser && currentUser.credits < 10 && (
                     <div className="mx-6 mt-6">
-                      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
+                      <div 
+                        className="rounded-xl p-4"
+                        style={{ 
+                          background: 'linear-gradient(to right, rgba(251, 191, 36, 0.1), rgba(249, 115, 22, 0.1))',
+                          border: `1px solid rgba(251, 191, 36, 0.2)`
+                        }}
+                      >
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                              <Crown className="w-6 h-6 text-amber-600" />
+                            <div 
+                              className="w-12 h-12 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: 'rgba(251, 191, 36, 0.2)' }}
+                            >
+                              <Crown className="w-6 h-6" style={{ color: colors.warning }} />
                             </div>
                             <div>
-                              <h4 className="font-bold text-gray-900 text-sm">
+                              <h4 className="font-bold text-sm" style={{ color: colors.primaryText }}>
                                 ⚠️ Low Credits Warning!
                               </h4>
-                              <p className="text-gray-700 text-xs mt-1">
-                                Only <span className="font-bold text-[#5e17eb]">{currentUser.credits}</span> credits remaining. 
+                              <p className="text-xs mt-1" style={{ color: colors.secondaryText }}>
+                                Only <span className="font-bold" style={{ color: colors.secondary }}>
+                                  {currentUser.credits}
+                                </span> credits remaining. 
                                 Top up to continue your conversations.
                               </p>
                             </div>
                           </div>
                           <button
                             onClick={handleBuyCredits}
-                            className="px-4 py-2 bg-black text-white font-bold rounded-xl hover:bg-gray-800 transition-colors whitespace-nowrap text-sm"
+                            className="px-4 py-2 font-bold rounded-xl transition-colors whitespace-nowrap text-sm"
+                            style={{ 
+                              backgroundColor: colors.primaryText,
+                              color: colors.background
+                            }}
                           >
                             💎 Get Credits Now
                           </button>
@@ -1008,7 +1265,12 @@ export default function ChatsPage() {
                   <div className="mt-6 px-6">
                     <button
                       onClick={loadConversations}
-                      className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm"
+                      className="inline-flex items-center gap-2 px-4 py-2 font-medium rounded-xl transition-colors text-sm"
+                      style={{ 
+                        border: `1px solid ${colors.border}`,
+                        color: colors.secondaryText,
+                        backgroundColor: 'transparent'
+                      }}
                     >
                       <RefreshCw className="w-4 h-4" />
                       Refresh Conversations
@@ -1017,56 +1279,88 @@ export default function ChatsPage() {
                 </div>
 
                 {/* Right Sidebar */}
-                <div className="w-[320px] border-l border-r min-h-[1000px] border-gray-200 bg-white overflow-y-auto p-6">
+                <div 
+                  className="w-[320px] min-h-[1000px] overflow-y-auto p-6"
+                  style={{ 
+                    backgroundColor: colors.background,
+                    borderLeft: `1px solid ${colors.border}`,
+                    borderRight: `1px solid ${colors.border}`
+                  }}
+                >
                   {/* Activity Stats */}
                   <div className="mb-8">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Activity className="w-5 h-5 text-[#5e17eb]" />
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: colors.primaryText }}>
+                      <Activity className="w-5 h-5" style={{ color: colors.secondary }} />
                       Your Activity
                     </h2>
                     
                     <div className="space-y-4">
-                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4">
+                      <div 
+                        className="rounded-xl p-4"
+                        style={{ 
+                          background: `linear-gradient(to right, ${colors.secondary}10, rgba(236, 72, 153, 0.1))`
+                        }}
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#5e17eb] to-purple-500 flex items-center justify-center">
+                            <div 
+                              className="w-10 h-10 rounded-full flex items-center justify-center"
+                              style={{ background: `linear-gradient(to right, ${colors.secondary}, #a855f7)` }}
+                            >
                               <MessageCircle className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                              <p className="text-sm text-gray-600">Total Messages</p>
-                              <p className="text-2xl font-bold text-gray-900">{stats.totalMessages}</p>
+                              <p className="text-sm" style={{ color: colors.secondaryText }}>Total Messages</p>
+                              <p className="text-2xl font-bold" style={{ color: colors.primaryText }}>{stats.totalMessages}</p>
                             </div>
                           </div>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4">
+                        <div 
+                          className="rounded-xl p-4"
+                          style={{ 
+                            background: 'linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(6, 182, 212, 0.1))'
+                          }}
+                        >
                           <div className="flex items-center gap-2 mb-2">
-                            <Target className="w-4 h-4 text-blue-600" />
-                            <p className="text-xs text-gray-600">Active Chats</p>
+                            <Target className="w-4 h-4" style={{ color: '#3b82f6' }} />
+                            <p className="text-xs" style={{ color: colors.secondaryText }}>Active Chats</p>
                           </div>
-                          <p className="text-xl font-bold text-gray-900">{stats.activeChats}</p>
+                          <p className="text-xl font-bold" style={{ color: colors.primaryText }}>{stats.activeChats}</p>
                         </div>
 
-                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4">
+                        <div 
+                          className="rounded-xl p-4"
+                          style={{ 
+                            background: 'linear-gradient(to right, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.1))'
+                          }}
+                        >
                           <div className="flex items-center gap-2 mb-2">
-                            <BarChart3 className="w-4 h-4 text-green-600" />
-                            <p className="text-xs text-gray-600">Credits Used</p>
+                            <BarChart3 className="w-4 h-4" style={{ color: colors.success }} />
+                            <p className="text-xs" style={{ color: colors.secondaryText }}>Credits Used</p>
                           </div>
-                          <p className="text-xl font-bold text-gray-900">{stats.creditsSpent}</p>
+                          <p className="text-xl font-bold" style={{ color: colors.primaryText }}>{stats.creditsSpent}</p>
                         </div>
                       </div>
 
-                      <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4">
+                      <div 
+                        className="rounded-xl p-4"
+                        style={{ 
+                          background: 'linear-gradient(to right, rgba(251, 191, 36, 0.1), rgba(249, 115, 22, 0.1))'
+                        }}
+                      >
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-amber-600" />
-                            <p className="text-sm font-medium text-gray-900">Response Time</p>
+                            <TrendingUp className="w-4 h-4" style={{ color: colors.warning }} />
+                            <p className="text-sm font-medium" style={{ color: colors.primaryText }}>Response Time</p>
                           </div>
-                          <span className="text-xs font-bold text-amber-700">{stats.averageResponseTime}</span>
+                          <span className="text-xs font-bold" style={{ color: colors.warning }}>
+                            {stats.averageResponseTime}
+                          </span>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-gray-600">
+                        <div className="flex items-center justify-between text-xs" style={{ color: colors.tertiaryText }}>
                           <span>Avg. response</span>
                           <span>Fast ⚡</span>
                         </div>
@@ -1076,39 +1370,58 @@ export default function ChatsPage() {
 
                   {/* Quick Stats */}
                   <div className="mb-8">
-                    <h3 className="font-bold text-gray-900 mb-3">Quick Stats</h3>
+                    <h3 className="font-bold mb-3" style={{ color: colors.primaryText }}>Quick Stats</h3>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div 
+                        className="flex items-center justify-between p-3 rounded-lg"
+                        style={{ backgroundColor: colors.panelBackground }}
+                      >
                         <div className="flex items-center gap-2">
-                          <Clock4 className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm text-gray-600">Longest Chat</span>
+                          <Clock4 className="w-4 h-4" style={{ color: colors.tertiaryText }} />
+                          <span className="text-sm" style={{ color: colors.secondaryText }}>Longest Chat</span>
                         </div>
-                        <span className="font-medium text-gray-900">{stats.longestConversation}</span>
+                        <span className="font-medium" style={{ color: colors.primaryText }}>
+                          {stats.longestConversation}
+                        </span>
                       </div>
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div 
+                        className="flex items-center justify-between p-3 rounded-lg"
+                        style={{ backgroundColor: colors.panelBackground }}
+                      >
                         <div className="flex items-center gap-2">
-                          <Award className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm text-gray-600">Most Active</span>
+                          <Award className="w-4 h-4" style={{ color: colors.tertiaryText }} />
+                          <span className="text-sm" style={{ color: colors.secondaryText }}>Most Active</span>
                         </div>
-                        <span className="font-medium text-gray-900">{stats.mostActiveHour}</span>
+                        <span className="font-medium" style={{ color: colors.primaryText }}>
+                          {stats.mostActiveHour}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Quick Actions */}
                   <div className="mb-8">
-                    <h3 className="font-bold text-gray-900 mb-3">Quick Actions</h3>
+                    <h3 className="font-bold mb-3" style={{ color: colors.primaryText }}>Quick Actions</h3>
                     <div className="space-y-3">
                       <button
                         onClick={goToDiscoverPage}
-                        className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white font-medium rounded-xl hover:from-[#4a13c4] hover:to-[#7238ff] transition-all shadow-sm flex items-center justify-center gap-2"
+                        className="w-full py-3 font-medium rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
+                        style={{ 
+                          background: `linear-gradient(to right, ${colors.secondary}, ${colors.primary})`,
+                          color: 'white'
+                        }}
                       >
                         <Users className="w-4 h-4" />
                         Discover More People
                       </button>
                       <button
                         onClick={handleBuyCredits}
-                        className="w-full py-3 border border-[#5e17eb] text-[#5e17eb] font-medium rounded-xl hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-3 font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                        style={{ 
+                          border: `1px solid ${colors.secondary}`,
+                          color: colors.secondary,
+                          backgroundColor: 'transparent'
+                        }}
                       >
                         <Zap className="w-4 h-4" />
                         Buy Credits
@@ -1117,15 +1430,21 @@ export default function ChatsPage() {
                   </div>
 
                   {/* Tips & Tricks */}
-                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-                    <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-500" />
+                  <div 
+                    className="rounded-xl p-4 border"
+                    style={{ 
+                      background: `linear-gradient(to right, ${colors.panelBackground}, ${colors.inputBackground})`,
+                      borderColor: colors.border
+                    }}
+                  >
+                    <h3 className="font-bold mb-2 flex items-center gap-2" style={{ color: colors.primaryText }}>
+                      <Sparkles className="w-4 h-4" style={{ color: colors.warning }} />
                       Pro Tip
                     </h3>
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-sm mb-3" style={{ color: colors.secondaryText }}>
                       Send messages during peak hours (6 PM - 10 PM) for faster responses!
                     </p>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center justify-between text-xs" style={{ color: colors.tertiaryText }}>
                       <span>Response rate: 95%</span>
                       <span>Peak hours</span>
                     </div>
@@ -1140,27 +1459,45 @@ export default function ChatsPage() {
       {/* Mobile Layout */}
       <div className="lg:hidden flex flex-col h-[calc(100vh-64px)]">
         {/* Mobile Header */}
-        <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-3">
+        <div 
+          className="px-4 py-3 backdrop-blur-sm"
+          style={{ 
+            backgroundColor: `${colors.background}95`,
+            borderBottom: `1px solid ${colors.border}`
+          }}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5e17eb] to-purple-600 flex items-center justify-center">
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}
+              >
                 <MessageCircle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-gray-900 text-sm">TabooTalks</h1>
-                <p className="text-xs text-gray-500">
-                  <span className="font-semibold text-[#5e17eb]">{currentUser?.credits || 0}</span> credits
+                <h1 className="font-bold text-sm" style={{ color: colors.primaryText }}>TabooTalks</h1>
+                <p className="text-xs" style={{ color: colors.secondaryText }}>
+                  <span className="font-semibold" style={{ color: colors.secondary }}>
+                    {currentUser?.credits || 0}
+                  </span> credits
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={goToDiscoverPage}
-                className="p-2 bg-[#5e17eb] text-white rounded-lg hover:bg-[#4a13c4]"
+                className="p-2 text-white rounded-lg transition-colors"
+                style={{ backgroundColor: colors.secondary }}
               >
                 <Plus className="w-5 h-5" />
               </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+              <button 
+                className="p-2 rounded-lg transition-colors"
+                style={{ 
+                  color: colors.secondaryText,
+                  backgroundColor: 'transparent'
+                }}
+              >
                 <Search className="w-5 h-5" />
               </button>
             </div>
@@ -1168,15 +1505,22 @@ export default function ChatsPage() {
         </div>
 
         {/* Mobile Content */}
-        <div className="flex-1 overflow-auto bg-white">
+        <div className="flex-1 overflow-auto" style={{ backgroundColor: colors.background }}>
           {/* Error Message */}
           {error && (
             <div className="mx-4 mt-4">
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center justify-between">
+              <div 
+                className="px-4 py-3 rounded-xl flex items-center justify-between"
+                style={{ 
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  border: `1px solid rgba(239, 68, 68, 0.2)`,
+                  color: colors.danger
+                }}
+              >
                 <span className="text-sm">{error}</span>
                 <button 
                   onClick={() => setError('')}
-                  className="text-red-500 hover:text-red-700"
+                  className="hover:opacity-70"
                 >
                   ×
                 </button>
@@ -1203,7 +1547,7 @@ export default function ChatsPage() {
                         className="absolute right-0 top-0 bottom-0 flex items-center justify-center transition-all duration-200"
                         style={{ 
                           width: `${Math.min(offset, 80)}px`,
-                          backgroundColor: 'rgb(239, 68, 68)',
+                          backgroundColor: colors.danger,
                           opacity: offset > 20 ? 0.95 : 0
                         }}
                       >
@@ -1217,14 +1561,19 @@ export default function ChatsPage() {
 
                       {/* Chat Item */}
                       <div
-                        className={`bg-white rounded-xl border border-gray-200 overflow-hidden`}
+                        className="rounded-xl border overflow-hidden"
+                        style={{ 
+                          backgroundColor: colors.cardBackground,
+                          borderColor: colors.border
+                        }}
                         onTouchStart={(e) => handleSwipeStart(e, conv.$id)}
                         onTouchMove={(e) => handleSwipeMove(e, conv.$id)}
                         onTouchEnd={() => handleSwipeEnd(conv.$id)}
                       >
                         <Link
                           href={`/main/chats/${conv.$id}`}
-                          className="block p-4 hover:bg-gray-50 transition-all"
+                          className="block p-4 transition-all"
+                          style={{ backgroundColor: colors.hoverBackground }}
                           onClick={(e) => {
                             if (offset > 10) {
                               e.preventDefault();
@@ -1234,7 +1583,10 @@ export default function ChatsPage() {
                         >
                           <div className="flex items-center gap-3">
                             <div className="relative">
-                              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-md">
+                              <div 
+                                className="w-14 h-14 rounded-full overflow-hidden shadow-md"
+                                style={{ border: `2px solid ${colors.background}` }}
+                              >
                                 <Image
                                   src={conv.bot?.profilePic || '/default-avatar.png'}
                                   alt={conv.bot?.username || 'User'}
@@ -1245,35 +1597,47 @@ export default function ChatsPage() {
                                 />
                               </div>
                               {conv.bot?.isOnline && (
-                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                                <div 
+                                  className="absolute bottom-0 right-0 w-3 h-3 rounded-full"
+                                  style={{ 
+                                    backgroundColor: colors.success,
+                                    border: `2px solid ${colors.background}`
+                                  }}
+                                ></div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-1">
-                                  <h3 className="font-bold text-gray-900 text-sm truncate">
+                                  <h3 className="font-bold text-sm truncate" style={{ color: colors.primaryText }}>
                                     {conv.bot?.username}
                                   </h3>
                                   {conv.bot?.isVerified && (
                                     <CheckCircle className="w-3 h-3 text-blue-500 fill-blue-100" />
                                   )}
                                 </div>
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs" style={{ color: colors.tertiaryText }}>
                                   {formatTime(conv.lastMessageAt)}
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-600 truncate mb-1">
+                              <p className="text-xs truncate mb-1" style={{ color: colors.secondaryText }}>
                                 {conv.lastMessage || 'Start a conversation...'}
                               </p>
                               <div className="flex items-center justify-between">
                                 {conv.bot?.location && (
-                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                  <span className="text-xs flex items-center gap-1" style={{ color: colors.tertiaryText }}>
                                     <MapPin className="w-3 h-3" />
                                     {conv.bot.location}
                                   </span>
                                 )}
                                 {conv.messageCount > 0 && (
-                                  <span className="text-xs bg-[#5e17eb]/10 text-[#5e17eb] px-2 py-1 rounded-full min-w-[50px] text-center">
+                                  <span 
+                                    className="text-xs px-2 py-1 rounded-full min-w-[50px] text-center"
+                                    style={{ 
+                                      backgroundColor: `${colors.secondary}10`,
+                                      color: colors.secondary
+                                    }}
+                                  >
                                     {conv.messageCount} msg{conv.messageCount !== 1 ? 's' : ''}
                                   </span>
                                 )}
@@ -1287,7 +1651,8 @@ export default function ChatsPage() {
                                 e.stopPropagation();
                                 setShowDeleteModal(conv.$id);
                               }}
-                              className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50"
+                              className="p-2 rounded-full transition-colors"
+                              style={{ color: colors.secondaryText }}
                               title="Delete chat"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1303,24 +1668,37 @@ export default function ChatsPage() {
               {/* Credit Warning Banner Mobile */}
               {currentUser && currentUser.credits < 10 && (
                 <div className="mt-6">
-                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
+                  <div 
+                    className="rounded-xl p-4"
+                    style={{ 
+                      background: 'linear-gradient(to right, rgba(251, 191, 36, 0.1), rgba(249, 115, 22, 0.1))',
+                      border: `1px solid rgba(251, 191, 36, 0.2)`
+                    }}
+                  >
                     <div className="flex flex-col items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                          <Crown className="w-6 h-6 text-amber-600" />
+                        <div 
+                          className="w-12 h-12 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: 'rgba(251, 191, 36, 0.2)' }}
+                        >
+                          <Crown className="w-6 h-6" style={{ color: colors.warning }} />
                         </div>
                         <div>
-                          <h4 className="font-bold text-gray-900 text-sm">
+                          <h4 className="font-bold text-sm" style={{ color: colors.primaryText }}>
                             ⚠️ Low Credits!
                           </h4>
-                          <p className="text-gray-700 text-xs mt-1">
+                          <p className="text-xs mt-1" style={{ color: colors.secondaryText }}>
                             {currentUser.credits} credits left
                           </p>
                         </div>
                       </div>
                       <button
                         onClick={handleBuyCredits}
-                        className="w-full px-4 py-2 bg-black text-white font-bold rounded-xl hover:bg-gray-800 transition-colors text-sm"
+                        className="w-full px-4 py-2 font-bold rounded-xl transition-colors text-sm"
+                        style={{ 
+                          backgroundColor: colors.primaryText,
+                          color: colors.background
+                        }}
                       >
                         💎 Get Credits
                       </button>
@@ -1331,15 +1709,25 @@ export default function ChatsPage() {
 
               {/* Mobile Stats */}
               <div className="mt-6">
-                <h3 className="font-bold text-gray-900 mb-3">Your Activity</h3>
+                <h3 className="font-bold mb-3" style={{ color: colors.primaryText }}>Your Activity</h3>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4">
-                    <p className="text-xs text-gray-600">Total Messages</p>
-                    <p className="text-xl font-bold text-gray-900">{stats.totalMessages}</p>
+                  <div 
+                    className="rounded-xl p-4"
+                    style={{ 
+                      background: `linear-gradient(to right, ${colors.secondary}10, rgba(236, 72, 153, 0.1))`
+                    }}
+                  >
+                    <p className="text-xs" style={{ color: colors.secondaryText }}>Total Messages</p>
+                    <p className="text-xl font-bold" style={{ color: colors.primaryText }}>{stats.totalMessages}</p>
                   </div>
-                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4">
-                    <p className="text-xs text-gray-600">Active Chats</p>
-                    <p className="text-xl font-bold text-gray-900">{stats.activeChats}</p>
+                  <div 
+                    className="rounded-xl p-4"
+                    style={{ 
+                      background: 'linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(6, 182, 212, 0.1))'
+                    }}
+                  >
+                    <p className="text-xs" style={{ color: colors.secondaryText }}>Active Chats</p>
+                    <p className="text-xl font-bold" style={{ color: colors.primaryText }}>{stats.activeChats}</p>
                   </div>
                 </div>
               </div>
@@ -1348,25 +1736,38 @@ export default function ChatsPage() {
             /* No Conversations Mobile */
             <div className="p-4">
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-[#5e17eb]/10 to-pink-500/10 mb-4">
-                  <MessageCircle className="w-10 h-10 text-[#5e17eb]" />
+                <div 
+                  className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${colors.secondary}10, rgba(236, 72, 153, 0.1))`
+                  }}
+                >
+                  <MessageCircle className="w-10 h-10" style={{ color: colors.secondary }} />
                 </div>
-                <h1 className="text-xl font-bold text-gray-900 mb-2">Welcome to TabooTalks</h1>
-                <p className="text-gray-600 text-sm mb-6">
+                <h1 className="text-xl font-bold mb-2" style={{ color: colors.primaryText }}>Welcome to TabooTalks</h1>
+                <p className="text-sm mb-6" style={{ color: colors.secondaryText }}>
                   Connect with interesting people from around the world.
                 </p>
                 
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={goToDiscoverPage}
-                    className="px-6 py-3 bg-[#5e17eb] text-white font-medium rounded-xl hover:bg-[#4a13c4] transition-all flex items-center justify-center gap-2"
+                    className="px-6 py-3 font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                    style={{ 
+                      backgroundColor: colors.secondary,
+                      color: 'white'
+                    }}
                   >
                     <Users className="w-5 h-5" />
                     Discover People
                   </button>
                   <button
                     onClick={handleBuyCredits}
-                    className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                    className="px-6 py-3 font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                    style={{ 
+                      background: 'linear-gradient(to right, #f59e0b, #f97316)',
+                      color: 'white'
+                    }}
                   >
                     <CreditCard className="w-5 h-5" />
                     Get Credits
