@@ -34,6 +34,16 @@
 .border-theme {
   border-color: var(--theme-border);
 }
+/* styles.css */
+.button {
+  background-color: var(--card-background);
+  color: var(--secondary-text);
+  border-color: var(--border);
+}
+
+.button:hover {
+  background-color: var(--hover-background);
+}
 
 @theme inline {
   --color-background: var(--background);

@@ -13,6 +13,8 @@ import personaService, { ParsedPersonaProfile } from '@/lib/services/personaServ
 import { CiPaperplane } from 'react-icons/ci';
 import { useCredits } from '@/lib/hooks/useCredits';
 import { useChatService } from '@/lib/hooks/useChatService';
+import { useTheme } from '@/lib/context/ThemeContext';
+import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
 interface Post {
   id: string;
@@ -56,6 +58,7 @@ const ReportAbuseModal = ({
   username: string;
   onReportSuccess: () => void;
 }) => {
+  const themeColors = useThemeColors(); // This returns colors directly
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [email, setEmail] = useState<string>('');
@@ -124,7 +127,7 @@ const ReportAbuseModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: themeColors.cardBackground }}>
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -132,15 +135,19 @@ const ReportAbuseModal = ({
                 <Flag className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Report Abuse</h2>
-                <p className="text-sm text-gray-600">Help us keep the community safe</p>
+                <h2 className="text-xl font-bold" style={{ color: themeColors.primaryText }}>Report Abuse</h2>
+                <p className="text-sm" style={{ color: themeColors.secondaryText }}>Help us keep the community safe</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 rounded-full transition-colors"
+              style={{ 
+                backgroundColor: themeColors.hoverBackground,
+                color: themeColors.secondaryText
+              }}
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -149,32 +156,32 @@ const ReportAbuseModal = ({
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Check className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Report Submitted Successfully!</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-bold mb-2" style={{ color: themeColors.primaryText }}>Report Submitted Successfully!</h3>
+              <p style={{ color: themeColors.secondaryText }}>
                 Thank you for helping us keep the community safe. Our team will review your report shortly.
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <div className="mb-6 p-4 bg-gray-50 rounded-xl">
+              <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: themeColors.panelBackground }}>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
                     <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-500"></div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{username}</h3>
-                    <p className="text-sm text-gray-500">Report this user for inappropriate behavior</p>
+                    <h3 className="font-semibold" style={{ color: themeColors.primaryText }}>{username}</h3>
+                    <p className="text-sm" style={{ color: themeColors.tertiaryText }}>Report this user for inappropriate behavior</p>
                   </div>
                 </div>
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-900 mb-3">
+                <label className="block text-sm font-medium mb-3" style={{ color: themeColors.primaryText }}>
                   Please tell us what happened. The more details you provide, the better.
                 </label>
                 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: themeColors.primaryText }}>
                     Select a reason *
                   </label>
                   <div className="space-y-2">
@@ -184,8 +191,13 @@ const ReportAbuseModal = ({
                         className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                           selectedReason === reason.value
                             ? 'border-[#5e17eb] bg-[#5e17eb]/5'
-                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            : 'hover:bg-gray-50'
                         }`}
+                        style={{ 
+                          borderColor: selectedReason === reason.value ? themeColors.secondary : themeColors.border,
+                          backgroundColor: selectedReason === reason.value ? `${themeColors.secondary}10` : themeColors.cardBackground,
+                          color: themeColors.primaryText
+                        }}
                       >
                         <input
                           type="radio"
@@ -193,29 +205,40 @@ const ReportAbuseModal = ({
                           value={reason.value}
                           checked={selectedReason === reason.value}
                           onChange={(e) => setSelectedReason(e.target.value)}
-                          className="w-4 h-4 text-[#5e17eb] focus:ring-[#5e17eb]"
+                          className="w-4 h-4 focus:ring-[#5e17eb]"
+                          style={{ color: themeColors.secondary }}
                         />
-                        <span className="text-sm text-gray-700">{reason.label}</span>
+                        <span className="text-sm" style={{ color: themeColors.secondaryText }}>{reason.label}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: themeColors.primaryText }}>
                     Add a detailed description *
                   </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Please provide specific details about what you observed..."
-                    className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all min-h-[120px] resize-none"
+                    className="w-full px-4 py-3 text-sm border rounded-lg outline-none focus:ring-2 transition-all min-h-[120px] resize-none"
+                    style={{ 
+                      backgroundColor: themeColors.inputBackground,
+                      color: themeColors.primaryText,
+                      borderColor: themeColors.border
+                    }}
                     required
                   />
+                  <style jsx>{`
+                    textarea::placeholder {
+                      color: ${themeColors.placeholderText};
+                    }
+                  `}</style>
                 </div>
 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: themeColors.primaryText }}>
                     Your email address *
                   </label>
                   <input
@@ -223,10 +246,20 @@ const ReportAbuseModal = ({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all"
+                    className="w-full px-4 py-3 text-sm border rounded-lg outline-none focus:ring-2 transition-all"
+                    style={{ 
+                      backgroundColor: themeColors.inputBackground,
+                      color: themeColors.primaryText,
+                      borderColor: themeColors.border
+                    }}
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-2">
+                  <style jsx>{`
+                    input::placeholder {
+                      color: ${themeColors.placeholderText};
+                    }
+                  `}</style>
+                  <p className="text-xs mt-2" style={{ color: themeColors.tertiaryText }}>
                     We&apos;ll use this email to contact you if we need more information about your report.
                   </p>
                 </div>
@@ -250,14 +283,19 @@ const ReportAbuseModal = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 px-4 py-3.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-3.5 border font-medium rounded-lg transition-colors"
+                  style={{ 
+                    borderColor: themeColors.border,
+                    color: themeColors.primaryText,
+                    backgroundColor: themeColors.cardBackground
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 px-4 py-3.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-3.5 bg-red-600 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
@@ -291,6 +329,7 @@ const PostOptionsDropdown = ({
   onClose: () => void;
   onReportClick: () => void;
 }) => {
+  const themeColors = useThemeColors(); // Added missing import
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -333,10 +372,14 @@ const PostOptionsDropdown = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-10 z-50 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2"
+      className="absolute right-0 top-10 z-50 w-56 rounded-xl shadow-lg border py-2"
+      style={{ 
+        backgroundColor: themeColors.cardBackground,
+        borderColor: themeColors.border 
+      }}
     >
-      <div className="px-3 py-2 border-b border-gray-100">
-        <p className="text-xs font-medium text-gray-500">Post Options</p>
+      <div className="px-3 py-2 border-b" style={{ borderColor: themeColors.borderLight }}>
+        <p className="text-xs font-medium" style={{ color: themeColors.tertiaryText }}>Post Options</p>
       </div>
       
       {options.map((option, index) => (
@@ -346,15 +389,18 @@ const PostOptionsDropdown = ({
             option.onClick();
             onClose();
           }}
-          className={`w-full flex items-center gap-3 px-4 py-3 text-sm ${option.color} ${option.hoverColor} transition-colors`}
+          className={`w-full flex items-center gap-3 px-4 py-3 text-sm ${option.color} transition-colors`}
+          style={{ 
+            backgroundColor: themeColors.cardBackground
+          }}
         >
           {option.icon}
           <span className="font-medium">{option.label}</span>
         </button>
       ))}
       
-      <div className="px-4 py-3 border-t border-gray-100">
-        <p className="text-xs text-gray-500">
+      <div className="px-4 py-3 border-t" style={{ borderColor: themeColors.borderLight }}>
+        <p className="text-xs" style={{ color: themeColors.tertiaryText }}>
           Reporting helps keep our community safe.
         </p>
       </div>
@@ -362,55 +408,65 @@ const PostOptionsDropdown = ({
   );
 };
 
-const PostSkeleton = () => (
-  <div className="border border-gray-200 rounded-xl overflow-hidden bg-white animate-pulse">
-    <div className="p-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-gray-300"></div>
-          <div className="space-y-2">
-            <div className="h-4 w-24 bg-gray-300 rounded"></div>
-            <div className="h-3 w-32 bg-gray-200 rounded"></div>
+const PostSkeleton = () => {
+  const colors = useThemeColors(); // Fixed: useThemeColors returns colors directly
+  
+  return (
+    <div className="border rounded-xl overflow-hidden animate-pulse" 
+         style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
+      <div className="p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-gray-300"></div>
+            <div className="space-y-2">
+              <div className="h-4 w-24 bg-gray-300 rounded"></div>
+              <div className="h-3 w-32 bg-gray-200 rounded"></div>
+            </div>
           </div>
+          <div className="h-10 w-24 bg-gray-300 rounded-lg"></div>
         </div>
-        <div className="h-10 w-24 bg-gray-300 rounded-lg"></div>
+      </div>
+      
+      <div className="h-[500px] bg-gray-300"></div>
+      
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+          <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+          <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+        </div>
+        <div className="h-4 w-32 bg-gray-300 rounded"></div>
+        <div className="h-3 w-full bg-gray-200 rounded"></div>
+        <div className="flex gap-2">
+          <div className="h-6 w-16 bg-gray-300 rounded-full"></div>
+          <div className="h-6 w-20 bg-gray-300 rounded-full"></div>
+          <div className="h-6 w-24 bg-gray-300 rounded-full"></div>
+        </div>
+        <div className="h-12 w-full bg-gray-200 rounded-lg"></div>
       </div>
     </div>
-    
-    <div className="h-[500px] bg-gray-300"></div>
-    
-    <div className="p-5 space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-gray-300"></div>
-        <div className="w-10 h-10 rounded-full bg-gray-300"></div>
-        <div className="w-10 h-10 rounded-full bg-gray-300"></div>
-      </div>
-      <div className="h-4 w-32 bg-gray-300 rounded"></div>
-      <div className="h-3 w-full bg-gray-200 rounded"></div>
-      <div className="flex gap-2">
-        <div className="h-6 w-16 bg-gray-300 rounded-full"></div>
-        <div className="h-6 w-20 bg-gray-300 rounded-full"></div>
-        <div className="h-6 w-24 bg-gray-300 rounded-full"></div>
-      </div>
-      <div className="h-12 w-full bg-gray-200 rounded-lg"></div>
-    </div>
-  </div>
-);
+  );
+};
 
-const ProfileCardSkeleton = () => (
-  <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200 animate-pulse">
-    <div className="flex items-center gap-3">
-      <div className="relative">
-        <div className="w-12 h-12 rounded-full bg-gray-300"></div>
+const ProfileCardSkeleton = () => {
+  const colors = useThemeColors(); // Fixed: useThemeColors returns colors directly
+  
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg transition-colors duration-200 animate-pulse"
+         style={{ backgroundColor: colors.hoverBackground }}>
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <div className="w-12 h-12 rounded-full bg-gray-300"></div>
+        </div>
+        <div className="space-y-2">
+          <div className="h-3 w-20 bg-gray-300 rounded"></div>
+          <div className="h-2 w-16 bg-gray-200 rounded"></div>
+        </div>
       </div>
-      <div className="space-y-2">
-        <div className="h-3 w-20 bg-gray-300 rounded"></div>
-        <div className="h-2 w-16 bg-gray-200 rounded"></div>
-      </div>
+      <div className="w-16 h-8 bg-gray-300 rounded-lg"></div>
     </div>
-    <div className="w-16 h-8 bg-gray-300 rounded-lg"></div>
-  </div>
-);
+  );
+};
 
 const getTimeAgo = (dateString: string) => {
   const date = new Date(dateString);
@@ -479,6 +535,7 @@ const EnhancedImageModal = ({
   onClose: () => void,
   username: string 
 }) => {
+  const colors = useThemeColors(); // Fixed: useThemeColors returns colors directly
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -625,6 +682,8 @@ export default function HomePage() {
   const { isAuthenticated, loading: authLoading, profile } = useAuth();
   const { showOffer, handleCloseOffer, isChecking } = useOffer();
   const { openChat } = useChatService();
+  const colors = useThemeColors(); // Fixed: useThemeColors returns colors directly
+  const { isDark } = useTheme();
   
   const [posts, setPosts] = useState<Post[]>([]);
   const [suggestedPeople, setSuggestedPeople] = useState<Post[]>([]);
@@ -1006,7 +1065,7 @@ export default function HomePage() {
 
   if (authLoading || isChecking || isLoading) {
     return (
-      <div className="min-h-screen bg-white text-gray-900">
+      <div className="min-h-screen" style={{ backgroundColor: colors.background, color: colors.primaryText }}>
         <LayoutController />
         <main className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
@@ -1018,7 +1077,10 @@ export default function HomePage() {
             
             <div className="hidden lg:block w-80 flex-shrink-0">
               <div className="sticky top-24 space-y-6">
-                <div className="p-6 border border-gray-200 rounded-xl bg-white">
+                <div className="p-6 border rounded-xl" style={{ 
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border 
+                }}>
                   <div className="h-6 w-32 bg-gray-300 rounded mb-5"></div>
                   <div className="space-y-4">
                     {[...Array(6)].map((_, i) => (
@@ -1035,7 +1097,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen" style={{ backgroundColor: colors.background, color: colors.primaryText }}>
       <LayoutController />
 
       {showReportSuccessToast && (
@@ -1066,25 +1128,27 @@ export default function HomePage() {
             <div className="mb-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                 <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-0">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Discover People</h2>
-                  <div className="flex bg-gray-100 rounded-lg p-1">
+                  <h2 className="text-xl sm:text-2xl font-bold" style={{ color: colors.primaryText }}>Discover People</h2>
+                  <div className="flex rounded-lg p-1" style={{ backgroundColor: colors.inputBackground }}>
                     <button
                       onClick={() => setActiveTab('all')}
-                      className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
-                        activeTab === 'all'
-                          ? 'bg-white text-[#5e17eb] shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                      className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200`}
+                      style={{ 
+                        backgroundColor: activeTab === 'all' ? colors.cardBackground : 'transparent',
+                        color: activeTab === 'all' ? colors.secondary : colors.secondaryText,
+                        boxShadow: activeTab === 'all' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                      }}
                     >
                       All Posts
                     </button>
                     <button
                       onClick={() => setActiveTab('following')}
-                      className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
-                        activeTab === 'following'
-                          ? 'bg-white text-[#5e17eb] shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                      className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200`}
+                      style={{ 
+                        backgroundColor: activeTab === 'following' ? colors.cardBackground : 'transparent',
+                        color: activeTab === 'following' ? colors.secondary : colors.secondaryText,
+                        boxShadow: activeTab === 'following' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                      }}
                     >
                       Following ({posts.filter(p => p.isFollowing).length})
                     </button>
@@ -1116,10 +1180,16 @@ export default function HomePage() {
                         <div className="absolute inset-0 rounded-full border-2 border-[#5e17eb] animate-ping opacity-50"></div>
                       )}
                     </div>
-                    <span className="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-[#5e17eb] group-focus:text-[#5e17eb] transition-colors duration-200">
+                    <span 
+                      className="text-xs sm:text-sm font-medium group-hover:text-[#5e17eb] group-focus:text-[#5e17eb] transition-colors duration-200"
+                      style={{ color: colors.primaryText }}
+                    >
                       {person.username}
                     </span>
-                    <span className="text-xs text-gray-500 group-hover:text-gray-700 transition-colors">
+                    <span 
+                      className="text-xs group-hover:text-gray-700 transition-colors"
+                      style={{ color: colors.tertiaryText }}
+                    >
                       {person.age} years
                     </span>
                   </button>
@@ -1134,7 +1204,11 @@ export default function HomePage() {
                 return (
                   <div
                     key={`${post.id}-${index}`}
-                    className="border border-gray-200 rounded-xl overflow-hidden bg-white relative"
+                    className="border rounded-xl overflow-hidden relative"
+                    style={{ 
+                      backgroundColor: colors.cardBackground,
+                      borderColor: colors.border
+                    }}
                   >
                     <div className="p-4 sm:p-5">
                       <div className="flex items-center justify-between">
@@ -1155,14 +1229,20 @@ export default function HomePage() {
                           </div>
                           <div className="max-w-[180px] sm:max-w-none">
                             <div className="flex items-center gap-1 sm:gap-2">
-                              <h3 className="font-semibold text-sm sm:text-lg text-gray-900 truncate">
+                              <h3 
+                                className="font-semibold text-sm sm:text-lg truncate"
+                                style={{ color: colors.primaryText }}
+                              >
                                 {post.username}, {post.age}
                               </h3>
                               {post.isVerified && (
                                 <CheckCircle className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] text-blue-500 fill-blue-100 flex-shrink-0" />
                               )}
                             </div>
-                            <div className="flex items-center flex-wrap gap-1 text-gray-500 text-xs sm:text-sm">
+                            <div 
+                              className="flex items-center flex-wrap gap-1 text-xs sm:text-sm"
+                              style={{ color: colors.tertiaryText }}
+                            >
                               <MapPin className="w-3 h-3 sm:w-[14px] sm:h-[14px]" />
                               <span className="truncate">{post.location}</span>
                               <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
@@ -1171,7 +1251,10 @@ export default function HomePage() {
                               <span>{post.timeAgo}</span>
                             </div>
                             {post.bio && (
-                              <p className="text-xs text-gray-600 mt-1 line-clamp-1">
+                              <p 
+                                className="text-xs mt-1 line-clamp-1"
+                                style={{ color: colors.secondaryText }}
+                              >
                                 {post.bio}
                               </p>
                             )}
@@ -1181,11 +1264,12 @@ export default function HomePage() {
                         <div className="flex items-center gap-1 sm:gap-2">
                           <button
                             onClick={() => handleFollow(post.id)}
-                            className={`flex items-center gap-1 px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
-                              post.isFollowing
-                                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
-                                : 'bg-[#5e17eb] text-white hover:bg-[#4a13c4]'
-                            }`}
+                            className={`flex items-center gap-1 px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200`}
+                            style={{ 
+                              backgroundColor: post.isFollowing ? colors.panelBackground : colors.secondary,
+                              color: post.isFollowing ? colors.primaryText : 'white',
+                              border: post.isFollowing ? `1px solid ${colors.border}` : 'none'
+                            }}
                           >
                             {post.isFollowing ? (
                               <>
@@ -1203,7 +1287,11 @@ export default function HomePage() {
                           <div className="relative">
                             <button 
                               onClick={(e) => handleThreeDotsClick(post.id, e)}
-                              className="p-1.5 sm:p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                              className="p-1.5 sm:p-2.5 rounded-lg transition-colors"
+                              style={{ 
+                                color: colors.secondaryText,
+                                backgroundColor: colors.hoverBackground
+                              }}
                             >
                               <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
@@ -1246,21 +1334,25 @@ export default function HomePage() {
                                 <div className="absolute inset-0 animate-ping bg-[#ff2e2e]/20 rounded-full"></div>
                               </div>
                             )}
-                            <div className={`p-2 sm:p-3 rounded-full transition-all duration-300 group-hover:scale-110 ${
-                              post.isLiked 
-                                ? 'bg-[#ff2e2e]/10 text-[#ff2e2e]' 
-                                : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
-                            }`}>
+                            <div className={`p-2 sm:p-3 rounded-full transition-all duration-300 group-hover:scale-110`}
+                                 style={{ 
+                                   backgroundColor: post.isLiked ? `${colors.primary}10` : colors.panelBackground,
+                                   color: post.isLiked ? colors.primary : colors.secondaryText
+                                 }}>
                               <Heart
                                 className="w-5 h-5 sm:w-[22px] sm:h-[22px]"
-                                fill={post.isLiked ? '#ff2e2e' : 'none'}
+                                fill={post.isLiked ? colors.primary : 'none'}
                               />
                             </div>
                           </button>
 
                           <button 
                             onClick={() => handleChat(post.personaId)}
-                            className="p-2 sm:p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300 hover:scale-110 relative group"
+                            className="p-2 sm:p-3 rounded-full transition-all duration-300 hover:scale-110 relative group"
+                            style={{ 
+                              backgroundColor: colors.panelBackground,
+                              color: colors.secondaryText
+                            }}
                           >
                             <MessageCircle className="w-5 h-5 sm:w-[22px] sm:h-[22px]" />
                             <span className="absolute -top-1 -right-1 text-xs bg-[#5e17eb] text-white rounded-full px-1.5 py-0.5 font-medium">
@@ -1270,20 +1362,32 @@ export default function HomePage() {
 
                           <button 
                             onClick={() => handleGift(post.personaId)}
-
-                            className="p-2 sm:p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300 hover:scale-110"
+                            className="p-2 sm:p-3 rounded-full transition-all duration-300 hover:scale-110"
+                            style={{ 
+                              backgroundColor: colors.panelBackground,
+                              color: colors.secondaryText
+                            }}
                           >
                             <Gift className="w-5 h-5 sm:w-[22px] sm:h-[22px]" />
                           </button>
 
-                          <button className="p-2 sm:p-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300 hover:scale-110">
+                          <button 
+                            className="p-2 sm:p-3 rounded-full transition-all duration-300 hover:scale-110"
+                            style={{ 
+                              backgroundColor: colors.panelBackground,
+                              color: colors.secondaryText
+                            }}
+                          >
                             <Camera className="w-5 h-5 sm:w-[22px] sm:h-[22px]" />
                           </button>
                         </div>
                         
                         <button
                           onClick={() => handleViewProfile(post.personaId)}
-                          className="flex items-center gap-1 px-3 py-2 sm:px-5 sm:py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-all duration-300 hover:scale-105"
+                          className="flex items-center gap-1 px-3 py-2 sm:px-5 sm:py-3 text-white rounded-lg font-medium transition-all duration-300 hover:scale-105"
+                          style={{ 
+                            backgroundColor: colors.secondary,
+                          }}
                         >
                           <Eye className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                           <span className="text-xs sm:text-sm">View Profile</span>
@@ -1291,27 +1395,56 @@ export default function HomePage() {
                       </div>
 
                       <div className="mb-3 sm:mb-4">
-                        <span className="font-semibold text-gray-900 text-sm sm:text-base">{formatNumber(post.likes)} likes</span>
+                        <span 
+                          className="font-semibold text-sm sm:text-base"
+                          style={{ color: colors.primaryText }}
+                        >{formatNumber(post.likes)} likes</span>
                         <span className="mx-2 sm:mx-3 text-gray-300">•</span>
-                        <span className="text-gray-600 text-sm sm:text-base">{post.comments} messages</span>
+                        <span 
+                          className="text-sm sm:text-base"
+                          style={{ color: colors.secondaryText }}
+                        >{post.comments} messages</span>
                       </div>
 
                       <div className="mb-3 sm:mb-5 space-y-2">
-                        <span className="font-semibold text-gray-900 mr-2 text-sm sm:text-base">{post.username}</span>
-                        <span className="text-gray-800 text-sm sm:text-base">{post.caption}</span>
+                        <span 
+                          className="font-semibold mr-2 text-sm sm:text-base"
+                          style={{ color: colors.primaryText }}
+                        >{post.username}</span>
+                        <span 
+                          className="text-sm sm:text-base"
+                          style={{ color: colors.primaryText }}
+                        >{post.caption}</span>
                         {post.bio && post.bio !== post.caption && (
-                          <p className="text-gray-600 text-sm mt-2">{post.bio}</p>
+                          <p 
+                            className="text-sm mt-2"
+                            style={{ color: colors.secondaryText }}
+                          >{post.bio}</p>
                         )}
                       </div>
 
                       <div className="flex flex-wrap gap-1 sm:gap-2 mb-4 sm:mb-6">
                         {post.interests.map((interest, idx) => (
-                          <span key={`${post.id}-interest-${idx}`} className="px-2 sm:px-4 py-1 sm:py-2 bg-gray-100 text-xs sm:text-sm rounded-full text-gray-700 hover:bg-gray-200 transition-colors duration-200">
+                          <span 
+                            key={`${post.id}-interest-${idx}`} 
+                            className="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm rounded-full transition-colors duration-200"
+                            style={{ 
+                              backgroundColor: colors.panelBackground,
+                              color: colors.secondaryText
+                            }}
+                          >
                             {interest}
                           </span>
                         ))}
                         {post.personalityTraits?.slice(0, 2).map((trait, idx) => (
-                          <span key={`${post.id}-trait-${idx}`} className="px-2 sm:px-4 py-1 sm:py-2 bg-[#5e17eb]/10 text-xs sm:text-sm rounded-full text-[#5e17eb] hover:bg-[#5e17eb]/20 transition-colors duration-200">
+                          <span 
+                            key={`${post.id}-trait-${idx}`} 
+                            className="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm rounded-full transition-colors duration-200"
+                            style={{ 
+                              backgroundColor: `${colors.secondary}10`,
+                              color: colors.secondary
+                            }}
+                          >
                             {trait}
                           </span>
                         ))}
@@ -1322,19 +1455,40 @@ export default function HomePage() {
                           <input 
                             type="text" 
                             placeholder={`Send a message to ${post.username}...`}
-                            className="w-full px-3 sm:px-4 py-2 sm:py-3.5 text-xs sm:text-sm border border-gray-300 rounded-lg outline-none focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 transition-all duration-300"
+                            className="w-full px-3 sm:px-4 py-2 sm:py-3.5 text-xs sm:text-sm border rounded-lg outline-none focus:ring-2 transition-all duration-300"
+                            style={{ 
+                              backgroundColor: colors.inputBackground,
+                              color: colors.primaryText,
+                              borderColor: colors.border
+                            }}
                           />
+                          <style jsx>{`
+                            input::placeholder {
+                              color: ${colors.placeholderText};
+                            }
+                          `}</style>
                           <div className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 sm:gap-2">
-                            <button className="p-1 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                            <button className="p-1 sm:p-2 rounded-full transition-colors"
+                                   style={{ 
+                                     color: colors.tertiaryText,
+                                     backgroundColor: colors.hoverBackground
+                                   }}>
                             </button>
-                            <button className="p-1 sm:p-2 text-black hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                            <button className="p-1 sm:p-2 rounded-full transition-colors"
+                                   style={{ 
+                                     color: colors.primaryText,
+                                     backgroundColor: colors.hoverBackground
+                                   }}>
                               <CiPaperplane className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                             </button>
                           </div>
                         </div>
                         <button
                           onClick={() => handleChat(post.personaId)}
-                          className="px-3 sm:px-6 bg-[#ff2e2e] text-white rounded-lg font-medium hover:bg-[#e62626] transition-all duration-300 hover:scale-105 flex items-center gap-1 sm:gap-2"
+                          className="px-3 sm:px-6 text-white rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center gap-1 sm:gap-2"
+                          style={{ 
+                            backgroundColor: colors.primary
+                          }}
                         >
                           <MessageCircle className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                           <span className="text-xs sm:text-sm">Send</span>
@@ -1353,8 +1507,14 @@ export default function HomePage() {
               )}
               
               {!hasMore && !isLoadingMore && posts.length > 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p className="text-lg font-medium">You&apos;ve seen all {posts.length} profiles for now!</p>
+                <div 
+                  className="text-center py-8"
+                  style={{ color: colors.secondaryText }}
+                >
+                  <p 
+                    className="text-lg font-medium"
+                    style={{ color: colors.primaryText }}
+                  >You&apos;ve seen all {posts.length} profiles for now!</p>
                   <p className="text-sm mt-2">Check back later for more matches</p>
                 </div>
               )}
@@ -1363,15 +1523,27 @@ export default function HomePage() {
 
           <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="sticky top-24 space-y-6">
-              <div className="p-6 border border-gray-200 rounded-xl bg-white shadow-sm">
+              <div 
+                className="p-6 border rounded-xl shadow-sm"
+                style={{ 
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border
+                }}
+              >
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-amber-500" />
-                    <h3 className="font-bold text-lg text-gray-900">Suggested People</h3>
+                    <h3 
+                      className="font-bold text-lg"
+                      style={{ color: colors.primaryText }}
+                    >Suggested People</h3>
                   </div>
                   <button 
                     onClick={() => loadInitialData()}
-                    className="text-sm text-[#5e17eb] hover:text-[#4a13c4] font-medium flex items-center gap-1 transition-colors"
+                    className="text-sm font-medium flex items-center gap-1 transition-colors"
+                    style={{ 
+                      color: colors.secondary
+                    }}
                   >
                     <RefreshCw className="w-4 h-4" />
                     Refresh
@@ -1381,12 +1553,16 @@ export default function HomePage() {
                   {suggestedPeople.map((person, index) => (
                     <div 
                       key={`suggestion-${person.id}-${index}`} 
-                      className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-all duration-200 hover:shadow-sm group cursor-pointer"
+                      className="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:shadow-sm group cursor-pointer"
+                      style={{ 
+                        backgroundColor: colors.hoverBackground
+                      }}
                       onClick={() => router.push(`/main/profile/${person.personaId}`)}
                     >
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                          <div className="w-12 h-12 rounded-full overflow-hidden border-2 shadow-sm"
+                               style={{ borderColor: isDark ? colors.panelBackground : 'white' }}>
                             <Image
                               src={person.imageUrl}
                               alt={person.username}
@@ -1396,21 +1572,33 @@ export default function HomePage() {
                             />
                           </div>
                           {person.isOnline && (
-                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white group-hover:scale-110 transition-transform"></div>
+                            <div 
+                              className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 group-hover:scale-110 transition-transform"
+                              style={{ borderColor: isDark ? colors.panelBackground : 'white' }}
+                            ></div>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-medium text-gray-900 truncate flex items-center gap-1">
+                          <div 
+                            className="font-medium truncate flex items-center gap-1"
+                            style={{ color: colors.primaryText }}
+                          >
                             {person.username}
                             {person.isVerified && (
                               <CheckCircle className="w-3.5 h-3.5 text-blue-500 fill-blue-100 flex-shrink-0" />
                             )}
                           </div>
-                          <div className="text-xs text-gray-500 flex items-center gap-1 truncate">
+                          <div 
+                            className="text-xs flex items-center gap-1 truncate"
+                            style={{ color: colors.tertiaryText }}
+                          >
                             <MapPin size={10} />
                             {person.location}
                           </div>
-                          <div className="text-xs text-gray-500">{person.age} years • {person.distance}</div>
+                          <div 
+                            className="text-xs"
+                            style={{ color: colors.tertiaryText }}
+                          >{person.age} years • {person.distance}</div>
                         </div>
                       </div>
                       <button 
@@ -1418,7 +1606,10 @@ export default function HomePage() {
                           e.stopPropagation();
                           router.push(`/main/profile/${person.personaId}`);
                         }}
-                        className="px-3 py-1.5 bg-[#5e17eb] text-white text-xs rounded-lg hover:bg-[#4a13c4] transition-all duration-200 hover:scale-105 shadow-sm"
+                        className="px-3 py-1.5 text-white text-xs rounded-lg transition-all duration-200 hover:scale-105 shadow-sm"
+                        style={{ 
+                          backgroundColor: colors.secondary
+                        }}
                       >
                         View
                       </button>
@@ -1427,23 +1618,48 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="p-6 border border-gray-200 rounded-xl bg-gradient-to-br from-[#5e17eb]/5 to-white shadow-sm">
-                <h3 className="font-bold mb-4 text-gray-900 flex items-center gap-2">
+              <div 
+                className="p-6 border rounded-xl shadow-sm bg-gradient-to-br"
+                style={{ 
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border,
+                  backgroundImage: `linear-gradient(to bottom right, ${colors.secondary}05, ${colors.cardBackground})`
+                }}
+              >
+                <h3 
+                  className="font-bold mb-4 flex items-center gap-2"
+                  style={{ color: colors.primaryText }}
+                >
                   <Zap size={18} className="text-[#5e17eb]" />
                   Your Credits
                 </h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div 
+                    className="flex items-center justify-between p-4 rounded-lg border shadow-sm"
+                    style={{ 
+                      backgroundColor: colors.cardBackground,
+                      borderColor: colors.border
+                    }}
+                  >
                     <div>
-                      <div className="font-medium text-gray-600 text-sm">Balance</div>
+                      <div 
+                        className="font-medium text-sm"
+                        style={{ color: colors.secondaryText }}
+                      >Balance</div>
                       {creditsLoading ? (
                         <div className="h-10 w-24 bg-gray-200 rounded animate-pulse mt-2"></div>
                       ) : (
-                        <div className="text-3xl font-bold text-[#5e17eb]">{userCredits.toLocaleString()}</div>
+                        <div 
+                          className="text-3xl font-bold"
+                          style={{ color: colors.secondary }}
+                        >{userCredits.toLocaleString()}</div>
                       )}
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-gray-500">Active</div>
+                      <div 
+                        className="text-sm"
+                        style={{ color: colors.tertiaryText }}
+                      >Active</div>
                       <div className="text-sm text-green-600 font-medium flex items-center gap-1">
                         <CheckCircle className="w-4 h-4" />
                         Valid
@@ -1451,35 +1667,63 @@ export default function HomePage() {
                     </div>
                   </div>
                   <button 
-                    className="w-full py-3.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm" 
+                    className="w-full py-3.5 bg-black text-white rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm" 
                     onClick={() => router.push('/main/credits')}
                     disabled={creditsLoading}
+                    style={{ 
+                      backgroundColor: isDark ? colors.cardBackground : 'black',
+                      color: isDark ? colors.primaryText : 'white'
+                    }}
                   >
                     {creditsLoading ? 'Loading...' : '💎 Buy More Credits'}
                   </button>
                 </div>
               </div>
 
-              <div className="p-6 border border-gray-200 rounded-xl bg-white shadow-sm">
-                <h3 className="font-bold mb-5 text-gray-900 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-[#5e17eb]" />
+              <div 
+                className="p-6 border rounded-xl shadow-sm"
+                style={{ 
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border
+                }}
+              >
+                <h3 
+                  className="font-bold mb-5 flex items-center gap-2"
+                  style={{ color: colors.primaryText }}
+                >
+                  <Activity className="w-5 h-5" style={{ color: colors.secondary }} />
                   Your Activity
                 </h3>
                 
                 <div className="space-y-4">
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
+                  <div 
+                    className="rounded-xl p-4 border"
+                    style={{ 
+                      backgroundColor: `${colors.secondary}05`,
+                      borderColor: `${colors.secondary}20`
+                    }}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#5e17eb] to-purple-500 flex items-center justify-center">
                           <Users className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">People Online</p>
-                          <p className="text-2xl font-bold text-gray-900">{activityStats.onlineNow}</p>
+                          <p 
+                            className="text-sm"
+                            style={{ color: colors.secondaryText }}
+                          >People Online</p>
+                          <p 
+                            className="text-2xl font-bold"
+                            style={{ color: colors.primaryText }}
+                          >{activityStats.onlineNow}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs text-gray-500">Active Now</div>
+                        <div 
+                          className="text-xs"
+                          style={{ color: colors.tertiaryText }}
+                        >Active Now</div>
                         <div className="text-xs font-medium text-green-600 flex items-center gap-1">
                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
                           Live
@@ -1489,20 +1733,44 @@ export default function HomePage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
+                    <div 
+                      className="rounded-xl p-4 border"
+                      style={{ 
+                        backgroundColor: isDark ? `rgba(59, 130, 246, 0.1)` : 'rgba(59, 130, 246, 0.05)',
+                        borderColor: isDark ? `rgba(59, 130, 246, 0.3)` : 'rgba(59, 130, 246, 0.15)'
+                      }}
+                    >
                       <div className="flex items-center gap-2 mb-2">
                         <Target className="w-4 h-4 text-blue-600" />
-                        <p className="text-xs text-gray-600">Following</p>
+                        <p 
+                          className="text-xs"
+                          style={{ color: colors.secondaryText }}
+                        >Following</p>
                       </div>
-                      <p className="text-xl font-bold text-gray-900">{activityStats.followingCount}</p>
+                      <p 
+                        className="text-xl font-bold"
+                        style={{ color: colors.primaryText }}
+                      >{activityStats.followingCount}</p>
                     </div>
 
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+                    <div 
+                      className="rounded-xl p-4 border"
+                      style={{ 
+                        backgroundColor: isDark ? `rgba(16, 185, 129, 0.1)` : 'rgba(16, 185, 129, 0.05)',
+                        borderColor: isDark ? `rgba(16, 185, 129, 0.3)` : 'rgba(16, 185, 129, 0.15)'
+                      }}
+                    >
                       <div className="flex items-center gap-2 mb-2">
                         <BarChart3 className="w-4 h-4 text-green-600" />
-                        <p className="text-xs text-gray-600">Likes</p>
+                        <p 
+                          className="text-xs"
+                          style={{ color: colors.secondaryText }}
+                        >Likes</p>
                       </div>
-                      <p className="text-xl font-bold text-gray-900">
+                      <p 
+                        className="text-xl font-bold"
+                        style={{ color: colors.primaryText }}
+                      >
                         {activityStats.totalLikes >= 1000 
                           ? `${(activityStats.totalLikes / 1000).toFixed(1)}k`
                           : activityStats.totalLikes}
@@ -1510,15 +1778,27 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-100">
+                  <div 
+                    className="rounded-xl p-4 border"
+                    style={{ 
+                      backgroundColor: isDark ? `rgba(245, 158, 11, 0.1)` : 'rgba(245, 158, 11, 0.05)',
+                      borderColor: isDark ? `rgba(245, 158, 11, 0.3)` : 'rgba(245, 158, 11, 0.15)'
+                    }}
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-amber-600" />
-                        <p className="text-sm font-medium text-gray-900">Messages Sent</p>
+                        <p 
+                          className="text-sm font-medium"
+                          style={{ color: colors.primaryText }}
+                        >Messages Sent</p>
                       </div>
                       <span className="text-xs font-bold text-amber-700">{activityStats.totalMessages}</span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-gray-600">
+                    <div 
+                      className="flex items-center justify-between text-xs"
+                      style={{ color: colors.secondaryText }}
+                    >
                       <span>Active chats: {activityStats.activeChats}</span>
                       <span>⚡ Fast replies</span>
                     </div>
@@ -1526,38 +1806,66 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-6">
-                  <h4 className="font-bold text-gray-900 mb-3 text-sm">Quick Stats</h4>
+                  <h4 
+                    className="font-bold mb-3 text-sm"
+                    style={{ color: colors.primaryText }}
+                  >Quick Stats</h4>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div 
+                      className="flex items-center justify-between p-3 rounded-lg"
+                      style={{ backgroundColor: colors.panelBackground }}
+                    >
                       <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">Avg. Response</span>
+                        <Clock className="w-4 h-4" style={{ color: colors.tertiaryText }} />
+                        <span 
+                          className="text-sm"
+                          style={{ color: colors.secondaryText }}
+                        >Avg. Response</span>
                       </div>
-                      <span className="font-medium text-gray-900">{activityStats.averageResponseTime}</span>
+                      <span 
+                        className="font-medium"
+                        style={{ color: colors.primaryText }}
+                      >{activityStats.averageResponseTime}</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div 
+                      className="flex items-center justify-between p-3 rounded-lg"
+                      style={{ backgroundColor: colors.panelBackground }}
+                    >
                       <div className="flex items-center gap-2">
-                        <Award className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">Most Active</span>
+                        <Award className="w-4 h-4" style={{ color: colors.tertiaryText }} />
+                        <span 
+                          className="text-sm"
+                          style={{ color: colors.secondaryText }}
+                        >Most Active</span>
                       </div>
-                      <span className="font-medium text-gray-900">{activityStats.mostActiveHour}</span>
+                      <span 
+                        className="font-medium"
+                        style={{ color: colors.primaryText }}
+                      >{activityStats.mostActiveHour}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-6">
-                  <h4 className="font-bold text-gray-900 mb-3 text-sm">Quick Actions</h4>
+                  <h4 
+                    className="font-bold mb-3 text-sm"
+                    style={{ color: colors.primaryText }}
+                  >Quick Actions</h4>
                   <div className="space-y-3">
                     <button
                       onClick={() => router.push('/main/people')}
-                      className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white font-medium rounded-xl hover:from-[#4a13c4] hover:to-[#7238ff] transition-all shadow-sm flex items-center justify-center gap-2 text-sm"
+                      className="w-full py-3 bg-gradient-to-r from-[#5e17eb] to-[#8a4bff] text-white font-medium rounded-xl shadow-sm flex items-center justify-center gap-2 text-sm transition-all"
                     >
                       <Users className="w-4 h-4" />
                       Discover More People
                     </button>
                     <button
                       onClick={() => router.push('/main/chats')}
-                      className="w-full py-3 border border-[#5e17eb] text-[#5e17eb] font-medium rounded-xl hover:bg-purple-50 transition-colors flex items-center justify-center gap-2 text-sm"
+                      className="w-full py-3 border text-[#5e17eb] font-medium rounded-xl flex items-center justify-center gap-2 text-sm transition-colors"
+                      style={{ 
+                        borderColor: colors.secondary,
+                        color: colors.secondary
+                      }}
                     >
                       <MessageCircle className="w-4 h-4" />
                       View All Chats
@@ -1565,15 +1873,30 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="mt-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-                  <h5 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-sm">
+                <div 
+                  className="mt-6 rounded-xl p-4 border"
+                  style={{ 
+                    backgroundColor: colors.panelBackground,
+                    borderColor: colors.border
+                  }}
+                >
+                  <h5 
+                    className="font-bold mb-2 flex items-center gap-2 text-sm"
+                    style={{ color: colors.primaryText }}
+                  >
                     <Sparkles className="w-4 h-4 text-amber-500" />
                     Pro Tip
                   </h5>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p 
+                    className="text-sm mb-3"
+                    style={{ color: colors.secondaryText }}
+                  >
                     Send messages during peak hours (6 PM - 10 PM) for faster responses!
                   </p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div 
+                    className="flex items-center justify-between text-xs"
+                    style={{ color: colors.tertiaryText }}
+                  >
                     <span>Response rate: 95%</span>
                     <span>Peak hours</span>
                   </div>
