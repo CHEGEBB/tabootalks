@@ -7,6 +7,7 @@ import useAuth from '@/lib/hooks/useAuth';
 import authService from '@/lib/services/authService';
 import storageService from '@/lib/appwrite/storage';
 import { ID } from 'appwrite';
+import { useTheme } from '@/lib/context/ThemeContext';
 import {
   Edit,
   Camera,
@@ -160,6 +161,7 @@ export default function ProfilePage() {
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { colors, isDark } = useTheme();
 
   // FULL edit form state - ALL fields from Appwrite
   const [editForm, setEditForm] = useState({
@@ -471,11 +473,11 @@ export default function ProfilePage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
         <LayoutController />
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading your profile...</p>
+          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: colors.primary }} />
+          <p style={{ color: colors.secondaryText }}>Loading your profile...</p>
         </div>
       </div>
     );
@@ -484,15 +486,16 @@ export default function ProfilePage() {
   // Not authenticated state
   if (!isAuthenticated || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
         <LayoutController />
         <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h1>
-            <p className="text-gray-600 mb-6">You need to be signed in to view your profile.</p>
+          <div className="rounded-2xl shadow-lg p-8 text-center" style={{ backgroundColor: colors.cardBackground }}>
+            <h1 className="text-2xl font-bold mb-4" style={{ color: colors.primaryText }}>Please Sign In</h1>
+            <p className="mb-6" style={{ color: colors.secondaryText }}>You need to be signed in to view your profile.</p>
             <a
               href="/login"
-              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-colors inline-block"
+              className="hover:bg-purple-700 font-bold py-3 px-6 rounded-xl transition-colors inline-block"
+              style={{ backgroundColor: colors.primary, color: 'white' }}
             >
               Go to Login
             </a>
@@ -509,32 +512,36 @@ export default function ProfilePage() {
   const isOnline = onlineStatus === 'Active now';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
       <LayoutController />
       
       {/* Profile Completion Modal */}
       {showCompletionModal && profileCompletion < 80 && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+          <div className="rounded-2xl p-6 max-w-md w-full" style={{ backgroundColor: colors.cardBackground }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Complete Your Profile</h3>
+              <h3 className="text-xl font-bold" style={{ color: colors.primaryText }}>Complete Your Profile</h3>
               <button
                 onClick={() => setShowCompletionModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-full"
+                style={{ color: colors.primaryText }}
               >
-                <X className="w-5 h-5 bg-red-500 rounded-full " />
+                <X className="w-5 h-5 rounded-full" style={{ backgroundColor: colors.danger }} />
               </button>
             </div>
             
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600">Profile Completion</span>
-                <span className="font-bold text-purple-600">{profileCompletion}%</span>
+                <span style={{ color: colors.secondaryText }}>Profile Completion</span>
+                <span className="font-bold" style={{ color: colors.secondary }}>{profileCompletion}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full rounded-full h-2" style={{ backgroundColor: colors.borderLight }}>
                 <div 
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${profileCompletion}%` }}
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${profileCompletion}%`,
+                    background: `linear-gradient(to right, ${colors.primary}, ${colors.secondary})` 
+                  }}
                 ></div>
               </div>
             </div>
@@ -544,7 +551,8 @@ export default function ProfilePage() {
                 setShowCompletionModal(false);
                 setIsEditing(true);
               }}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-colors"
+              className="w-full hover:bg-purple-700 font-bold py-3 rounded-xl transition-colors"
+              style={{ backgroundColor: colors.primary, color: 'white' }}
             >
               Complete Profile Now
             </button>
@@ -556,12 +564,13 @@ export default function ProfilePage() {
         
         {/* Header with Stats */}
         <div className="mb-8">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="rounded-2xl shadow-lg p-6" style={{ backgroundColor: colors.cardBackground }}>
             <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
               
               {/* Profile Image */}
               <div className="relative">
-                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-xl">
+                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 shadow-xl" 
+                     style={{ borderColor: colors.background }}>
                   {profileData.profilePic ? (
                     <img 
                       src={profileData.profilePic} 
@@ -569,7 +578,8 @@ export default function ProfilePage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white text-4xl font-bold">
+                    <div className="w-full h-full flex items-center justify-center text-white text-4xl font-bold"
+                         style={{ background: `linear-gradient(to bottom right, ${colors.primary}, ${colors.secondary})` }}>
                       {profileData.username.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -578,7 +588,8 @@ export default function ProfilePage() {
                 {/* Edit Profile Photo Button */}
                 <button 
                   onClick={() => setShowPhotoModal(true)}
-                  className="absolute bottom-2 right-2 bg-purple-600 text-white p-2 rounded-full shadow-lg hover:bg-purple-700 transition-colors"
+                  className="absolute bottom-2 right-2 p-2 rounded-full shadow-lg transition-colors"
+                  style={{ backgroundColor: colors.secondary, color: 'white' }}
                 >
                   <CameraIcon className="w-4 h-4" />
                 </button>
@@ -589,12 +600,13 @@ export default function ProfilePage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <h1 className="text-3xl font-bold text-gray-900">
+                      <h1 className="text-3xl font-bold" style={{ color: colors.primaryText }}>
                         {profileData.username}
                         {profileData.age && `, ${profileData.age}`}
                       </h1>
                       {profileData.isVerified && (
-                        <div className="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                        <div className="px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1"
+                             style={{ backgroundColor: `${colors.secondary}20`, color: colors.secondary }}>
                           <Shield className="w-3 h-3" />
                           Verified
                         </div>
@@ -602,7 +614,7 @@ export default function ProfilePage() {
                     </div>
                     
                     {/* Location */}
-                    <div className="flex items-center gap-2 text-gray-600 mb-4">
+                    <div className="flex items-center gap-2 mb-4" style={{ color: colors.secondaryText }}>
                       {profileData.location ? (
                         <>
                           <MapPin className="w-4 h-4" />
@@ -610,14 +622,14 @@ export default function ProfilePage() {
                           <span className="mx-2">•</span>
                         </>
                       ) : (
-                        <span className="text-gray-400">No location set</span>
+                        <span style={{ color: colors.placeholderText }}>No location set</span>
                       )}
                       
                       {/* Online status */}
-                      <span className={`font-medium flex items-center gap-1 ${
-                        isOnline ? 'text-green-600' : 'text-gray-500'
-                      }`}>
-                        <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+                      <span className={`font-medium flex items-center gap-1`} 
+                            style={{ color: isOnline ? colors.success : colors.tertiaryText }}>
+                        <div className={`w-2 h-2 rounded-full ${isOnline ? 'animate-pulse' : ''}`} 
+                             style={{ backgroundColor: isOnline ? colors.success : colors.tertiaryText }}></div>
                         {onlineStatus}
                       </span>
                     </div>
@@ -625,7 +637,8 @@ export default function ProfilePage() {
                     {/* User details chips */}
                     <div className="flex flex-wrap gap-2 mb-4">
                       {profileData.gender && (
-                        <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                        <span className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1"
+                              style={{ backgroundColor: `${colors.primary}20`, color: colors.primary }}>
                           <User className="w-3 h-3" />
                           {profileData.gender === 'men' ? 'Male' : 
                            profileData.gender === 'women' ? 'Female' : 
@@ -633,19 +646,22 @@ export default function ProfilePage() {
                         </span>
                       )}
                       {profileData.fieldOfWork && (
-                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                        <span className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1"
+                              style={{ backgroundColor: `${colors.secondary}20`, color: colors.secondary }}>
                           <BriefcaseIcon className="w-3 h-3" />
                           {profileData.fieldOfWork}
                         </span>
                       )}
                       {profileData.englishLevel && (
-                        <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                        <span className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1"
+                              style={{ backgroundColor: `${colors.secondary}20`, color: colors.secondary }}>
                           <Globe className="w-3 h-3" />
                           English: {profileData.englishLevel}
                         </span>
                       )}
                       {profileData.martialStatus && (
-                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                        <span className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1"
+                              style={{ backgroundColor: `${colors.success}20`, color: colors.success }}>
                           <HeartIcon className="w-3 h-3" />
                           {profileData.martialStatus}
                         </span>
@@ -657,13 +673,19 @@ export default function ProfilePage() {
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-xl transition-colors flex items-center gap-2"
+                      className="hover:opacity-90 font-bold py-2 px-6 rounded-xl transition-colors flex items-center gap-2"
+                      style={{ backgroundColor: colors.secondary, color: 'white' }}
                     >
                       <Edit className="w-4 h-4" />
                       Edit Profile
                     </button>
                     <button
-                      className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-6 rounded-xl transition-colors flex items-center gap-2"
+                      className="border font-medium py-2 px-6 rounded-xl transition-colors flex items-center gap-2"
+                      style={{ 
+                        backgroundColor: colors.background, 
+                        color: colors.secondaryText, 
+                        borderColor: colors.border 
+                      }}
                     >
                       <CreditCard className="w-4 h-4" />
                       {profileData.credits} Credits
@@ -674,13 +696,16 @@ export default function ProfilePage() {
                 {/* Profile Completion Bar */}
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Profile Strength</span>
-                    <span className="text-sm font-bold text-purple-600">{profileCompletion}%</span>
+                    <span className="text-sm" style={{ color: colors.secondaryText }}>Profile Strength</span>
+                    <span className="text-sm font-bold" style={{ color: colors.secondary }}>{profileCompletion}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full rounded-full h-2" style={{ backgroundColor: colors.borderLight }}>
                     <div 
-                      className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${profileCompletion}%` }}
+                      className="h-2 rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${profileCompletion}%`,
+                        background: `linear-gradient(to right, ${colors.primary}, ${colors.secondary})` 
+                      }}
                     ></div>
                   </div>
                 </div>
@@ -695,27 +720,27 @@ export default function ProfilePage() {
           <div className="lg:col-span-2 space-y-8">
             
             {/* Photo Gallery */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="rounded-2xl shadow-lg p-6" style={{ backgroundColor: colors.cardBackground }}>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Photos</h2>
+                <h2 className="text-xl font-bold" style={{ color: colors.primaryText }}>Photos</h2>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setActiveTab('public')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      activeTab === 'public'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors`}
+                    style={{ 
+                      backgroundColor: activeTab === 'public' ? colors.secondary : colors.inputBackground,
+                      color: activeTab === 'public' ? 'white' : colors.secondaryText
+                    }}
                   >
                     Public ({photos.filter(p => !p.isPrivate).length})
                   </button>
                   <button
                     onClick={() => setActiveTab('private')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      activeTab === 'private'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors`}
+                    style={{ 
+                      backgroundColor: activeTab === 'private' ? colors.secondary : colors.inputBackground,
+                      color: activeTab === 'private' ? 'white' : colors.secondaryText
+                    }}
                   >
                     <div className="flex items-center gap-2">
                       <Lock className="w-3 h-3" />
@@ -728,9 +753,10 @@ export default function ProfilePage() {
               {/* Photos Grid */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {/* Upload Photo Card */}
-                <label className={`aspect-square rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer transition-colors hover:border-purple-400 hover:bg-purple-50 ${
+                <label className={`aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors hover:opacity-80 ${
                   uploading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}>
+                }`}
+                style={{ borderColor: colors.border, backgroundColor: colors.inputBackground }}>
                   <input
                     type="file"
                     className="hidden"
@@ -739,11 +765,11 @@ export default function ProfilePage() {
                     disabled={uploading}
                   />
                   {uploading ? (
-                    <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+                    <Loader2 className="w-8 h-8 animate-spin" style={{ color: colors.secondary }} />
                   ) : (
                     <>
-                      <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                      <span className="text-sm font-medium text-gray-600">Add Photo</span>
+                      <Upload className="w-8 h-8 mb-2" style={{ color: colors.tertiaryText }} />
+                      <span className="text-sm font-medium" style={{ color: colors.secondaryText }}>Add Photo</span>
                     </>
                   )}
                 </label>
@@ -752,7 +778,8 @@ export default function ProfilePage() {
                 {photos.map((photo) => (
                   <div
                     key={photo.id}
-                    className="aspect-square rounded-xl overflow-hidden relative group cursor-pointer bg-gray-100"
+                    className="aspect-square rounded-xl overflow-hidden relative group cursor-pointer"
+                    style={{ backgroundColor: colors.inputBackground }}
                     onClick={() => {
                       setSelectedPhoto(photo);
                       setShowPhotoModal(true);
@@ -768,7 +795,8 @@ export default function ProfilePage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
                         {photo.isProfile && (
-                          <div className="bg-purple-600 text-white px-2 py-1 rounded-full text-xs">
+                          <div className="px-2 py-1 rounded-full text-xs text-white"
+                               style={{ backgroundColor: colors.secondary }}>
                             Profile
                           </div>
                         )}
@@ -777,7 +805,8 @@ export default function ProfilePage() {
                             e.stopPropagation();
                             handleDeletePhoto(photo.id);
                           }}
-                          className="bg-red-500 text-white p-1.5 rounded-full hover:bg-red-600 transition-colors"
+                          className="p-1.5 rounded-full transition-colors text-white hover:opacity-80"
+                          style={{ backgroundColor: colors.danger }}
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -791,8 +820,9 @@ export default function ProfilePage() {
                           e.stopPropagation();
                           handleSetProfilePhoto(photo.url);
                         }}
-                        className="absolute top-2 right-2 bg-white/90 text-gray-800 p-1.5 rounded-full hover:bg-white transition-colors opacity-0 group-hover:opacity-100"
+                        className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-full transition-colors opacity-0 group-hover:opacity-100"
                         title="Set as profile photo"
+                        style={{ color: colors.iconColor }}
                       >
                         <User className="w-3 h-3" />
                       </button>
@@ -803,21 +833,23 @@ export default function ProfilePage() {
             </div>
             
             {/* About Section - SHOWING ALL FIELDS */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="rounded-2xl shadow-lg p-6" style={{ backgroundColor: colors.cardBackground }}>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">About Me</h2>
+                <h2 className="text-xl font-bold" style={{ color: colors.primaryText }}>About Me</h2>
                 {isEditing && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="px-4 py-2 rounded-lg transition-colors"
+                      style={{ color: colors.secondaryText, backgroundColor: colors.inputBackground }}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveChanges}
                       disabled={isUpdating}
-                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: colors.secondary, color: 'white' }}
                     >
                       {isUpdating ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -836,70 +868,96 @@ export default function ProfilePage() {
                   {/* Basic Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                         Username *
                       </label>
                       <input
                         type="text"
                         value={editForm.username}
                         onChange={(e) => setEditForm({...editForm, username: e.target.value})}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 transition-colors"
                         placeholder="Enter your username"
+                        style={{ 
+                          backgroundColor: colors.inputBackground,
+                          color: colors.primaryText,
+                          borderColor: colors.border,
+                        }}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                         Email
                       </label>
                       <input
                         type="email"
                         value={editForm.email}
                         readOnly
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 placeholder:text-gray-500 text-gray-500"
+                        className="w-full px-4 py-2.5 border rounded-lg"
                         placeholder="Your email (cannot change)"
+                        style={{ 
+                          backgroundColor: colors.inputBackground,
+                          color: colors.primaryText,
+                          borderColor: colors.border,
+                          opacity: 0.7
+                        }}
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                         Age
                       </label>
                       <input
                         type="number"
                         value={editForm.age}
                         onChange={(e) => setEditForm({...editForm, age: e.target.value})}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 transition-colors"
                         placeholder="Enter your age"
                         min="18"
                         max="100"
+                        style={{ 
+                          backgroundColor: colors.inputBackground,
+                          color: colors.primaryText,
+                          borderColor: colors.border,
+                        }}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                         Birthday
                       </label>
                       <input
                         type="date"
                         value={editForm.birthday}
                         onChange={(e) => setEditForm({...editForm, birthday: e.target.value})}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 transition-colors"
+                        style={{ 
+                          backgroundColor: colors.inputBackground,
+                          color: colors.primaryText,
+                          borderColor: colors.border,
+                        }}
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                         Gender
                       </label>
                       <select
                         value={editForm.gender}
                         onChange={(e) => setEditForm({...editForm, gender: e.target.value})}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 transition-colors"
+                        style={{ 
+                          backgroundColor: colors.inputBackground,
+                          color: colors.primaryText,
+                          borderColor: colors.border,
+                        }}
                       >
-                        <option value="" className="placeholder:text-gray-500 text-gray-500">Select gender</option>
+                        <option value="" style={{ color: colors.placeholderText }}>Select gender</option>
                         {GENDER_OPTIONS.map(option => (
                           <option key={option} value={option}>
                             {option === 'men' ? 'Male' : 
@@ -910,15 +968,20 @@ export default function ProfilePage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                         Relationship Status
                       </label>
                       <select
                         value={editForm.martialStatus}
                         onChange={(e) => setEditForm({...editForm, martialStatus: e.target.value})}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 transition-colors"
+                        style={{ 
+                          backgroundColor: colors.inputBackground,
+                          color: colors.primaryText,
+                          borderColor: colors.border,
+                        }}
                       >
-                        <option value="" className="placeholder:text-gray-500 text-gray-500">Select status</option>
+                        <option value="" style={{ color: colors.placeholderText }}>Select status</option>
                         {MARTIAL_STATUS.map(status => (
                           <option key={status} value={status}>{status}</option>
                         ))}
@@ -928,77 +991,102 @@ export default function ProfilePage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                         Location
                       </label>
                       <input
                         type="text"
                         value={editForm.location}
                         onChange={(e) => setEditForm({...editForm, location: e.target.value})}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 transition-colors"
                         placeholder="City, Country"
+                        style={{ 
+                          backgroundColor: colors.inputBackground,
+                          color: colors.primaryText,
+                          borderColor: colors.border,
+                        }}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                         Profession / Field of Work
                       </label>
                       <input
                         type="text"
                         value={editForm.fieldOfWork}
                         onChange={(e) => setEditForm({...editForm, fieldOfWork: e.target.value})}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 transition-colors"
                         placeholder="Your profession"
+                        style={{ 
+                          backgroundColor: colors.inputBackground,
+                          color: colors.primaryText,
+                          borderColor: colors.border,
+                        }}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                       Bio *
                     </label>
                     <textarea
                       value={editForm.bio}
                       onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
                       rows={4}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                      className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 transition-colors"
                       placeholder="Tell us about yourself..."
+                      style={{ 
+                        backgroundColor: colors.inputBackground,
+                        color: colors.primaryText,
+                        borderColor: colors.border,
+                      }}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                         English Level
                       </label>
                       <select
                         value={editForm.englishLevel}
                         onChange={(e) => setEditForm({...editForm, englishLevel: e.target.value})}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 transition-colors"
+                        style={{ 
+                          backgroundColor: colors.inputBackground,
+                          color: colors.primaryText,
+                          borderColor: colors.border,
+                        }}
                       >
-                        <option value="" className="placeholder:text-gray-500 text-gray-500">Select level</option>
+                        <option value="" style={{ color: colors.placeholderText }}>Select level</option>
                         {ENGLISH_LEVELS.map(level => (
                           <option key={level} value={level}>{level}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                         Languages (comma separated)
                       </label>
                       <input
                         type="text"
                         value={editForm.languages}
                         onChange={(e) => setEditForm({...editForm, languages: e.target.value})}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-colors placeholder:text-gray-500 text-gray-500"
+                        className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 transition-colors"
                         placeholder="English, German, Spanish"
+                        style={{ 
+                          backgroundColor: colors.inputBackground,
+                          color: colors.primaryText,
+                          borderColor: colors.border,
+                        }}
                       />
                     </div>
                   </div>
 
                   {/* Goals Section */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                    <label className="block text-sm font-medium mb-3" style={{ color: colors.secondaryText }}>
                       Your Goals (Select up to 3)
                     </label>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -1007,25 +1095,32 @@ export default function ProfilePage() {
                           key={goal}
                           type="button"
                           onClick={() => handleArrayFieldChange('goals', goal)}
-                          className={`px-4 py-2.5 rounded-lg border transition-colors flex items-center justify-center gap-2 ${
-                            editForm.goals.includes(goal)
-                              ? 'bg-purple-600 text-white border-purple-600'
-                              : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100'
-                          }`}
+                          className="px-4 py-2.5 rounded-lg border transition-colors flex items-center justify-center gap-2"
+                          style={{
+                            backgroundColor: editForm.goals.includes(goal) 
+                              ? colors.secondary 
+                              : colors.inputBackground,
+                            color: editForm.goals.includes(goal) 
+                              ? 'white' 
+                              : colors.primaryText,
+                            borderColor: editForm.goals.includes(goal) 
+                              ? colors.secondary 
+                              : colors.border,
+                          }}
                         >
                           <TargetIcon className="w-4 h-4" />
                           {goal}
                         </button>
                       ))}
                     </div>
-                    <div className="mt-2 text-sm text-gray-500">
+                    <div className="mt-2 text-sm" style={{ color: colors.tertiaryText }}>
                       Selected: {editForm.goals.join(', ')}
                     </div>
                   </div>
 
                   {/* Interests Section */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                    <label className="block text-sm font-medium mb-3" style={{ color: colors.secondaryText }}>
                       Your Interests
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -1034,11 +1129,18 @@ export default function ProfilePage() {
                           key={interest}
                           type="button"
                           onClick={() => handleArrayFieldChange('interests', interest)}
-                          className={`px-3 py-2 rounded-lg border transition-colors flex items-center justify-center gap-2 text-sm ${
-                            editForm.interests.includes(interest)
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100'
-                          }`}
+                          className="px-3 py-2 rounded-lg border transition-colors flex items-center justify-center gap-2 text-sm"
+                          style={{
+                            backgroundColor: editForm.interests.includes(interest) 
+                              ? colors.primary 
+                              : colors.inputBackground,
+                            color: editForm.interests.includes(interest) 
+                              ? 'white' 
+                              : colors.primaryText,
+                            borderColor: editForm.interests.includes(interest) 
+                              ? colors.primary 
+                              : colors.border,
+                          }}
                         >
                           {interest === 'Music' && <MusicIcon className="w-4 h-4" />}
                           {interest === 'Movies' && <FilmIcon className="w-4 h-4" />}
@@ -1059,7 +1161,7 @@ export default function ProfilePage() {
 
                   {/* Personality Traits */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                    <label className="block text-sm font-medium mb-3" style={{ color: colors.secondaryText }}>
                       Personality Traits
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -1068,11 +1170,18 @@ export default function ProfilePage() {
                           key={trait}
                           type="button"
                           onClick={() => handleArrayFieldChange('personalityTraits', trait)}
-                          className={`px-3 py-2 rounded-lg border transition-colors flex items-center justify-center gap-2 text-sm ${
-                            editForm.personalityTraits.includes(trait)
-                              ? 'bg-green-600 text-white border-green-600'
-                              : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100'
-                          }`}
+                          className="px-3 py-2 rounded-lg border transition-colors flex items-center justify-center gap-2 text-sm"
+                          style={{
+                            backgroundColor: editForm.personalityTraits.includes(trait) 
+                              ? colors.success 
+                              : colors.inputBackground,
+                            color: editForm.personalityTraits.includes(trait) 
+                              ? 'white' 
+                              : colors.primaryText,
+                            borderColor: editForm.personalityTraits.includes(trait) 
+                              ? colors.success 
+                              : colors.border,
+                          }}
                         >
                           <Smile className="w-4 h-4" />
                           {trait}
@@ -1087,13 +1196,18 @@ export default function ProfilePage() {
                   
                   {/* Bio */}
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <User className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: colors.primaryText }}>
+                      <User className="w-5 h-5" style={{ color: colors.secondary }} />
                       About Me
                     </h3>
-                    <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <p className="leading-relaxed p-4 rounded-lg border"
+                       style={{ 
+                         backgroundColor: colors.inputBackground, 
+                         borderColor: colors.borderLight,
+                         color: profileData.bio ? colors.primaryText : colors.placeholderText
+                       }}>
                       {profileData.bio || (
-                        <span className="text-gray-400 italic">No bio added yet. Add a bio to tell others about yourself.</span>
+                        <span className="italic">No bio added yet. Add a bio to tell others about yourself.</span>
                       )}
                     </p>
                   </div>
@@ -1101,53 +1215,67 @@ export default function ProfilePage() {
                   {/* Basic Info Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Username */}
-                    <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-100">
+                    <div className="p-4 rounded-xl border" 
+                         style={{ backgroundColor: colors.inputBackground, borderColor: colors.borderLight }}>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                             style={{ backgroundColor: colors.primary }}>
                           <User className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <div className="text-sm text-gray-600">Username</div>
-                          <div className="font-bold text-gray-900">{profileData.username || 'Not set'}</div>
+                          <div className="text-sm" style={{ color: colors.secondaryText }}>Username</div>
+                          <div className="font-bold" style={{ color: colors.primaryText }}>
+                            {profileData.username || 'Not set'}
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Email */}
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
+                    <div className="p-4 rounded-xl border" 
+                         style={{ backgroundColor: colors.inputBackground, borderColor: colors.borderLight }}>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                             style={{ backgroundColor: colors.secondary }}>
                           <Mail className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <div className="text-sm text-gray-600">Email</div>
-                          <div className="font-bold text-gray-900 truncate">{profileData.email}</div>
+                          <div className="text-sm" style={{ color: colors.secondaryText }}>Email</div>
+                          <div className="font-bold truncate" style={{ color: colors.primaryText }}>
+                            {profileData.email}
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Age */}
-                    <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                    <div className="p-4 rounded-xl border" 
+                         style={{ backgroundColor: colors.inputBackground, borderColor: colors.borderLight }}>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                             style={{ backgroundColor: colors.success }}>
                           <Calendar className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <div className="text-sm text-gray-600">Age</div>
-                          <div className="font-bold text-gray-900">{profileData.age || 'Not set'}</div>
+                          <div className="text-sm" style={{ color: colors.secondaryText }}>Age</div>
+                          <div className="font-bold" style={{ color: colors.primaryText }}>
+                            {profileData.age || 'Not set'}
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Birthday */}
-                    <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-100">
+                    <div className="p-4 rounded-xl border" 
+                         style={{ backgroundColor: colors.inputBackground, borderColor: colors.borderLight }}>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                             style={{ backgroundColor: colors.warning }}>
                           <Calendar className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <div className="text-sm text-gray-600">Birthday</div>
-                          <div className="font-bold text-gray-900">
+                          <div className="text-sm" style={{ color: colors.secondaryText }}>Birthday</div>
+                          <div className="font-bold" style={{ color: colors.primaryText }}>
                             {profileData.birthday ? new Date(profileData.birthday).toLocaleDateString() : 'Not set'}
                           </div>
                         </div>
@@ -1156,14 +1284,16 @@ export default function ProfilePage() {
 
                     {/* Gender */}
                     {profileData.gender && (
-                      <div className="p-4 bg-gradient-to-r from-pink-50 to-rose-50 rounded-xl border border-pink-100">
+                      <div className="p-4 rounded-xl border" 
+                           style={{ backgroundColor: colors.inputBackground, borderColor: colors.borderLight }}>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                               style={{ backgroundColor: colors.primary }}>
                             <User className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <div className="text-sm text-gray-600">Gender</div>
-                            <div className="font-bold text-gray-900">
+                            <div className="text-sm" style={{ color: colors.secondaryText }}>Gender</div>
+                            <div className="font-bold" style={{ color: colors.primaryText }}>
                               {profileData.gender === 'men' ? 'Male' : 
                                profileData.gender === 'women' ? 'Female' : 
                                profileData.gender}
@@ -1175,14 +1305,18 @@ export default function ProfilePage() {
 
                     {/* Martial Status */}
                     {profileData.martialStatus && (
-                      <div className="p-4 bg-gradient-to-r from-red-50 to-orange-50 rounded-xl border border-red-100">
+                      <div className="p-4 rounded-xl border" 
+                           style={{ backgroundColor: colors.inputBackground, borderColor: colors.borderLight }}>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                               style={{ backgroundColor: colors.danger }}>
                             <HeartIcon className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <div className="text-sm text-gray-600">Relationship Status</div>
-                            <div className="font-bold text-gray-900">{profileData.martialStatus}</div>
+                            <div className="text-sm" style={{ color: colors.secondaryText }}>Relationship Status</div>
+                            <div className="font-bold" style={{ color: colors.primaryText }}>
+                              {profileData.martialStatus}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1190,14 +1324,18 @@ export default function ProfilePage() {
 
                     {/* Location */}
                     {profileData.location && (
-                      <div className="p-4 bg-gradient-to-r from-cyan-50 to-teal-50 rounded-xl border border-cyan-100">
+                      <div className="p-4 rounded-xl border" 
+                           style={{ backgroundColor: colors.inputBackground, borderColor: colors.borderLight }}>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-lg flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                               style={{ backgroundColor: colors.success }}>
                             <MapPin className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <div className="text-sm text-gray-600">Location</div>
-                            <div className="font-bold text-gray-900">{profileData.location}</div>
+                            <div className="text-sm" style={{ color: colors.secondaryText }}>Location</div>
+                            <div className="font-bold" style={{ color: colors.primaryText }}>
+                              {profileData.location}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1205,14 +1343,18 @@ export default function ProfilePage() {
 
                     {/* Field of Work */}
                     {profileData.fieldOfWork && (
-                      <div className="p-4 bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl border border-indigo-100">
+                      <div className="p-4 rounded-xl border" 
+                           style={{ backgroundColor: colors.inputBackground, borderColor: colors.borderLight }}>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-lg flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                               style={{ backgroundColor: colors.secondary }}>
                             <BriefcaseIcon className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <div className="text-sm text-gray-600">Profession</div>
-                            <div className="font-bold text-gray-900">{profileData.fieldOfWork}</div>
+                            <div className="text-sm" style={{ color: colors.secondaryText }}>Profession</div>
+                            <div className="font-bold" style={{ color: colors.primaryText }}>
+                              {profileData.fieldOfWork}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1220,14 +1362,18 @@ export default function ProfilePage() {
 
                     {/* English Level */}
                     {profileData.englishLevel && (
-                      <div className="p-4 bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl border border-violet-100">
+                      <div className="p-4 rounded-xl border" 
+                           style={{ backgroundColor: colors.inputBackground, borderColor: colors.borderLight }}>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-500 rounded-lg flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                               style={{ backgroundColor: colors.secondary }}>
                             <Globe className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <div className="text-sm text-gray-600">English Level</div>
-                            <div className="font-bold text-gray-900">{profileData.englishLevel}</div>
+                            <div className="text-sm" style={{ color: colors.secondaryText }}>English Level</div>
+                            <div className="font-bold" style={{ color: colors.primaryText }}>
+                              {profileData.englishLevel}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1236,16 +1382,21 @@ export default function ProfilePage() {
 
                   {/* Languages */}
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Languages className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: colors.primaryText }}>
+                      <Languages className="w-5 h-5" style={{ color: colors.secondary }} />
                       Languages
                     </h3>
                     {profileData.languagesArray.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
-                        {profileData.languagesArray.map((lang: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined, index: React.Key | null | undefined) => (
+                        {profileData.languagesArray.map((lang, index) => (
                           <span 
                             key={index}
-                            className="bg-gradient-to-r from-indigo-100 to-purple-100 border border-indigo-300 text-indigo-800 px-4 py-2 rounded-full font-medium hover:shadow-md transition-shadow flex items-center gap-2"
+                            className="px-4 py-2 rounded-full font-medium hover:shadow-md transition-shadow flex items-center gap-2"
+                            style={{ 
+                              backgroundColor: `${colors.secondary}20`, 
+                              color: colors.secondary,
+                              borderColor: `${colors.secondary}40`
+                            }}
                           >
                             <Globe className="w-4 h-4" />
                             {lang}
@@ -1253,7 +1404,12 @@ export default function ProfilePage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <p className="italic p-4 rounded-lg border" 
+                         style={{ 
+                           backgroundColor: colors.inputBackground, 
+                           borderColor: colors.borderLight,
+                           color: colors.placeholderText
+                         }}>
                         No languages added. Add languages you speak.
                       </p>
                     )}
@@ -1261,8 +1417,8 @@ export default function ProfilePage() {
 
                   {/* Goals */}
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <TargetIcon className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: colors.primaryText }}>
+                      <TargetIcon className="w-5 h-5" style={{ color: colors.secondary }} />
                       My Goals
                     </h3>
                     {profileData.goalsArray.length > 0 ? (
@@ -1270,7 +1426,12 @@ export default function ProfilePage() {
                         {profileData.goalsArray.map((goal, index) => (
                           <span 
                             key={index}
-                            className="bg-gradient-to-r from-purple-100 to-pink-100 border border-purple-300 text-purple-800 px-4 py-2 rounded-full font-medium hover:shadow-md transition-shadow flex items-center gap-2"
+                            className="px-4 py-2 rounded-full font-medium hover:shadow-md transition-shadow flex items-center gap-2"
+                            style={{ 
+                              backgroundColor: `${colors.secondary}20`, 
+                              color: colors.secondary,
+                              borderColor: `${colors.secondary}40`
+                            }}
                           >
                             <TargetIcon className="w-4 h-4" />
                             {goal}
@@ -1278,7 +1439,12 @@ export default function ProfilePage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <p className="italic p-4 rounded-lg border" 
+                         style={{ 
+                           backgroundColor: colors.inputBackground, 
+                           borderColor: colors.borderLight,
+                           color: colors.placeholderText
+                         }}>
                         No goals set. What are you looking for on this platform?
                       </p>
                     )}
@@ -1286,8 +1452,8 @@ export default function ProfilePage() {
 
                   {/* Interests */}
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: colors.primaryText }}>
+                      <Sparkles className="w-5 h-5" style={{ color: colors.secondary }} />
                       My Interests
                     </h3>
                     {profileData.interestsArray.length > 0 ? (
@@ -1295,27 +1461,42 @@ export default function ProfilePage() {
                         {profileData.interestsArray.map((interest, index) => (
                           <div
                             key={index}
-                            className="flex flex-col items-center p-3 bg-white border border-gray-200 hover:border-purple-300 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-md group"
+                            className="flex flex-col items-center p-3 border rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-md group"
+                            style={{ 
+                              backgroundColor: colors.cardBackground,
+                              borderColor: colors.border
+                            }}
                           >
-                            <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-blue-100 border-2 border-gray-300 rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                              {interest === 'Music' && <MusicIcon className="w-5 h-5 text-purple-600" />}
-                              {interest === 'Movies' && <FilmIcon className="w-5 h-5 text-purple-600" />}
-                              {interest === 'Gaming' && <GameIcon className="w-5 h-5 text-purple-600" />}
-                              {interest === 'Sports' && <Activity className="w-5 h-5 text-purple-600" />}
-                              {interest === 'Travel' && <PlaneIcon className="w-5 h-5 text-purple-600" />}
-                              {interest === 'Food' && <UtensilsIcon className="w-5 h-5 text-purple-600" />}
-                              {interest === 'Art' && <PaletteIcon className="w-5 h-5 text-purple-600" />}
-                              {interest === 'Reading' && <BookOpenIcon className="w-5 h-5 text-purple-600" />}
-                              {interest === 'Fitness' && <DumbbellIcon className="w-5 h-5 text-purple-600" />}
+                            <div className="w-12 h-12 border-2 rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"
+                                 style={{ 
+                                   backgroundColor: `${colors.primary}10`,
+                                   borderColor: colors.border
+                                 }}>
+                              {interest === 'Music' && <MusicIcon className="w-5 h-5" style={{ color: colors.secondary }} />}
+                              {interest === 'Movies' && <FilmIcon className="w-5 h-5" style={{ color: colors.secondary }} />}
+                              {interest === 'Gaming' && <GameIcon className="w-5 h-5" style={{ color: colors.secondary }} />}
+                              {interest === 'Sports' && <Activity className="w-5 h-5" style={{ color: colors.secondary }} />}
+                              {interest === 'Travel' && <PlaneIcon className="w-5 h-5" style={{ color: colors.secondary }} />}
+                              {interest === 'Food' && <UtensilsIcon className="w-5 h-5" style={{ color: colors.secondary }} />}
+                              {interest === 'Art' && <PaletteIcon className="w-5 h-5" style={{ color: colors.secondary }} />}
+                              {interest === 'Reading' && <BookOpenIcon className="w-5 h-5" style={{ color: colors.secondary }} />}
+                              {interest === 'Fitness' && <DumbbellIcon className="w-5 h-5" style={{ color: colors.secondary }} />}
                               {!['Music','Movies','Gaming','Sports','Travel','Food','Art','Reading','Fitness'].includes(interest) && 
-                               <Sparkles className="w-5 h-5 text-purple-600" />}
+                               <Sparkles className="w-5 h-5" style={{ color: colors.secondary }} />}
                             </div>
-                            <span className="text-sm font-medium text-gray-900 text-center">{interest}</span>
+                            <span className="text-sm font-medium text-center" style={{ color: colors.primaryText }}>
+                              {interest}
+                            </span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <p className="italic p-4 rounded-lg border" 
+                         style={{ 
+                           backgroundColor: colors.inputBackground, 
+                           borderColor: colors.borderLight,
+                           color: colors.placeholderText
+                         }}>
                         No interests added. Add your hobbies and interests.
                       </p>
                     )}
@@ -1323,8 +1504,8 @@ export default function ProfilePage() {
 
                   {/* Personality Traits */}
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Smile className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: colors.primaryText }}>
+                      <Smile className="w-5 h-5" style={{ color: colors.secondary }} />
                       Personality Traits
                     </h3>
                     {profileData.traitsArray.length > 0 ? (
@@ -1332,7 +1513,12 @@ export default function ProfilePage() {
                         {profileData.traitsArray.map((trait, index) => (
                           <span 
                             key={index}
-                            className="bg-gradient-to-r from-green-100 to-emerald-100 border border-green-300 text-green-800 px-4 py-2 rounded-full font-medium hover:shadow-md transition-shadow flex items-center gap-2"
+                            className="px-4 py-2 rounded-full font-medium hover:shadow-md transition-shadow flex items-center gap-2"
+                            style={{ 
+                              backgroundColor: `${colors.success}20`, 
+                              color: colors.success,
+                              borderColor: `${colors.success}40`
+                            }}
                           >
                             <Smile className="w-4 h-4" />
                             {trait}
@@ -1340,7 +1526,12 @@ export default function ProfilePage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <p className="italic p-4 rounded-lg border" 
+                         style={{ 
+                           backgroundColor: colors.inputBackground, 
+                           borderColor: colors.borderLight,
+                           color: colors.placeholderText
+                         }}>
                         No personality traits added. Describe your personality.
                       </p>
                     )}
@@ -1354,62 +1545,82 @@ export default function ProfilePage() {
           <div className="space-y-8">
             
             {/* Stats Card */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Your Stats</h2>
+            <div className="rounded-2xl shadow-lg p-6" style={{ backgroundColor: colors.cardBackground }}>
+              <h2 className="text-xl font-bold mb-6" style={{ color: colors.primaryText }}>Your Stats</h2>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-100">
+                <div className="flex items-center justify-between p-3 rounded-xl border"
+                     style={{ 
+                       backgroundColor: colors.inputBackground,
+                       borderColor: colors.borderLight
+                     }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                         style={{ backgroundColor: colors.primary }}>
                       <CreditCard className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">Credits</div>
+                      <div className="font-medium" style={{ color: colors.primaryText }}>Credits</div>
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-purple-600">
+                  <div className="text-2xl font-bold" style={{ color: colors.primary }}>
                     {profileData.credits}
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
+                <div className="flex items-center justify-between p-3 rounded-xl border"
+                     style={{ 
+                       backgroundColor: colors.inputBackground,
+                       borderColor: colors.borderLight
+                     }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                         style={{ backgroundColor: colors.danger }}>
                       <Heart className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">Total Matches</div>
+                      <div className="font-medium" style={{ color: colors.primaryText }}>Total Matches</div>
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold" style={{ color: colors.danger }}>
                     {profileData.totalMatches}
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                <div className="flex items-center justify-between p-3 rounded-xl border"
+                     style={{ 
+                       backgroundColor: colors.inputBackground,
+                       borderColor: colors.borderLight
+                     }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                         style={{ backgroundColor: colors.success }}>
                       <MessageSquare className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">Total Chats</div>
+                      <div className="font-medium" style={{ color: colors.primaryText }}>Total Chats</div>
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-bold" style={{ color: colors.success }}>
                     {profileData.totalChats}
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-100">
+                <div className="flex items-center justify-between p-3 rounded-xl border"
+                     style={{ 
+                       backgroundColor: colors.inputBackground,
+                       borderColor: colors.borderLight
+                     }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                         style={{ backgroundColor: colors.warning }}>
                       <UsersIcon className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">Following</div>
+                      <div className="font-medium" style={{ color: colors.primaryText }}>Following</div>
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-yellow-600">
+                  <div className="text-2xl font-bold" style={{ color: colors.warning }}>
                     {profileData.followingCount}
                   </div>
                 </div>
@@ -1417,13 +1628,14 @@ export default function ProfilePage() {
             </div>
             
             {/* Account Info */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Account Info</h2>
+            <div className="rounded-2xl shadow-lg p-6" style={{ backgroundColor: colors.cardBackground }}>
+              <h2 className="text-xl font-bold mb-6" style={{ color: colors.primaryText }}>Account Info</h2>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                  <span className="text-gray-600">Member Since</span>
-                  <span className="font-medium text-gray-900">
+                <div className="flex items-center justify-between p-2 rounded-lg transition-colors"
+                     style={{ color: colors.secondaryText }}>
+                  <span>Member Since</span>
+                  <span className="font-medium" style={{ color: colors.primaryText }}>
                     {new Date(profileData.createdAt).toLocaleDateString('en-US', { 
                       month: 'short', 
                       year: 'numeric'
@@ -1431,9 +1643,10 @@ export default function ProfilePage() {
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                  <span className="text-gray-600">Last Active</span>
-                  <span className="font-medium text-gray-900">
+                <div className="flex items-center justify-between p-2 rounded-lg transition-colors"
+                     style={{ color: colors.secondaryText }}>
+                  <span>Last Active</span>
+                  <span className="font-medium" style={{ color: colors.primaryText }}>
                     {new Date(profileData.lastActive).toLocaleDateString('en-US', { 
                       month: 'short', 
                       day: 'numeric'
@@ -1441,40 +1654,45 @@ export default function ProfilePage() {
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                  <span className="text-gray-600">User ID</span>
-                  <span className="font-mono text-xs text-gray-500 truncate">
-  {profileData.userId?.substring(0, 8)}...
-</span>
+                <div className="flex items-center justify-between p-2 rounded-lg transition-colors"
+                     style={{ color: colors.secondaryText }}>
+                  <span>User ID</span>
+                  <span className="font-mono text-xs truncate" style={{ color: colors.tertiaryText }}>
+                    {profileData.userId?.substring(0, 8)}...
+                  </span>
                 </div>
               </div>
             </div>
             
             {/* Quick Actions */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
+            <div className="rounded-2xl shadow-lg p-6" style={{ backgroundColor: colors.cardBackground }}>
+              <h2 className="text-xl font-bold mb-6" style={{ color: colors.primaryText }}>Quick Actions</h2>
               
               <div className="space-y-3">
-                <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-purple-50 rounded-xl transition-colors group">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center group-hover:from-purple-600 group-hover:to-purple-700 transition-colors">
+                <button className="w-full flex items-center gap-3 p-3 rounded-xl transition-colors group hover:opacity-90"
+                        style={{ backgroundColor: colors.inputBackground }}>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                       style={{ backgroundColor: colors.secondary }}>
                     <Search className="w-5 h-5 text-white" />
                   </div>
                   <div className="text-left">
-                    <div className="font-medium text-gray-900">Discover People</div>
-                    <div className="text-sm text-gray-600">Find new connections</div>
+                    <div className="font-medium" style={{ color: colors.primaryText }}>Discover People</div>
+                    <div className="text-sm" style={{ color: colors.secondaryText }}>Find new connections</div>
                   </div>
                 </button>
                 
                 <button 
                   onClick={logout}
-                  className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-red-50 rounded-xl transition-colors group"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl transition-colors group hover:opacity-90"
+                  style={{ backgroundColor: colors.inputBackground }}
                 >
-                  <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center group-hover:from-red-600 group-hover:to-red-700 transition-colors">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                       style={{ backgroundColor: colors.danger }}>
                     <LogOut className="w-5 h-5 text-white" />
                   </div>
                   <div className="text-left">
-                    <div className="font-medium text-red-600">Log Out</div>
-                    <div className="text-sm text-red-500">Sign out of your account</div>
+                    <div className="font-medium" style={{ color: colors.danger }}>Log Out</div>
+                    <div className="text-sm" style={{ color: colors.danger, opacity: 0.7 }}>Sign out of your account</div>
                   </div>
                 </button>
               </div>
@@ -1488,8 +1706,8 @@ export default function ProfilePage() {
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
           <div className="max-w-4xl w-full">
             <div className="flex justify-between items-center mb-6">
-              <div className="text-white">
-                <h3 className="text-xl font-bold">Photo Gallery</h3>
+              <div>
+                <h3 className="text-xl font-bold text-white">Photo Gallery</h3>
                 <p className="text-gray-300 mt-1">View and manage your photos</p>
               </div>
               <button
@@ -1501,8 +1719,9 @@ export default function ProfilePage() {
             </div>
             
             {/* Main Photo Display */}
-            <div className="bg-white rounded-xl p-4 mb-4">
-              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+            <div className="bg-white rounded-xl p-4 mb-4" style={{ backgroundColor: colors.cardBackground }}>
+              <div className="aspect-square rounded-lg overflow-hidden"
+                   style={{ backgroundColor: colors.inputBackground }}>
                 {selectedPhoto ? (
                   <img 
                     src={selectedPhoto.url} 
@@ -1517,7 +1736,7 @@ export default function ProfilePage() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Camera className="w-24 h-24 text-gray-300" />
+                    <Camera className="w-24 h-24" style={{ color: colors.border }} />
                   </div>
                 )}
               </div>
@@ -1554,7 +1773,7 @@ export default function ProfilePage() {
             
             {/* Photo Actions */}
             {selectedPhoto && (
-              <div className="mt-6 p-4 bg-white/10 backdrop-blur-sm rounded-xl">
+              <div className="mt-6 p-4 backdrop-blur-sm rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
                 <div className="flex items-center justify-between">
                   <div className="text-white">
                     <div className="font-medium">Photo Info</div>
@@ -1567,7 +1786,8 @@ export default function ProfilePage() {
                     {!selectedPhoto.isProfile && (
                       <button
                         onClick={() => handleSetProfilePhoto(selectedPhoto.url)}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                        className="px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 hover:opacity-90"
+                        style={{ backgroundColor: colors.secondary }}
                       >
                         <User className="w-4 h-4" />
                         Set as Profile
@@ -1579,7 +1799,8 @@ export default function ProfilePage() {
                           handleDeletePhoto(selectedPhoto.id);
                           setSelectedPhoto(null);
                         }}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                        className="px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 hover:opacity-90"
+                        style={{ backgroundColor: colors.danger }}
                       >
                         <Trash2 className="w-4 h-4" />
                         Delete

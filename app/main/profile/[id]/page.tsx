@@ -13,6 +13,7 @@ import {
 import LayoutController from '@/components/layout/LayoutController';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
 // Interest icons mapping
 const interestIcons: Record<string, React.ReactNode> = {
@@ -31,6 +32,7 @@ const ProfilePage = () => {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const colors = useThemeColors();
 
   const [profile, setProfile] = useState<ParsedPersonaProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,7 +43,6 @@ const ProfilePage = () => {
   const [isWinking, setIsWinking] = useState(false);
   const [message, setMessage] = useState('');
   const [winkAnimation, setWinkAnimation] = useState(false);
-
 
   const personaId = params.id as string;
 
@@ -79,7 +80,6 @@ const ProfilePage = () => {
     }
   };
 
-
   const handleSendWink = async () => {
     if (!profile) return;
   
@@ -106,7 +106,6 @@ const ProfilePage = () => {
       setIsWinking(false);
     }
   };
-
 
   const handleWink = async () => {
     setIsWinking(true);
@@ -146,7 +145,7 @@ const ProfilePage = () => {
   };
 
   const handleSendGift = () => {
-    router.push(`/main/virtual-gifts/${profile?.$id}`)
+    router.push(`/main/virtual-gifts/${profile?.$id}`);
   };
 
   const openImageModal = (imageUrl: string, index: number) => {
@@ -206,19 +205,19 @@ const ProfilePage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <div className="min-h-screen" style={{ background: colors.background }}>
         <LayoutController />
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="h-8 rounded w-1/4 mb-6" style={{ background: colors.hoverBackground }}></div>
             <div className="flex flex-col lg:flex-row gap-8">
               <div className="lg:w-2/3">
-                <div className="h-96 bg-gray-200 rounded-xl"></div>
+                <div className="h-96 rounded-xl" style={{ background: colors.hoverBackground }}></div>
               </div>
               <div className="lg:w-1/3 space-y-4">
-                <div className="h-12 bg-gray-200 rounded"></div>
-                <div className="h-8 bg-gray-200 rounded"></div>
-                <div className="h-32 bg-gray-200 rounded"></div>
+                <div className="h-12 rounded" style={{ background: colors.hoverBackground }}></div>
+                <div className="h-8 rounded" style={{ background: colors.hoverBackground }}></div>
+                <div className="h-32 rounded" style={{ background: colors.hoverBackground }}></div>
               </div>
             </div>
           </div>
@@ -229,17 +228,18 @@ const ProfilePage = () => {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <div className="min-h-screen" style={{ background: colors.background }}>
         <LayoutController />
         <div className="max-w-6xl mx-auto px-4 py-16 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
-            <X className="w-10 h-10 text-red-500" />
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ background: `${colors.danger}20` }}>
+            <X className="w-10 h-10" style={{ color: colors.danger }} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Profile Not Found</h1>
-          <p className="text-gray-600 mb-6">{error || 'The profile you are looking for does not exist.'}</p>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: colors.primaryText }}>Profile Not Found</h1>
+          <p className="mb-6" style={{ color: colors.secondaryText }}>{error || 'The profile you are looking for does not exist.'}</p>
           <button
             onClick={() => router.push('/main/home')}
-            className="px-6 py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors"
+            className="px-6 py-3 rounded-lg font-medium transition-colors"
+            style={{ background: colors.secondary, color: colors.primaryText === '#000000' ? '#ffffff' : colors.primaryText }}
           >
             Back to Home
           </button>
@@ -249,14 +249,15 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen" style={{ background: colors.background }}>
       <LayoutController />
 
       <main className="max-w-6xl mx-auto px-4 py-6">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+          className="flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity"
+          style={{ color: colors.secondaryText }}
         >
           <ChevronLeft className="w-5 h-5" />
           Back
@@ -267,11 +268,14 @@ const ProfilePage = () => {
           {/* Left Column - Profile Info & Photos */}
           <div className="lg:col-span-2 space-y-6">
             {/* Profile Header */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="rounded-2xl border p-6" style={{ 
+              background: colors.cardBackground, 
+              borderColor: colors.borderLight
+            }}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                 {/* Profile Picture */}
                 <div className="relative">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 shadow-lg" style={{ borderColor: colors.cardBackground }}>
                     <Image
                       src={profile.profilePic}
                       alt={profile.username}
@@ -295,7 +299,7 @@ const ProfilePage = () => {
                 {/* Profile Info */}
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-3xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-bold" style={{ color: colors.primaryText }}>
                       {profile.username}, {profile.age}
                     </h1>
                     <div className={`px-2 py-1 rounded-full text-xs font-medium ${profile.isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
@@ -306,7 +310,7 @@ const ProfilePage = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 text-gray-600 mb-4">
+                  <div className="flex items-center gap-4 mb-4" style={{ color: colors.secondaryText }}>
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
                       <span>{profile.location}</span>
@@ -322,28 +326,40 @@ const ProfilePage = () => {
                   </div>
 
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                    <div className="px-3 py-1 rounded-full text-sm" style={{ 
+                      background: colors.hoverBackground, 
+                      color: colors.secondaryText 
+                    }}>
                       {profile.fieldOfWork}
                     </div>
-                    <div className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                    <div className="px-3 py-1 rounded-full text-sm" style={{ 
+                      background: colors.hoverBackground, 
+                      color: colors.secondaryText 
+                    }}>
                       {profile.englishLevel} English
                     </div>
-                    <div className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                    <div className="px-3 py-1 rounded-full text-sm" style={{ 
+                      background: colors.hoverBackground, 
+                      color: colors.secondaryText 
+                    }}>
                       {profile.martialStatus}
                     </div>
                   </div>
 
                   {/* Bio */}
-                  <p className="text-gray-700">{profile.bio}</p>
+                  <p style={{ color: colors.secondaryText }}>{profile.bio}</p>
                 </div>
               </div>
             </div>
 
             {/* Photos Section */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="rounded-2xl border p-6" style={{ 
+              background: colors.cardBackground, 
+              borderColor: colors.borderLight
+            }}>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Photos</h2>
-                <span className="text-sm text-gray-500">{allImages.length} photos</span>
+                <h2 className="text-xl font-bold" style={{ color: colors.primaryText }}>Photos</h2>
+                <span className="text-sm" style={{ color: colors.tertiaryText }}>{allImages.length} photos</span>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -371,63 +387,77 @@ const ProfilePage = () => {
             </div>
 
             {/* About Me Section */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">About Me</h2>
+            <div className="rounded-2xl border p-6" style={{ 
+              background: colors.cardBackground, 
+              borderColor: colors.borderLight
+            }}>
+              <h2 className="text-xl font-bold mb-6" style={{ color: colors.primaryText }}>About Me</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Personality Traits */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Personality</h3>
+                  <h3 className="font-semibold mb-3" style={{ color: colors.primaryText }}>Personality</h3>
                   <div className="flex flex-wrap gap-2">
                     {profile.personalityTraits.map((trait, index) => (
                       <span
                         key={index}
-                        className="px-3 py-2 bg-[#5e17eb]/10 text-[#5e17eb] rounded-lg text-sm font-medium"
+                        className="px-3 py-2 rounded-lg text-sm font-medium"
+                        style={{ 
+                          background: `${colors.secondary}20`, 
+                          color: colors.secondary 
+                        }}
                       >
                         {trait}
                       </span>
                     ))}
                   </div>
-                  <p className="mt-3 text-gray-600 text-sm">{profile.personality}</p>
+                  <p className="mt-3 text-sm" style={{ color: colors.secondaryText }}>{profile.personality}</p>
                 </div>
 
                 {/* Looking For */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Looking For</h3>
+                  <h3 className="font-semibold mb-3" style={{ color: colors.primaryText }}>Looking For</h3>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Target className="w-4 h-4 text-[#5e17eb]" />
-                      <span className="text-gray-700">Get attention</span>
+                      <Target className="w-4 h-4" style={{ color: colors.secondary }} />
+                      <span style={{ color: colors.secondaryText }}>Get attention</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-[#5e17eb]" />
-                      <span className="text-gray-700">
+                      <Users className="w-4 h-4" style={{ color: colors.secondary }} />
+                      <span style={{ color: colors.secondaryText }}>
                         People aged {profile.preferences.ageRange?.[0] || 18} - {profile.preferences.ageRange?.[1] || 90}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-[#5e17eb]" />
-                      <span className="text-gray-700">{profile.preferences.lookingFor || 'Meaningful connections'}</span>
+                      <Sparkles className="w-4 h-4" style={{ color: colors.secondary }} />
+                      <span style={{ color: colors.secondaryText }}>{profile.preferences.lookingFor || 'Meaningful connections'}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
             {/* SEND GIFT SECTION */}
-            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
+            <div className="rounded-lg md:rounded-xl shadow border p-4 md:p-6" style={{ 
+              background: colors.cardBackground, 
+              borderColor: colors.borderLight 
+            }}>
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2">
                 <div>
-                  <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <Gift className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+                  <h2 className="text-lg md:text-xl font-bold flex items-center gap-2" style={{ color: colors.primaryText }}>
+                    <Gift className="w-5 h-5 md:w-6 md:h-6" style={{ color: colors.secondary }} />
                     Virtual Gifts for Special Ones
                   </h2>
-                  <p className="text-gray-600 text-sm md:text-base mt-1">
+                  <p className="text-sm md:text-base mt-1" style={{ color: colors.secondaryText }}>
                     Liven up your chat with {profile.username} by sending a thoughtful gift
                   </p>
                 </div>
                 <button
                   onClick={handleSendGift}
-                  className="text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-full transition-colors w-fit"
+                  className="text-sm font-medium px-4 py-2 rounded-full transition-colors w-fit"
+                  style={{ 
+                    background: colors.secondary,
+                    color: '#ffffff'
+                  }}
                 >
                   Choose Virtual Gift
                 </button>
@@ -445,7 +475,7 @@ const ProfilePage = () => {
                       className="rounded-lg object-cover"
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-900">Rose</span>
+                  <span className="text-sm font-medium" style={{ color: colors.primaryText }}>Rose</span>
                 </div>
 
                 {/* Gift 2 - Just image, no click */}
@@ -459,7 +489,7 @@ const ProfilePage = () => {
                       className="rounded-lg object-cover"
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-900">Wishwell</span>
+                  <span className="text-sm font-medium" style={{ color: colors.primaryText }}>Wishwell</span>
                 </div>
 
                 {/* Gift 3 - Just image, no click */}
@@ -473,7 +503,7 @@ const ProfilePage = () => {
                       className="rounded-lg object-cover"
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-900">flowers</span>
+                  <span className="text-sm font-medium" style={{ color: colors.primaryText }}>Flowers</span>
                 </div>
 
                 {/* Gift 4 - Just image, no click */}
@@ -487,27 +517,30 @@ const ProfilePage = () => {
                       className="rounded-lg object-cover"
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-900">Love potion</span>
+                  <span className="text-sm font-medium" style={{ color: colors.primaryText }}>Love potion</span>
                 </div>
               </div>
             </div>
             {/* Posts Section */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Posts</h2>
+            <div className="rounded-2xl border p-6" style={{ 
+              background: colors.cardBackground, 
+              borderColor: colors.borderLight
+            }}>
+              <h2 className="text-xl font-bold mb-6" style={{ color: colors.primaryText }}>Recent Posts</h2>
               <div className="space-y-4">
                 {/* Sample post */}
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-gray-700 italic">
+                <div className="p-4 rounded-xl" style={{ background: colors.hoverBackground }}>
+                  <p style={{ color: colors.secondaryText }} className="italic">
                     &ldquo;I remind myself that happiness is a choice, so I choose joy daily even when life feels heavy and uncertain.&rdquo;
                   </p>
-                  <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
+                  <div className="flex items-center justify-between mt-3 text-sm" style={{ color: colors.tertiaryText }}>
                     <span>Just now</span>
                     <div className="flex items-center gap-4">
-                      <button className="flex items-center gap-1 hover:text-[#5e17eb]">
+                      <button className="flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: colors.tertiaryText }}>
                         <Heart className="w-4 h-4" />
                         <span>24</span>
                       </button>
-                      <button className="flex items-center gap-1 hover:text-[#5e17eb]">
+                      <button className="flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: colors.tertiaryText }}>
                         <MessageCircle className="w-4 h-4" />
                         <span>8</span>
                       </button>
@@ -521,37 +554,46 @@ const ProfilePage = () => {
           {/* Right Column - Actions & Details */}
           <div className="space-y-6">
             {/* Action Buttons */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="rounded-2xl border p-6" style={{ 
+              background: colors.cardBackground, 
+              borderColor: colors.borderLight
+            }}>
               <div className="space-y-3">
                 <button
                   onClick={() => router.push(`/main/chats/${personaId}`)}
-                  className="w-full py-3 bg-[#5e17eb] text-white rounded-xl font-medium hover:bg-[#4a13c4] transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+                  style={{ 
+                    background: colors.secondary,
+                    color: '#ffffff'
+                  }}
                 >
                   <MessageCircle className="w-5 h-5" />
                   Start Chat
                 </button>
 
                 <button
-  onClick={handleSendWink}
-  disabled={isWinking}
-  className="w-full py-3 bg-gradient-to-r from-[#ff2e2e] to-[#ff6b6b] text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 relative overflow-hidden"
->
-  <Sparkles className="w-5 h-5" />
-  {isWinking ? 'Winking...' : 'Send Wink'}
-  
-  {/* Animated background effect */}
-  {winkAnimation && (
-    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
-  )}
-</button>
+                  onClick={handleSendWink}
+                  disabled={isWinking}
+                  className="w-full py-3 bg-gradient-to-r from-[#ff2e2e] to-[#ff6b6b] text-white rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 relative overflow-hidden"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  {isWinking ? 'Winking...' : 'Send Wink'}
+                  
+                  {/* Animated background effect */}
+                  {winkAnimation && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                  )}
+                </button>
 
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={handleFollow}
-                    className={`py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 ${isFollowing
-                        ? 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
-                        : 'bg-[#5e17eb] text-white hover:bg-[#4a13c4]'
-                      }`}
+                    className={`py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2`}
+                    style={{ 
+                      background: isFollowing ? colors.hoverBackground : colors.secondary,
+                      color: isFollowing ? colors.secondaryText : '#ffffff',
+                      border: isFollowing ? `1px solid ${colors.borderLight}` : 'none'
+                    }}
                   >
                     <UserPlus className="w-5 h-5" />
                     {isFollowing ? 'Following' : 'Follow'}
@@ -559,7 +601,12 @@ const ProfilePage = () => {
 
                   <button
                     onClick={handleSendGift}
-                    className="py-3 bg-white border-2 border-[#5e17eb] text-[#5e17eb] rounded-xl font-medium hover:bg-[#5e17eb]/5 transition-colors flex items-center justify-center gap-2"
+                    className="py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+                    style={{ 
+                      background: colors.cardBackground,
+                      color: colors.secondary,
+                      border: `2px solid ${colors.secondary}`
+                    }}
                   >
                     <Gift className="w-5 h-5" />
                     Gift
@@ -569,13 +616,20 @@ const ProfilePage = () => {
             </div>
 
             {/* Interests */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Interests</h3>
+            <div className="rounded-2xl border p-6" style={{ 
+              background: colors.cardBackground, 
+              borderColor: colors.borderLight
+            }}>
+              <h3 className="font-semibold mb-4" style={{ color: colors.primaryText }}>Interests</h3>
               <div className="flex flex-wrap gap-2">
                 {profile.interests.map((interest, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                    style={{ 
+                      background: colors.hoverBackground,
+                      color: colors.secondaryText
+                    }}
                   >
                     {getInterestIcon(interest)}
                     <span className="text-sm">{interest}</span>
@@ -585,55 +639,76 @@ const ProfilePage = () => {
             </div>
 
             {/* Languages */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Languages</h3>
+            <div className="rounded-2xl border p-6" style={{ 
+              background: colors.cardBackground, 
+              borderColor: colors.borderLight
+            }}>
+              <h3 className="font-semibold mb-4" style={{ color: colors.primaryText }}>Languages</h3>
               <div className="space-y-2">
                 {profile.languages.map((language, index) => (
                   <div key={index} className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-[#5e17eb] rounded-full"></div>
-                    <span className="text-gray-700">{language}</span>
+                    <div className="w-2 h-2 rounded-full" style={{ background: colors.secondary }}></div>
+                    <span style={{ color: colors.secondaryText }}>{language}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Credits Info */}
-            <div className="bg-gradient-to-br from-[#5e17eb]/5 to-white rounded-2xl border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Credits Info</h3>
+            <div className="rounded-2xl border p-6" style={{ 
+              background: `linear-gradient(135deg, ${colors.secondary}05 0%, ${colors.cardBackground} 100%)`,
+              borderColor: colors.borderLight 
+            }}>
+              <h3 className="font-semibold mb-4" style={{ color: colors.primaryText }}>Credits Info</h3>
               <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200">
-                  <span className="text-gray-700">Sending a photo:</span>
-                  <span className="font-semibold text-[#5e17eb]">10 cr</span>
+                <div className="flex justify-between items-center p-3 rounded-lg border" style={{
+                  background: colors.cardBackground,
+                  borderColor: colors.borderLight
+                }}>
+                  <span style={{ color: colors.secondaryText }}>Sending a photo:</span>
+                  <span className="font-semibold" style={{ color: colors.secondary }}>10 cr</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200">
-                  <span className="text-gray-700">Sending a sticker:</span>
-                  <span className="font-semibold text-[#5e17eb]">5 cr</span>
+                <div className="flex justify-between items-center p-3 rounded-lg border" style={{
+                  background: colors.cardBackground,
+                  borderColor: colors.borderLight
+                }}>
+                  <span style={{ color: colors.secondaryText }}>Sending a sticker:</span>
+                  <span className="font-semibold" style={{ color: colors.secondary }}>5 cr</span>
                 </div>
-                <button className="w-full py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors">
+                <button 
+                  className="w-full py-3 rounded-lg font-medium transition-colors"
+                  style={{ 
+                    background: colors.primaryText === '#000000' ? '#000000' : '#ffffff',
+                    color: colors.primaryText === '#000000' ? '#ffffff' : '#000000' 
+                  }}
+                >
                   Get Credits
                 </button>
               </div>
             </div>
 
             {/* Activity Stats */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Activity Stats</h3>
+            <div className="rounded-2xl border p-6" style={{ 
+              background: colors.cardBackground, 
+              borderColor: colors.borderLight
+            }}>
+              <h3 className="font-semibold mb-4" style={{ color: colors.primaryText }}>Activity Stats</h3>
               <div className="grid grid-cols-2 gap-3">
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-[#5e17eb]">{profile.totalChats}</div>
-                  <div className="text-xs text-gray-500">Total Chats</div>
+                <div className="text-center p-3 rounded-lg" style={{ background: colors.hoverBackground }}>
+                  <div className="text-2xl font-bold" style={{ color: colors.secondary }}>{profile.totalChats}</div>
+                  <div className="text-xs" style={{ color: colors.tertiaryText }}>Total Chats</div>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-[#5e17eb]">{profile.totalMatches}</div>
-                  <div className="text-xs text-gray-500">Matches</div>
+                <div className="text-center p-3 rounded-lg" style={{ background: colors.hoverBackground }}>
+                  <div className="text-2xl font-bold" style={{ color: colors.secondary }}>{profile.totalMatches}</div>
+                  <div className="text-xs" style={{ color: colors.tertiaryText }}>Matches</div>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-[#5e17eb]">{profile.followingCount}</div>
-                  <div className="text-xs text-gray-500">Following</div>
+                <div className="text-center p-3 rounded-lg" style={{ background: colors.hoverBackground }}>
+                  <div className="text-2xl font-bold" style={{ color: colors.secondary }}>{profile.followingCount}</div>
+                  <div className="text-xs" style={{ color: colors.tertiaryText }}>Following</div>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-xs text-gray-500">Last Active</div>
-                  <div className="text-sm font-medium text-gray-700">{getTimeAgo(profile.lastActive)}</div>
+                <div className="text-center p-3 rounded-lg" style={{ background: colors.hoverBackground }}>
+                  <div className="text-xs" style={{ color: colors.tertiaryText }}>Last Active</div>
+                  <div className="text-sm font-medium" style={{ color: colors.secondaryText }}>{getTimeAgo(profile.lastActive)}</div>
                 </div>
               </div>
             </div>
@@ -706,14 +781,16 @@ const ProfilePage = () => {
                 {allImages.map((image, index) => (
                   <button
                     key={index}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setCurrentImageIndex(index);
                       setSelectedImage(image);
                     }}
-                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${currentImageIndex === index
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                      currentImageIndex === index
                         ? 'border-[#5e17eb] scale-110'
                         : 'border-transparent hover:border-white/50'
-                      }`}
+                    }`}
                   >
                     <Image
                       src={image}

@@ -24,6 +24,8 @@ import personaService, { ParsedPersonaProfile } from '@/lib/services/personaServ
 import giftHandlerService from '@/lib/services/giftHandlerService';
 import { COLLECTIONS, DATABASE_ID, databases } from '@/lib/appwrite/config';
 import { Query, ID } from 'appwrite';
+import { useTheme } from '@/lib/context/ThemeContext';
+import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
 // Types
 interface Category {
@@ -49,6 +51,8 @@ export default function VirtualGiftToPersonaPage() {
     error: giftsError,
     canAffordGift,
   } = useGifts();
+  const { isDark } = useTheme();
+  const colors = useThemeColors();
   
   // State
   const [recipient, setRecipient] = useState<ParsedPersonaProfile | null>(null);
@@ -348,16 +352,16 @@ export default function VirtualGiftToPersonaPage() {
   // Loading states - Only initial loading
   if (giftsLoading || !recipient) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
         <LayoutController />
-        <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: colors.background }}>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center"
           >
             <div className="w-16 h-16 border-4 border-[#5e17eb] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-            <p className="text-gray-600 font-medium">Loading gifts...</p>
+            <p style={{ color: colors.secondaryText }} className="font-medium">Loading gifts...</p>
           </motion.div>
         </div>
       </div>
@@ -365,7 +369,7 @@ export default function VirtualGiftToPersonaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
       <LayoutController />
       
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
@@ -383,15 +387,17 @@ export default function VirtualGiftToPersonaPage() {
               <button
                 onClick={handleBack}
                 className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+                style={{ color: colors.iconColor, backgroundColor: isDark ? 'transparent' : undefined }}
                 aria-label="Back"
               >
-                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 group-hover:text-[#5e17eb] group-hover:-translate-x-1 transition-all" />
+                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 group-hover:text-[#5e17eb] group-hover:-translate-x-1 transition-all" />
               </button>
               
               {/* Recipient Info */}
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <div className="relative flex-shrink-0">
-                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden border-2 border-white shadow-md">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden border-2 shadow-md" 
+                       style={{ borderColor: isDark ? colors.border : 'white' }}>
                     {recipient.profilePic ? (
                       <Image
                         src={recipient.profilePic}
@@ -411,17 +417,18 @@ export default function VirtualGiftToPersonaPage() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-bold text-gray-900 text-sm sm:text-base truncate">{recipient.username}</h2>
-                  <p className="text-xs text-gray-500 hidden sm:block truncate">Send a virtual gift</p>
+                  <h2 className="font-bold text-sm sm:text-base truncate" style={{ color: colors.primaryText }}>{recipient.username}</h2>
+                  <p className="text-xs hidden sm:block truncate" style={{ color: colors.tertiaryText }}>Send a virtual gift</p>
                 </div>
               </div>
             </div>
             
             {/* Right: Credits */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <div className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-[#5e17eb]/10 to-purple-500/10 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl">
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl"
+                   style={{ backgroundColor: isDark ? colors.panelBackground : 'rgba(94, 23, 235, 0.1)' }}>
                 <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
-                <span className="text-base sm:text-lg font-bold text-gray-900">{userCredits}</span>
+                <span className="text-base sm:text-lg font-bold" style={{ color: colors.primaryText }}>{userCredits}</span>
               </div>
               <button
                 onClick={handleBuyCredits}
@@ -435,13 +442,19 @@ export default function VirtualGiftToPersonaPage() {
           
           {/* Second Row - Choose Gift Text + Gift History Button */}
           <div className="flex items-center justify-between gap-4">
-            <p className="text-sm sm:text-base text-gray-600">
-              Choose a virtual gift for <span className="font-semibold text-gray-900">{recipient.username}</span>
+            <p className="text-sm sm:text-base" style={{ color: colors.secondaryText }}>
+              Choose a virtual gift for <span className="font-semibold" style={{ color: colors.primaryText }}>{recipient.username}</span>
             </p>
             
             <button
               onClick={handleGiftHistory}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 whitespace-nowrap"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium whitespace-nowrap"
+              style={{ 
+                backgroundColor: colors.cardBackground, 
+                color: colors.secondaryText,
+                borderColor: colors.border,
+                borderWidth: '1px'
+              }}
             >
               <History className="w-4 h-4" />
               <span className="hidden sm:inline">Gift History</span>
@@ -457,7 +470,11 @@ export default function VirtualGiftToPersonaPage() {
                 exit={{ opacity: 0, y: -10 }}
                 className="mt-4"
               >
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-center justify-between">
+                <div className="border text-green-700 px-4 py-3 rounded-xl flex items-center justify-between"
+                     style={{ 
+                       backgroundColor: isDark ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                       borderColor: isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.3)'
+                     }}>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500" />
                     <span className="font-medium text-sm sm:text-base">{success}</span>
@@ -479,7 +496,11 @@ export default function VirtualGiftToPersonaPage() {
                 exit={{ opacity: 0, y: -10 }}
                 className="mt-4"
               >
-                <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center justify-between">
+                <div className="border text-red-700 px-4 py-3 rounded-xl flex items-center justify-between"
+                     style={{ 
+                       backgroundColor: isDark ? 'rgba(255, 46, 46, 0.1)' : 'rgba(255, 46, 46, 0.1)',
+                       borderColor: isDark ? 'rgba(255, 46, 46, 0.2)' : 'rgba(255, 46, 46, 0.3)'
+                     }}>
                   <div className="flex items-center gap-3">
                     <AlertCircle className="w-5 h-5 text-red-500" />
                     <span className="font-medium text-sm sm:text-base">{error || giftsError}</span>
@@ -501,16 +522,17 @@ export default function VirtualGiftToPersonaPage() {
           className="mb-6 sm:mb-8"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base sm:text-lg font-bold text-gray-900">Browse Categories</h3>
+            <h3 className="text-base sm:text-lg font-bold" style={{ color: colors.primaryText }}>Browse Categories</h3>
           </div>
           
           <div className="relative">
             <button
               onClick={() => scrollCategories('left')}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center lg:hidden hover:bg-white transition-colors"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full shadow-lg flex items-center justify-center lg:hidden hover:bg-white transition-colors"
+              style={{ backgroundColor: isDark ? colors.panelBackground : 'rgba(255, 255, 255, 0.9)' }}
               aria-label="Scroll left"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-5 h-5" style={{ color: colors.iconColor }} />
             </button>
             
             <div
@@ -531,8 +553,14 @@ export default function VirtualGiftToPersonaPage() {
                 className={`flex flex-col items-center px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl whitespace-nowrap transition-all min-w-[100px] sm:min-w-[120px] flex-shrink-0 ${
                   activeCategory === 'all'
                     ? 'bg-gradient-to-r from-[#5e17eb] to-purple-600 text-white shadow-lg'
-                    : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
+                    : ''
                 }`}
+                style={activeCategory !== 'all' ? {
+                  backgroundColor: colors.cardBackground,
+                  color: colors.secondaryText,
+                  borderColor: colors.border,
+                  borderWidth: '1px'
+                } : {}}
               >
                 <Gift className="w-4 h-4 sm:w-5 sm:h-5 mb-1" />
                 <span className="font-medium text-xs sm:text-sm">All Gifts</span>
@@ -547,8 +575,14 @@ export default function VirtualGiftToPersonaPage() {
                   className={`flex flex-col items-center px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl whitespace-nowrap transition-all min-w-[100px] sm:min-w-[120px] flex-shrink-0 ${
                     activeCategory === category.id
                       ? `bg-gradient-to-r ${category.color} text-white shadow-lg`
-                      : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
+                      : ''
                   }`}
+                  style={activeCategory !== category.id ? {
+                    backgroundColor: colors.cardBackground,
+                    color: colors.secondaryText,
+                    borderColor: colors.border,
+                    borderWidth: '1px'
+                  } : {}}
                 >
                   <div className="mb-1">
                     {category.icon}
@@ -560,10 +594,11 @@ export default function VirtualGiftToPersonaPage() {
             
             <button
               onClick={() => scrollCategories('right')}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center lg:hidden hover:bg-white transition-colors"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full shadow-lg flex items-center justify-center lg:hidden hover:bg-white transition-colors"
+              style={{ backgroundColor: isDark ? colors.panelBackground : 'rgba(255, 255, 255, 0.9)' }}
               aria-label="Scroll right"
             >
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-5 h-5" style={{ color: colors.iconColor }} />
             </button>
           </div>
         </motion.div>
@@ -590,10 +625,10 @@ export default function VirtualGiftToPersonaPage() {
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-lg sm:text-2xl font-bold text-gray-900">
+                      <h3 className="text-lg sm:text-2xl font-bold" style={{ color: colors.primaryText }}>
                         {categoryId === 'featured' ? 'Featured Gifts' : `${getCategoryDisplayName(categoryId)} Gifts`}
                       </h3>
-                      <p className="text-xs sm:text-sm text-gray-600">
+                      <p className="text-xs sm:text-sm" style={{ color: colors.tertiaryText }}>
                         {categoryId === 'featured' ? 'Most popular gifts' : `${gifts.length} gifts available`}
                       </p>
                     </div>
@@ -610,7 +645,12 @@ export default function VirtualGiftToPersonaPage() {
                       transition={{ delay: giftIndex * 0.05 }}
                       whileHover={{ scale: 1.03, y: -5 }}
                       onClick={() => handleSelectGift(gift)}
-                      className="group relative bg-white overflow-hidden hover:shadow-2xl transition-all cursor-pointer flex flex-col border border-gray-100 rounded-xl"
+                      className="group relative overflow-hidden hover:shadow-2xl transition-all cursor-pointer flex flex-col rounded-xl"
+                      style={{ 
+                        backgroundColor: colors.cardBackground, 
+                        borderColor: colors.border, 
+                        borderWidth: '1px' 
+                      }}
                     >
                       {/* Popular Badge */}
                       {gift.popularityScore > 250 && (
@@ -622,14 +662,16 @@ export default function VirtualGiftToPersonaPage() {
                       
                       {/* Subcategory Badge */}
                       {gift.subcategory && subcategoryIcons[gift.subcategory] && (
-                        <div className="absolute top-2 left-2 z-10 bg-white/90 backdrop-blur-sm text-gray-700 text-[10px] sm:text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                        <div className="absolute top-2 left-2 z-10 text-[10px] sm:text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-sm"
+                             style={{ backgroundColor: `${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.9)'}`, color: colors.secondaryText }}>
                           <span className="hidden sm:inline">{subcategoryIcons[gift.subcategory]}</span>
                           <span className="capitalize hidden sm:inline">{gift.subcategory}</span>
                         </div>
                       )}
                       
                       {/* Gift Image */}
-                      <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden relative rounded-t-xl">
+                      <div className="aspect-square flex items-center justify-center overflow-hidden relative rounded-t-xl"
+                           style={{ backgroundColor: isDark ? colors.panelBackground : 'rgba(249, 250, 251, 1)' }}>
                         {gift.imageUrl ? (
                           <Image
                             src={gift.imageUrl}
@@ -646,23 +688,28 @@ export default function VirtualGiftToPersonaPage() {
                       {/* Gift Info */}
                       <div className="p-2.5 sm:p-4 flex-1 flex flex-col justify-between">
                         <div className="mb-2">
-                          <h4 className="font-bold text-gray-900 text-xs sm:text-sm lg:text-base mb-0.5 sm:mb-1 line-clamp-1">{gift.name}</h4>
-                          <p className="text-[10px] sm:text-xs text-gray-600 line-clamp-2">{gift.description}</p>
+                          <h4 className="font-bold text-xs sm:text-sm lg:text-base mb-0.5 sm:mb-1 line-clamp-1"
+                              style={{ color: colors.primaryText }}>{gift.name}</h4>
+                          <p className="text-[10px] sm:text-xs line-clamp-2"
+                             style={{ color: colors.tertiaryText }}>{gift.description}</p>
                         </div>
                         
                         <div className="flex items-center justify-between mt-auto">
                           <div className="flex items-center gap-1 sm:gap-1.5">
                             <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
-                            <span className="font-bold text-sm sm:text-base lg:text-lg text-gray-900">{gift.price}</span>
+                            <span className="font-bold text-sm sm:text-base lg:text-lg"
+                                  style={{ color: colors.primaryText }}>{gift.price}</span>
                           </div>
                           
                           {gift.isAnimated ? (
-                            <div className="text-[9px] sm:text-xs text-purple-600 bg-purple-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium flex items-center gap-0.5">
+                            <div className="text-[9px] sm:text-xs text-purple-600 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium flex items-center gap-0.5"
+                                 style={{ backgroundColor: isDark ? 'rgba(94, 23, 235, 0.2)' : 'rgba(94, 23, 235, 0.1)' }}>
                               <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                               <span className="hidden sm:inline">Animated</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-0.5 sm:gap-1 text-xs sm:text-sm text-gray-500">
+                            <div className="flex items-center gap-0.5 sm:gap-1 text-xs sm:text-sm"
+                                 style={{ color: colors.tertiaryText }}>
                               <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-red-400" />
                               <span className="hidden sm:inline">{gift.popularityScore}</span>
                             </div>
@@ -685,22 +732,26 @@ export default function VirtualGiftToPersonaPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50"
+            className="fixed inset-0 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
           >
             <motion.div
               initial={{ y: '100%', opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="bg-gray-100 sm:rounded-3xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+              className="sm:rounded-3xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+              style={{ backgroundColor: colors.background }}
             >
               
               {/* Modal Content - Stacked on Mobile, Side by Side on Desktop */}
               <div className="flex flex-col md:flex-row overflow-y-auto">
                 
                 {/* Left Side - Gift Preview */}
-                <div className="md:w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 p-6 sm:p-8 flex flex-col items-center justify-center md:rounded-l-3xl">
-                  <div className="w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 mb-4 sm:mb-6 bg-white shadow-lg p-4 flex items-center justify-center">
+                <div className="md:w-1/2 p-6 sm:p-8 flex flex-col items-center justify-center md:rounded-l-3xl"
+                     style={{ backgroundColor: isDark ? colors.panelBackground : 'rgba(249, 250, 251, 1)' }}>
+                  <div className="w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 mb-4 sm:mb-6 shadow-lg p-4 flex items-center justify-center"
+                       style={{ backgroundColor: colors.cardBackground }}>
                     {selectedGift.imageUrl ? (
                       <Image
                         src={selectedGift.imageUrl}
@@ -717,14 +768,15 @@ export default function VirtualGiftToPersonaPage() {
                   </div>
                   
                   <div className="text-center">
-                    <h3 className="font-bold text-gray-900 text-xl sm:text-2xl mb-2">{selectedGift.name}</h3>
-                    <p className="text-gray-600 mb-4 text-sm sm:text-base">{selectedGift.description}</p>
+                    <h3 className="font-bold text-xl sm:text-2xl mb-2" style={{ color: colors.primaryText }}>{selectedGift.name}</h3>
+                    <p className="mb-4 text-sm sm:text-base" style={{ color: colors.secondaryText }}>{selectedGift.description}</p>
                     
                     <div className="flex items-center justify-center gap-3">
-                      <div className="flex items-center gap-2 sm:gap-3 bg-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl border border-gray-100 shadow-md">
+                      <div className="flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-xl border shadow-md"
+                           style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
                         <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
-                        <span className="text-2xl sm:text-3xl font-bold text-gray-900">{selectedGift.price}</span>
-                        <span className="text-gray-600 text-sm sm:text-base">credits</span>
+                        <span className="text-2xl sm:text-3xl font-bold" style={{ color: colors.primaryText }}>{selectedGift.price}</span>
+                        <span style={{ color: colors.secondaryText }} className="text-sm sm:text-base">credits</span>
                       </div>
                     </div>
                   </div>
@@ -734,15 +786,16 @@ export default function VirtualGiftToPersonaPage() {
                 <div className="md:w-1/2 p-6 sm:p-8 flex flex-col">
                   <div className="flex items-center justify-between mb-4 sm:mb-6">
                     <div>
-                      <h3 className="font-bold text-gray-900 text-lg sm:text-xl">Send to {recipient.username}</h3>
-                      <p className="text-gray-500 text-xs sm:text-sm">Add a personal message</p>
+                      <h3 className="font-bold text-lg sm:text-xl" style={{ color: colors.primaryText }}>Send to {recipient.username}</h3>
+                      <p className="text-xs sm:text-sm" style={{ color: colors.tertiaryText }}>Add a personal message</p>
                     </div>
                     <button
                       onClick={() => {
                         setShowGiftOverlay(false);
                         setSelectedGift(null);
                       }}
-                      className="text-gray-400 hover:text-gray-600 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-1.5"
+                      className="text-gray-400 hover:text-gray-600 transition-colors rounded-full p-1.5"
+                      style={{ backgroundColor: isDark ? colors.hoverBackground : 'rgba(243, 244, 246, 1)' }}
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -751,14 +804,16 @@ export default function VirtualGiftToPersonaPage() {
                   {/* Credit Status */}
                   <div className="mb-4 sm:mb-6">
                     {userCredits < selectedGift.price ? (
-                      <div className="bg-white border border-rose-200 rounded-xl p-4 shadow-sm">
+                      <div className="border rounded-xl p-4 shadow-sm"
+                           style={{ backgroundColor: colors.cardBackground, borderColor: isDark ? 'rgba(255, 46, 46, 0.3)' : 'rgba(254, 202, 202, 1)' }}>
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                               style={{ backgroundColor: isDark ? 'rgba(255, 46, 46, 0.2)' : 'rgba(254, 226, 226, 1)' }}>
                             <AlertCircle className="w-5 h-5 text-rose-500" />
                           </div>
                           <div>
-                            <h5 className="font-bold text-rose-800 text-sm sm:text-base">Insufficient Credits</h5>
-                            <p className="text-rose-700 text-xs sm:text-sm">
+                            <h5 className="font-bold text-sm sm:text-base" style={{ color: isDark ? 'rgb(254, 202, 202)' : 'rgb(159, 18, 57)' }}>Insufficient Credits</h5>
+                            <p style={{ color: isDark ? 'rgb(251, 113, 133)' : 'rgb(190, 18, 60)' }} className="text-xs sm:text-sm">
                               You need {selectedGift.price - userCredits} more credits
                             </p>
                           </div>
@@ -771,14 +826,16 @@ export default function VirtualGiftToPersonaPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="bg-white border border-green-200 rounded-xl p-4 shadow-sm">
+                      <div className="border rounded-xl p-4 shadow-sm"
+                           style={{ backgroundColor: colors.cardBackground, borderColor: isDark ? 'rgba(16, 185, 129, 0.3)' : 'rgba(209, 250, 229, 1)' }}>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                               style={{ backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(236, 253, 245, 1)' }}>
                             <CheckCircle className="w-5 h-5 text-green-500" />
                           </div>
                           <div>
-                            <h5 className="font-bold text-green-800 text-sm sm:text-base">Ready to Send</h5>
-                            <p className="text-green-700 text-xs sm:text-sm">
+                            <h5 className="font-bold text-sm sm:text-base" style={{ color: isDark ? 'rgb(167, 243, 208)' : 'rgb(4, 120, 87)' }}>Ready to Send</h5>
+                            <p style={{ color: isDark ? 'rgb(52, 211, 153)' : 'rgb(6, 95, 70)' }} className="text-xs sm:text-sm">
                               You have {userCredits} credits available
                             </p>
                           </div>
@@ -789,17 +846,22 @@ export default function VirtualGiftToPersonaPage() {
                   
                   {/* Personal Message */}
                   <div className="mb-4 sm:mb-6 flex-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                       Personal message (optional)
                     </label>
                     <textarea
                       value={personalMessage}
                       onChange={(e) => setPersonalMessage(e.target.value)}
                       placeholder={`Write something sweet for ${recipient.username}...`}
-                      className="w-full h-24 sm:h-32 px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 focus:border-[#5e17eb] text-sm resize-none"
+                      className="w-full h-24 sm:h-32 px-4 py-3 border rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5e17eb]/20 focus:border-[#5e17eb] text-sm resize-none"
+                      style={{ 
+                        backgroundColor: colors.inputBackground,
+                        color: colors.primaryText,
+                        borderColor: colors.border
+                      }}
                       maxLength={200}
                     />
-                    <div className="text-right text-xs text-gray-500 mt-1">
+                    <div className="text-right text-xs mt-1" style={{ color: colors.tertiaryText }}>
                       {personalMessage.length}/200
                     </div>
                   </div>
@@ -824,20 +886,25 @@ export default function VirtualGiftToPersonaPage() {
                   </button>
                   
                   {/* Balance Info */}
-                  <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200">
+                  <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t" style={{ borderColor: colors.border }}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                             style={{ backgroundColor: isDark ? 'rgba(217, 119, 6, 0.2)' : 'rgba(254, 243, 199, 1)' }}>
                           <Crown className="w-5 h-5 text-amber-500" />
                         </div>
                         <div>
-                          <p className="text-xs sm:text-sm font-medium text-gray-900">Your Balance</p>
-                          <p className="text-xl sm:text-2xl font-bold text-gray-900">{userCredits} credits</p>
+                          <p className="text-xs sm:text-sm font-medium" style={{ color: colors.secondaryText }}>Your Balance</p>
+                          <p className="text-xl sm:text-2xl font-bold" style={{ color: colors.primaryText }}>{userCredits} credits</p>
                         </div>
                       </div>
                       <button
                         onClick={handleBuyCredits}
-                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors text-xs sm:text-sm"
+                        className="px-3 sm:px-4 py-1.5 sm:py-2 font-medium rounded-lg transition-colors text-xs sm:text-sm"
+                        style={{ 
+                          backgroundColor: isDark ? colors.panelBackground : 'rgba(243, 244, 246, 1)',
+                          color: colors.secondaryText
+                        }}
                       >
                         Get More
                       </button>
@@ -857,22 +924,28 @@ export default function VirtualGiftToPersonaPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl"
+              className="rounded-2xl max-w-md w-full p-8 shadow-2xl"
+              style={{ backgroundColor: colors.cardBackground }}
             >
               <div className="text-center mb-6">
-                <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-rose-50 border-4 border-rose-100 flex items-center justify-center">
+                <div className="w-20 h-20 mx-auto mb-5 rounded-full border-4 flex items-center justify-center"
+                     style={{ 
+                       backgroundColor: isDark ? 'rgba(255, 46, 46, 0.1)' : 'rgba(254, 226, 226, 1)',
+                       borderColor: isDark ? 'rgba(255, 46, 46, 0.2)' : 'rgba(254, 202, 202, 1)'
+                     }}>
                   <AlertCircle className="w-10 h-10 text-rose-500" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Not Enough Credits</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-bold mb-2" style={{ color: colors.primaryText }}>Not Enough Credits</h3>
+                <p style={{ color: colors.secondaryText }}>
                   You need <span className="font-bold text-[#5e17eb]">{selectedGift.price}</span> credits to send{' '}
-                  <span className="font-bold">{selectedGift.name}</span>, but you only have{' '}
+                  <span className="font-bold" style={{ color: colors.primaryText }}>{selectedGift.name}</span>, but you only have{' '}
                   <span className="font-bold text-rose-500">{userCredits}</span> credits.
                 </p>
               </div>
@@ -889,7 +962,13 @@ export default function VirtualGiftToPersonaPage() {
                     setShowInsufficientCredits(false);
                     setSelectedGift(null);
                   }}
-                  className="w-full py-3.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                  className="w-full py-3.5 text-gray-700 font-medium rounded-xl transition-colors"
+                  style={{ 
+                    backgroundColor: colors.background,
+                    color: colors.primaryText,
+                    borderColor: colors.border,
+                    borderWidth: '1px'
+                  }}
                 >
                   Choose Different Gift
                 </button>
