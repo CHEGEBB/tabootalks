@@ -1,8 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* These will be set by the theme service */
+  --theme-background: #ffffff;
+  --theme-panelBackground: #f8f9fa;
+  --theme-primaryText: #000000;
+  --theme-secondaryText: #333333;
+  /* ... and all other colors */
+}
+
+.dark {
+  /* These will be set by the theme service */
+  --theme-background: #111b21;
+  --theme-panelBackground: #202c33;
+  --theme-primaryText: #e9edef;
+  --theme-secondaryText: #8696a0;
+  /* ... and all other colors */
+}
+
+/* You can also create utility classes if you want */
+.text-primary {
+  color: var(--theme-primaryText);
+}
+
+.text-secondary {
+  color: var(--theme-secondaryText);
+}
+
+.bg-panel {
+  background-color: var(--theme-panelBackground);
+}
+
+.border-theme {
+  border-color: var(--theme-border);
 }
 
 @theme inline {
