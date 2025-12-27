@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import useAuth from '@/lib/hooks/useAuth';
 import useConversationStats from '@/lib/hooks/useConversationStats';
+import { useTheme } from '@/lib/context/ThemeContext';
 
 interface DesktopNavProps {
   activeTab: string;
@@ -15,6 +16,7 @@ interface DesktopNavProps {
 export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { isDark, colors } = useTheme();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
@@ -71,7 +73,6 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
         break;
       case 'chats':
         router.push('/main/chats/');
-        // Refresh stats when navigating to chats
         refreshStats();
         break;
       case 'discover':
@@ -131,7 +132,7 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
       id: 'chats', 
       label: 'Chats', 
       icon: MessageCircle, 
-      badge: stats.activeChats // Dynamic badge from conversation stats
+      badge: stats.activeChats
     },
     { id: 'discover', label: 'Discover', icon: Search },
     { id: 'people', label: 'People', icon: Users },
@@ -141,16 +142,23 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
   // Show loading skeleton while fetching user
   if (authLoading) {
     return (
-      <nav className="sticky top-0 z-40 bg-white border-b border-gray-200">
+      <nav className="sticky top-0 z-40 border-b transition-colors"
+        style={{
+          backgroundColor: colors.background,
+          borderColor: colors.border
+        }}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-24">
-            <div className="animate-pulse bg-gray-200 h-12 w-48 rounded"></div>
+            <div className="animate-pulse h-12 w-48 rounded"
+              style={{ backgroundColor: colors.inputBackground }}></div>
             <div className="flex gap-10">
               {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="animate-pulse bg-gray-200 h-12 w-12 rounded-full"></div>
+                <div key={i} className="animate-pulse h-12 w-12 rounded-full"
+                  style={{ backgroundColor: colors.inputBackground }}></div>
               ))}
             </div>
-            <div className="animate-pulse bg-gray-200 h-12 w-32 rounded-full"></div>
+            <div className="animate-pulse h-12 w-32 rounded-full"
+              style={{ backgroundColor: colors.inputBackground }}></div>
           </div>
         </div>
       </nav>
@@ -158,7 +166,11 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
   }
 
   return (
-    <nav className="sticky top-0 z-40 bg-white border-b border-gray-200">
+    <nav className="sticky top-0 z-40 border-b transition-colors"
+      style={{
+        backgroundColor: colors.background,
+        borderColor: colors.border
+      }}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-24">
           {/* Logo */}
@@ -172,7 +184,7 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
             >
               <div className="relative" style={{ width: '240px', height: '70px' }}>
                 <Image
-                  src="/assets/logo2.png"
+                  src={isDark ? "/assets/logo.png" : "/assets/logo2.png"}
                   alt="TabooTalks Logo"
                   width={240}
                   height={70}
@@ -193,43 +205,47 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
                 <div key={item.id} className="flex flex-col items-center">
                   <button
                     onClick={() => handleNavigation(item.id)}
-                    className={`flex flex-col items-center gap-1 transition-all ${
-                      isActive ? 'text-[#5e17eb]' : 'text-gray-500 hover:text-[#5e17eb]'
-                    }`}
+                    className="flex flex-col items-center gap-1 transition-all"
+                    style={{
+                      color: isActive ? colors.secondary : colors.secondaryText
+                    }}
                   >
-                    <div className={`relative p-4 rounded-full transition-all ${
-                      isActive 
-                        ? 'bg-[#5e17eb]/10 border border-[#5e17eb]/20' 
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}>
-                      <item.icon size={24} className={isActive ? 'text-[#5e17eb]' : ''} />
+                    <div className="relative p-4 rounded-full transition-all"
+                      style={{
+                        backgroundColor: isActive 
+                          ? `${colors.secondary}10` 
+                          : colors.cardBackground,
+                        border: isActive 
+                          ? `1px solid ${colors.secondary}33` 
+                          : 'none'
+                      }}>
+                      <item.icon size={24} style={{ 
+                        color: isActive ? colors.secondary : colors.iconColor 
+                      }} />
                       
-                      {/* Dynamic Badge - ALWAYS show for chats, even when 0 */}
-                      {item.id === 'chats' && !statsLoading && (
-                        <span className={`absolute -top-1 -right-1 h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center text-white ${
-                          item.badge && item.badge > 0 ? 'bg-[#ff2e2e] animate-pulse' : 'bg-gray-400'
-                        }`}>
-                          {item.badge || 0}
-                        </span>
-                      )}
-                      
-                      {/* Show badge for other items only if > 0 */}
-                      {item.id !== 'chats' && showBadge && (
-                        <span className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-[#ff2e2e] text-xs font-bold flex items-center justify-center text-white animate-pulse">
+                      {item.id === 'chats' && !statsLoading && item.badge && item.badge > 0 && (
+                        <span className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-[#ff2e2e] text-xs font-bold flex items-center justify-center text-white">
                           {item.badge}
                         </span>
                       )}
                       
-                      {/* Loading indicator for stats */}
+                      {item.id !== 'chats' && showBadge && (
+                        <span className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-[#ff2e2e] text-xs font-bold flex items-center justify-center text-white">
+                          {item.badge}
+                        </span>
+                      )}
+                      
                       {item.id === 'chats' && statsLoading && (
                         <div className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-gray-300 flex items-center justify-center">
                           <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         </div>
                       )}
                     </div>
-                    <span className={`text-sm font-medium mt-2 ${
-                      isActive ? 'text-[#5e17eb] font-semibold' : 'text-gray-600'
-                    }`}>
+                    <span className="text-sm font-medium mt-2"
+                      style={{
+                        color: isActive ? colors.secondary : colors.secondaryText,
+                        fontWeight: isActive ? '600' : '500'
+                      }}>
                       {item.label}
                     </span>
                   </button>
@@ -243,40 +259,59 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
             {/* Gift Icon */}
             <button 
               onClick={handleGift}
-              className="relative p-3 text-gray-600 hover:text-[#5e17eb] transition hover:bg-gray-100 rounded-full"
+              className="relative p-3 transition rounded-full"
+              style={{
+                color: colors.secondaryText
+              }}
             >
               <GiftIcon size={34} />
-              <span className="absolute top-3 right-3 h-3 w-3 rounded-full bg-[#ff2e2e]"></span>
+              <span className="absolute top-3 right-3 h-3 w-3 rounded-full bg-[#ff2e2e] border-2 border-white"></span>
             </button>
 
             {/* Credits Display */}
             <button 
               onClick={() => handleNavigation('credits')}
-              className={`rounded-full px-4 py-2 transition ${
-                activeTab === 'credits' 
-                  ? 'bg-[#5e17eb]/10 border border-[#5e17eb]/20' 
-                  : 'bg-[#5e17eb] hover:bg-[#4a13c2]'
-              }`}
+              className="rounded-full px-4 py-2 transition"
+              style={{
+                backgroundColor: activeTab === 'credits' 
+                  ? `${colors.secondary}10` 
+                  : colors.secondary,
+                border: activeTab === 'credits' 
+                  ? `1px solid ${colors.secondary}33` 
+                  : 'none'
+              }}
             >
-              <span className={`font-bold text-sm ${
-                activeTab === 'credits' ? 'text-[#5e17eb]' : 'text-white'
-              }`}>
+              <span className="font-bold text-sm"
+                style={{
+                  color: activeTab === 'credits' ? colors.secondary : 'white'
+                }}>
                 {profile?.credits || 0}
               </span>
             </button>
             
             {/* Profile Section */}
-            <div className="flex items-center gap-4 pl-6 border-l border-gray-200 relative" ref={dropdownRef}>
+            <div className="flex items-center gap-4 pl-6 border-l relative"
+              style={{ borderColor: colors.border }}
+              ref={dropdownRef}>
               <div className="text-right">
-                <p className="font-bold text-gray-900 text-lg">{profile?.username || 'User'}</p>
-                <p className="text-sm text-gray-500">Premium Member</p>
+                <p className="font-bold text-lg"
+                  style={{ color: colors.primaryText }}>
+                  {profile?.username || 'User'}
+                </p>
+                <p className="text-sm"
+                  style={{ color: colors.secondaryText }}>
+                  Premium Member
+                </p>
               </div>
               
               {/* Profile Image */}
               <div className="relative">
                 <button 
                   onClick={() => handleRightSideAction('profile')}
-                  className="relative w-14 h-14 rounded-full overflow-hidden border-3 border-[#5e17eb] hover:border-[#4a13c2] transition"
+                  className="relative w-14 h-14 rounded-full overflow-hidden border-3 transition hover:opacity-90"
+                  style={{ 
+                    borderColor: colors.secondary
+                  }}
                 >
                   {profile?.profilePic ? (
                     <Image
@@ -288,7 +323,10 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
                       unoptimized={profile.profilePic.startsWith('http')}
                     />
                   ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-[#5e17eb] to-[#ff2e2e] flex items-center justify-center text-white font-bold text-xl">
+                    <div className="h-full w-full flex items-center justify-center text-white font-bold text-xl"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${colors.secondary} 0%, #ff2e2e 100%)`
+                      }}>
                       {profile?.username?.charAt(0).toUpperCase() || 'U'}
                     </div>
                   )}
@@ -296,48 +334,90 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                  <div className="absolute right-0 mt-2 w-64 rounded-lg shadow-xl border z-50"
+                    style={{
+                      backgroundColor: colors.panelBackground,
+                      borderColor: colors.border
+                    }}>
                     <div className="py-2">
                       {/* User Info */}
-                      <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="font-semibold text-gray-900">{profile?.username || 'User'}</p>
-                        <p className="text-sm text-gray-500">{profile?.email || ''}</p>
+                      <div className="px-4 py-3 border-b"
+                        style={{ borderColor: colors.border }}>
+                        <p className="font-semibold"
+                          style={{ color: colors.primaryText }}>
+                          {profile?.username || 'User'}
+                        </p>
+                        <p className="text-sm"
+                          style={{ color: colors.secondaryText }}>
+                          {profile?.email || ''}
+                        </p>
                       </div>
                       
-                      {/* Conversation Stats in Dropdown */}
-                      <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-pink-50">
+                      {/* Stats */}
+                      <div className="px-4 py-3 border-b"
+                        style={{
+                          borderColor: colors.border,
+                          background: `linear-gradient(90deg, ${colors.secondary}10 0%, #ff2e2e10 100%)`
+                        }}>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-gray-600">Active Chats</span>
-                          <span className="text-sm font-bold text-[#5e17eb]">{stats.activeChats}</span>
+                          <span className="text-xs"
+                            style={{ color: colors.secondaryText }}>
+                            Active Chats
+                          </span>
+                          <span className="text-sm font-bold"
+                            style={{ color: colors.secondary }}>
+                            {stats.activeChats}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">Total Messages</span>
-                          <span className="text-sm font-bold text-gray-900">{stats.totalMessages}</span>
+                          <span className="text-xs"
+                            style={{ color: colors.secondaryText }}>
+                            Total Messages
+                          </span>
+                          <span className="text-sm font-bold"
+                            style={{ color: colors.primaryText }}>
+                            {stats.totalMessages}
+                          </span>
                         </div>
                       </div>
                       
                       {/* Menu Items */}
                       <button 
                         onClick={() => handleProfileDropdown('my-account')}
-                        className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
+                        className="flex items-center w-full px-4 py-3 text-left transition hover:bg-opacity-50"
+                        style={{
+                          color: colors.primaryText,
+                          backgroundColor: colors.hoverBackground
+                        }}
                       >
-                        <User size={18} className="mr-3 text-gray-500" />
+                        <User size={18} className="mr-3"
+                          style={{ color: colors.secondaryText }} />
                         <span>My Account</span>
                       </button>
                       
                       <button 
                         onClick={() => handleProfileDropdown('settings')}
-                        className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
+                        className="flex items-center w-full px-4 py-3 text-left transition hover:bg-opacity-50"
+                        style={{
+                          color: colors.primaryText,
+                          backgroundColor: colors.hoverBackground
+                        }}
                       >
-                        <Settings size={18} className="mr-3 text-gray-500" />
+                        <Settings size={18} className="mr-3"
+                          style={{ color: colors.secondaryText }} />
                         <span>Settings</span>
                       </button>
                       
-                      <div className="border-t border-gray-100 my-1"></div>
+                      <div className="border-t my-1"
+                        style={{ borderColor: colors.borderLight }}></div>
                       
                       <button 
                         onClick={() => handleProfileDropdown('logout')}
-                        className="flex items-center w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 transition"
+                        className="flex items-center w-full px-4 py-3 text-left transition hover:bg-opacity-50"
+                        style={{
+                          color: '#ff2e2e',
+                          backgroundColor: `${colors.hoverBackground}`
+                        }}
                       >
                         <LogOut size={18} className="mr-3" />
                         <span>Log Out</span>

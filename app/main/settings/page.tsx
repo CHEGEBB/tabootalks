@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/main/settings/page.tsx - UPDATED WITH WORKING VERIFICATION
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -14,7 +13,6 @@ import {
   Send,
   AlertTriangle,
   User,
-  Globe,
   Moon,
   Sun,
   Trash2,
@@ -27,15 +25,27 @@ import {
   Loader2,
   CheckCircle,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Palette,
+  Type,
+  Monitor
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useTheme } from '@/lib/context/ThemeContext';
 import authService from '@/lib/services/authService';
 import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const { user, profile, loading: authLoading, refresh } = useAuth();
+  const themeContext = useTheme();
   const router = useRouter();
+  
+  // Get everything from theme context
+  const theme = themeContext.theme;
+  const setTheme = themeContext.setTheme;
+  const isDark = themeContext.isDark;
+  const themeMounted = themeContext.mounted;
+  const colors = themeContext.colors;
   
   const [currentSection, setCurrentSection] = useState<string>('account');
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -56,16 +66,52 @@ export default function SettingsPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Appearance states
+  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
   
   // Processing states
   const [processing, setProcessing] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  //font states
-  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
+  // Initialize appearance settings
+  useEffect(() => {
+    // Font size
+    const savedSize = localStorage.getItem('tabootalks-fontsize') as 'small' | 'medium' | 'large';
+    if (savedSize) {
+      setFontSize(savedSize);
+      applyFontSize(savedSize);
+    }
+  }, []);
 
+  const applyFontSize = (size: 'small' | 'medium' | 'large') => {
+    const root = document.documentElement;
+    switch (size) {
+      case 'small':
+        root.style.fontSize = '14px';
+        break;
+      case 'large':
+        root.style.fontSize = '18px';
+        break;
+      default:
+        root.style.fontSize = '16px';
+    }
+  };
+
+  const handleFontSizeChange = (size: 'small' | 'medium' | 'large') => {
+    setFontSize(size);
+    localStorage.setItem('tabootalks-fontsize', size);
+    applyFontSize(size);
+    setSuccessMessage(`Font size changed to ${size}`);
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const handleThemeChange = (newTheme: 'light' | 'dark') => {
+    setTheme(newTheme);
+    setSuccessMessage(`Theme changed to ${newTheme} mode`);
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
 
   // Handle verification email
   const handleSendVerificationEmail = async () => {
@@ -92,11 +138,7 @@ export default function SettingsPage() {
 
     try {
       setProcessing(true);
-      
-      // Update email in Appwrite
       await authService.updateEmail(newEmail);
-      
-      // Refresh profile
       await refresh();
       
       setNewEmail('');
@@ -133,7 +175,6 @@ export default function SettingsPage() {
 
     try {
       setProcessing(true);
-      
       await authService.updatePassword(newPassword, currentPassword);
       
       setCurrentPassword('');
@@ -160,7 +201,6 @@ export default function SettingsPage() {
 
     try {
       setProcessing(true);
-      
       await authService.updateProfile(profile?.$id || '', { username: newUsername });
       await refresh();
       
@@ -174,26 +214,6 @@ export default function SettingsPage() {
     } finally {
       setProcessing(false);
     }
-  };
-
-  useEffect(() => {
-    const savedSize = localStorage.getItem('fontSize') as 'small' | 'medium' | 'large';
-    if (savedSize) setFontSize(savedSize);
-  }, []);
-
-  const handleFontSizeChange = (size: 'small' | 'medium' | 'large') => {
-    setFontSize(size);
-    localStorage.setItem('fontSize', size);
-    document.documentElement.style.fontSize = size === 'small' ? '14px' : size === 'large' ? '18px' : '16px';
-    setSuccessMessage(`Font size changed to ${size}`);
-    setTimeout(() => setSuccessMessage(''), 3000);
-  };
-
-  // Handle theme change
-  const handleThemeChange = (darkMode: boolean) => {
-    setIsDarkMode(darkMode);
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-    document.body.classList.toggle('dark', darkMode);
   };
 
   // Handle logout
@@ -220,7 +240,6 @@ export default function SettingsPage() {
 
     try {
       setProcessing(true);
-      
       if (profile?.$id) {
         await authService.deleteAccount(profile.$id);
         router.push('/');
@@ -235,29 +254,36 @@ export default function SettingsPage() {
 
   const settingsSections = [
     { id: 'account', label: 'Account Settings', icon: <User className="w-5 h-5" /> },
-    { id: 'appearance', label: 'Appearance', icon: <Moon className="w-5 h-5" /> },
+    { id: 'appearance', label: 'Appearance', icon: <Palette className="w-5 h-5" /> },
     { id: 'support', label: 'Help & Support', icon: <Info className="w-5 h-5" /> }
   ];
 
   const renderAccountSettings = () => (
     <div className="space-y-8">
       {/* Email Verification Section */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-6">
+      <div className={`border rounded-xl p-6 ${isDark ? 'bg-gradient-to-r from-purple-900/20 to-blue-900/20' : 'bg-gradient-to-r from-purple-50 to-blue-50'}`} style={{ 
+        backgroundColor: isDark ? colors.panelBackground : 'transparent',
+        borderColor: colors.border 
+      }}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                user?.emailVerification ? 'bg-green-100' : 'bg-yellow-100'
-              }`}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ 
+                backgroundColor: user?.emailVerification 
+                  ? (isDark ? '#10b981' + '30' : '#10b981' + '20') 
+                  : (isDark ? '#f59e0b' + '30' : '#f59e0b' + '20') 
+              }}>
                 {user?.emailVerification ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <CheckCircle className="w-5 h-5" style={{ color: colors.success }} />
                 ) : (
-                  <Mail className="w-5 h-5 text-yellow-600" />
+                  <Mail className="w-5 h-5" style={{ color: colors.warning }} />
                 )}
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Email Verification</h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <h3 className="text-lg font-bold" style={{ color: colors.primaryText }}>
+                  Email Verification
+                </h3>
+                <p className="text-sm mt-1" style={{ color: colors.secondaryText }}>
                   {user?.emailVerification 
                     ? 'Your email is verified ✓' 
                     : 'Verify your email to secure your account and enable password recovery.'
@@ -271,7 +297,13 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSendVerificationEmail}
                   disabled={processing}
-                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-medium px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+                  className="font-medium px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+                  style={{ 
+                    backgroundColor: colors.primary,
+                    color: '#ffffff'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e62e2e'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.primary}
                 >
                   {processing ? (
                     <>
@@ -285,7 +317,7 @@ export default function SettingsPage() {
                     </>
                   )}
                 </button>
-                <div className="text-xs text-gray-500 flex items-center gap-1 px-3">
+                <div className="text-xs flex items-center gap-1 px-3" style={{ color: colors.secondaryText }}>
                   <Info className="w-3 h-3" />
                   Check your inbox and click the verification link
                 </div>
@@ -296,22 +328,29 @@ export default function SettingsPage() {
       </div>
 
       {/* Account Verification Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6">
+      <div className={`border rounded-xl p-6 ${isDark ? 'bg-gradient-to-r from-blue-900/20 to-cyan-900/20' : 'bg-gradient-to-r from-blue-50 to-cyan-50'}`} style={{ 
+        backgroundColor: isDark ? colors.panelBackground : 'transparent',
+        borderColor: colors.border 
+      }}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                profile?.isVerified ? 'bg-green-100' : 'bg-blue-100'
-              }`}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ 
+                backgroundColor: profile?.isVerified 
+                  ? (isDark ? '#10b981' + '30' : '#10b981' + '20') 
+                  : (isDark ? '#5e17eb' + '30' : '#5e17eb' + '20') 
+              }}>
                 {profile?.isVerified ? (
-                  <BadgeCheck className="w-5 h-5 text-green-600" />
+                  <BadgeCheck className="w-5 h-5" style={{ color: colors.success }} />
                 ) : (
-                  <ShieldCheck className="w-5 h-5 text-blue-600" />
+                  <ShieldCheck className="w-5 h-5" style={{ color: colors.secondary }} />
                 )}
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Account Verification</h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <h3 className="text-lg font-bold" style={{ color: colors.primaryText }}>
+                  Account Verification
+                </h3>
+                <p className="text-sm mt-1" style={{ color: colors.secondaryText }}>
                   {profile?.isVerified 
                     ? 'Your account is verified ✓' 
                     : 'Get verified to unlock premium features and build trust'
@@ -323,7 +362,13 @@ export default function SettingsPage() {
             {!profile?.isVerified && (
               <a
                 href="mailto:verification.help@id-mail.info?subject=Account Verification Request&body=Username: [YOUR_USERNAME]%0D%0AEmail: [YOUR_EMAIL]"
-                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-lg transition-colors inline-flex items-center gap-2"
+                className="mt-4 font-medium px-4 py-2.5 rounded-lg transition-colors inline-flex items-center gap-2"
+                style={{ 
+                  backgroundColor: colors.secondary,
+                  color: '#ffffff'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4e14d3'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.secondary}
               >
                 <Mail className="w-4 h-4" />
                 Request Verification
@@ -334,68 +379,122 @@ export default function SettingsPage() {
       </div>
 
       {/* Contact Information */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6">Contact Information</h3>
+      <div className="border rounded-xl p-6" style={{ 
+        backgroundColor: colors.cardBackground,
+        borderColor: colors.border 
+      }}>
+        <h3 className="text-lg font-bold mb-6" style={{ color: colors.primaryText }}>
+          Contact Information
+        </h3>
         
         <div className="space-y-6">
           {/* Username */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+            backgroundColor: colors.activeBackground 
+          }}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <User className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ 
+                backgroundColor: isDark ? colors.secondary + '30' : colors.secondary + '10' 
+              }}>
+                <User className="w-5 h-5" style={{ color: colors.secondary }} />
               </div>
               <div>
-                <div className="text-sm text-gray-600">Username</div>
-                <div className="font-medium text-gray-900">{profile?.username || 'Not set'}</div>
+                <div className="text-sm" style={{ color: colors.secondaryText }}>Username</div>
+                <div className="font-medium" style={{ color: colors.primaryText }}>
+                  {profile?.username || 'Not set'}
+                </div>
               </div>
             </div>
             <button
               onClick={() => setShowUsernameModal(true)}
-              className="text-purple-600 hover:text-purple-700 font-medium px-4 py-2 hover:bg-purple-50 rounded-lg transition-colors"
+              className="font-medium px-4 py-2 rounded-lg transition-colors"
+              style={{ 
+                color: colors.secondary 
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isDark ? colors.secondary + '20' : colors.secondary + '10';
+                e.currentTarget.style.color = '#4e14d3';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = colors.secondary;
+              }}
             >
               Edit
             </button>
           </div>
 
           {/* Current Email */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+            backgroundColor: colors.activeBackground 
+          }}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <AtSign className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ 
+                backgroundColor: isDark ? colors.secondary + '30' : colors.secondary + '10' 
+              }}>
+                <AtSign className="w-5 h-5" style={{ color: colors.secondary }} />
               </div>
               <div>
-                <div className="text-sm text-gray-600">Email address</div>
-                <div className="font-medium text-gray-900">{profile?.email || 'Not set'}</div>
+                <div className="text-sm" style={{ color: colors.secondaryText }}>Email address</div>
+                <div className="font-medium" style={{ color: colors.primaryText }}>
+                  {profile?.email || 'Not set'}
+                </div>
                 {user?.emailVerification && (
                   <div className="flex items-center gap-1 mt-1">
-                    <BadgeCheck className="w-4 h-4 text-green-500" />
-                    <span className="text-xs text-green-600">Verified</span>
+                    <BadgeCheck className="w-4 h-4" style={{ color: colors.success }} />
+                    <span className="text-xs" style={{ color: colors.success }}>Verified</span>
                   </div>
                 )}
               </div>
             </div>
             <button
               onClick={() => setShowEmailModal(true)}
-              className="text-purple-600 hover:text-purple-700 font-medium px-4 py-2 hover:bg-purple-50 rounded-lg transition-colors"
+              className="font-medium px-4 py-2 rounded-lg transition-colors"
+              style={{ 
+                color: colors.secondary 
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isDark ? colors.secondary + '20' : colors.secondary + '10';
+                e.currentTarget.style.color = '#4e14d3';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = colors.secondary;
+              }}
             >
               Edit
             </button>
           </div>
 
           {/* Password */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+            backgroundColor: colors.activeBackground 
+          }}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Lock className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ 
+                backgroundColor: isDark ? '#3b82f6' + '30' : '#3b82f6' + '10' 
+              }}>
+                <Lock className="w-5 h-5" style={{ color: '#3b82f6' }} />
               </div>
               <div>
-                <div className="text-sm text-gray-600">Password</div>
-                <div className="font-medium text-gray-900">••••••••</div>
+                <div className="text-sm" style={{ color: colors.secondaryText }}>Password</div>
+                <div className="font-medium" style={{ color: colors.primaryText }}>••••••••</div>
               </div>
             </div>
             <button
               onClick={() => setShowPasswordModal(true)}
-              className="text-purple-600 hover:text-purple-700 font-medium px-4 py-2 hover:bg-purple-50 rounded-lg transition-colors"
+              className="font-medium px-4 py-2 rounded-lg transition-colors"
+              style={{ 
+                color: colors.secondary 
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isDark ? colors.secondary + '20' : colors.secondary + '10';
+                e.currentTarget.style.color = '#4e14d3';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = colors.secondary;
+              }}
             >
               Change
             </button>
@@ -407,131 +506,272 @@ export default function SettingsPage() {
 
   const renderAppearance = () => (
     <div className="space-y-6">
-      {/* Theme */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6">Theme</h3>
+      {/* Theme Selection */}
+      <div className="border rounded-xl p-6" style={{ 
+        backgroundColor: colors.cardBackground,
+        borderColor: colors.border 
+      }}>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ 
+            backgroundColor: isDark ? colors.secondary + '30' : colors.secondary + '10' 
+          }}>
+            <Monitor className="w-5 h-5" style={{ color: colors.secondary }} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold" style={{ color: colors.primaryText }}>
+              Theme Mode
+            </h3>
+            <p className="text-sm" style={{ color: colors.secondaryText }}>
+              Choose your preferred theme
+            </p>
+          </div>
+        </div>
         
         <div className="grid grid-cols-2 gap-4">
           <button
-            onClick={() => handleThemeChange(false)}
-            className={`p-6 rounded-xl border-2 transition-all ${
-              !isDarkMode
-                ? 'border-purple-500 bg-purple-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
+            onClick={() => handleThemeChange('light')}
+            disabled={!themeMounted}
+            className="p-6 rounded-xl border-2 transition-all flex flex-col items-center gap-3"
+            style={{ 
+              backgroundColor: theme === 'light' ? colors.primary + '10' : colors.cardBackground,
+              borderColor: theme === 'light' ? colors.primary : colors.border,
+              opacity: !themeMounted ? 0.5 : 1,
+              cursor: !themeMounted ? 'not-allowed' : 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (themeMounted && theme !== 'light') {
+                e.currentTarget.style.borderColor = isDark ? '#3a4a52' : '#d1d5db';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (themeMounted && theme !== 'light') {
+                e.currentTarget.style.borderColor = colors.border;
+              }
+            }}
           >
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 bg-white border border-gray-300 rounded-lg flex items-center justify-center">
-                <Sun className="w-6 h-6 text-yellow-500" />
-              </div>
-              <div className="font-medium text-gray-900">Light Mode</div>
+            <div className="w-16 h-16 bg-gradient-to-br from-white to-gray-100 border border-gray-300 rounded-xl flex items-center justify-center shadow-sm">
+              <Sun className="w-8 h-8 text-yellow-500" />
             </div>
+            <div>
+              <div className="font-semibold" style={{ color: colors.primaryText }}>
+                Light Mode
+              </div>
+              <div className="text-xs mt-1" style={{ color: colors.secondaryText }}>
+                White background with dark text
+              </div>
+            </div>
+            {theme === 'light' && themeMounted && (
+              <div className="mt-2">
+                <CheckCircle className="w-5 h-5" style={{ color: colors.primary }} />
+              </div>
+            )}
           </button>
 
           <button
-            onClick={() => handleThemeChange(true)}
-            className={`p-6 rounded-xl border-2 transition-all ${
-              isDarkMode
-                ? 'border-purple-500 bg-purple-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
+            onClick={() => handleThemeChange('dark')}
+            disabled={!themeMounted}
+            className="p-6 rounded-xl border-2 transition-all flex flex-col items-center gap-3"
+            style={{ 
+              backgroundColor: theme === 'dark' ? colors.secondary + '10' : colors.cardBackground,
+              borderColor: theme === 'dark' ? colors.secondary : colors.border,
+              opacity: !themeMounted ? 0.5 : 1,
+              cursor: !themeMounted ? 'not-allowed' : 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (themeMounted && theme !== 'dark') {
+                e.currentTarget.style.borderColor = isDark ? '#3a4a52' : '#d1d5db';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (themeMounted && theme !== 'dark') {
+                e.currentTarget.style.borderColor = colors.border;
+              }
+            }}
           >
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
-                <Moon className="w-6 h-6 text-gray-300" />
-              </div>
-              <div className="font-medium text-gray-900">Dark Mode</div>
+            <div className="w-16 h-16 bg-gradient-to-br from-[#111b21] to-[#202c33] border border-[#2a3942] rounded-xl flex items-center justify-center shadow-sm">
+              <Moon className="w-8 h-8 text-blue-300" />
             </div>
+            <div>
+              <div className="font-semibold" style={{ color: colors.primaryText }}>
+                Dark Mode
+              </div>
+              <div className="text-xs mt-1" style={{ color: colors.secondaryText }}>
+                WhatsApp-like dark theme
+              </div>
+            </div>
+            {theme === 'dark' && themeMounted && (
+              <div className="mt-2">
+                <CheckCircle className="w-5 h-5" style={{ color: colors.secondary }} />
+              </div>
+            )}
           </button>
         </div>
       </div>
+
       {/* Font Size */}
-<div className="bg-white border border-gray-200 rounded-xl p-6">
-  <h3 className="text-lg font-bold text-gray-900 mb-6">Text Size</h3>
-  
-  <div className="space-y-3">
-    {[
-      { value: 'small', label: 'Small', example: 'Compact view for more content' },
-      { value: 'medium', label: 'Medium', example: 'Standard comfortable reading' },
-      { value: 'large', label: 'Large', example: 'Easier reading experience' }
-    ].map((option) => (
-      <button
-        key={option.value}
-        onClick={() => handleFontSizeChange(option.value as 'small' | 'medium' | 'large')}
-        className={`w-full flex items-center justify-between p-4 rounded-lg transition-colors ${
-          fontSize === option.value
-            ? 'bg-purple-50 border border-purple-200'
-            : 'bg-gray-50 hover:bg-gray-100'
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
-            <span className={`font-bold text-purple-600 ${
-              option.value === 'small' ? 'text-xs' : option.value === 'large' ? 'text-lg' : 'text-sm'
-            }`}>
-              Aa
-            </span>
+      <div className="border rounded-xl p-6" style={{ 
+        backgroundColor: colors.cardBackground,
+        borderColor: colors.border 
+      }}>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ 
+            backgroundColor: isDark ? '#3b82f6' + '30' : '#3b82f6' + '10' 
+          }}>
+            <Type className="w-5 h-5" style={{ color: '#3b82f6' }} />
           </div>
-          <div className="text-left">
-            <div className="font-medium text-gray-900">{option.label}</div>
-            <div className="text-xs text-gray-600">{option.example}</div>
+          <div>
+            <h3 className="text-lg font-bold" style={{ color: colors.primaryText }}>
+              Text Size
+            </h3>
+            <p className="text-sm" style={{ color: colors.secondaryText }}>
+              Adjust reading comfort
+            </p>
           </div>
         </div>
-        {fontSize === option.value && (
-          <Check className="w-5 h-5 text-purple-600" />
-        )}
-      </button>
-    ))}
-  </div>
-</div>
+        
+        <div className="space-y-3">
+          {[
+            { value: 'small' as const, label: 'Small', example: 'Compact view for more content', size: 'text-xs' },
+            { value: 'medium' as const, label: 'Medium', example: 'Standard comfortable reading', size: 'text-sm' },
+            { value: 'large' as const, label: 'Large', example: 'Easier reading experience', size: 'text-base' }
+          ].map((option) => (
+            <button
+              key={option.value}
+              onClick={() => handleFontSizeChange(option.value)}
+              className="w-full flex items-center justify-between p-4 rounded-lg transition-colors"
+              style={{ 
+                backgroundColor: fontSize === option.value 
+                  ? colors.secondary + '10' 
+                  : colors.activeBackground,
+                border: fontSize === option.value ? `1px solid ${colors.secondary}30` : 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (fontSize !== option.value) {
+                  e.currentTarget.style.backgroundColor = colors.hoverBackground;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (fontSize !== option.value) {
+                  e.currentTarget.style.backgroundColor = colors.activeBackground;
+                }
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ 
+                  background: isDark 
+                    ? `linear-gradient(135deg, ${colors.secondary}30, ${colors.primary}30)` 
+                    : `linear-gradient(135deg, ${colors.secondary}10, ${colors.primary}10)` 
+                }}>
+                  <span className="font-bold" style={{ color: colors.secondary, fontSize: option.size === 'text-xs' ? '0.75rem' : option.size === 'text-sm' ? '0.875rem' : '1rem' }}>
+                    Aa
+                  </span>
+                </div>
+                <div className="text-left">
+                  <div className="font-medium" style={{ color: colors.primaryText }}>
+                    {option.label}
+                  </div>
+                  <div className="text-xs" style={{ color: colors.secondaryText }}>
+                    {option.example}
+                  </div>
+                </div>
+              </div>
+              {fontSize === option.value && (
+                <Check className="w-5 h-5" style={{ color: colors.secondary }} />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 
   const renderSupport = () => (
     <div className="space-y-6">
       {/* Help & Support */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6">Help & Support</h3>
+      <div className="border rounded-xl p-6" style={{ 
+        backgroundColor: colors.cardBackground,
+        borderColor: colors.border 
+      }}>
+        <h3 className="text-lg font-bold mb-6" style={{ color: colors.primaryText }}>
+          Help & Support
+        </h3>
         
         <div className="space-y-4">
           <a
             href="mailto:support@tabootalks.com?subject=Support Request"
-            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
+            className="w-full flex items-center justify-between p-4 rounded-lg transition-colors group"
+            style={{ 
+              backgroundColor: colors.activeBackground 
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = colors.hoverBackground;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = colors.activeBackground;
+            }}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Mail className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ 
+                backgroundColor: isDark ? colors.secondary + '30' : colors.secondary + '10' 
+              }}>
+                <Mail className="w-5 h-5" style={{ color: colors.secondary }} />
               </div>
               <div className="text-left">
-                <div className="font-medium text-gray-900">Contact Support</div>
-                <div className="text-sm text-gray-600">support@tabootalks.com</div>
+                <div className="font-medium" style={{ color: colors.primaryText }}>
+                  Contact Support
+                </div>
+                <div className="text-sm" style={{ color: colors.secondaryText }}>
+                  support@tabootalks.com
+                </div>
               </div>
             </div>
-            <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-gray-600" />
+            <ExternalLink className="w-5 h-5" style={{ color: colors.secondaryText }} />
           </a>
 
           <a
             href="mailto:verification.help@id-mail.info?subject=Verification Request"
-            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
+            className="w-full flex items-center justify-between p-4 rounded-lg transition-colors group"
+            style={{ 
+              backgroundColor: colors.activeBackground 
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = colors.hoverBackground;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = colors.activeBackground;
+            }}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <ShieldCheck className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ 
+                backgroundColor: isDark ? '#3b82f6' + '30' : '#3b82f6' + '10' 
+              }}>
+                <ShieldCheck className="w-5 h-5" style={{ color: '#3b82f6' }} />
               </div>
               <div className="text-left">
-                <div className="font-medium text-gray-900">Verification Support</div>
-                <div className="text-sm text-gray-600">verification.help@id-mail.info</div>
+                <div className="font-medium" style={{ color: colors.primaryText }}>
+                  Verification Support
+                </div>
+                <div className="text-sm" style={{ color: colors.secondaryText }}>
+                  verification.help@id-mail.info
+                </div>
               </div>
             </div>
-            <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-gray-600" />
+            <ExternalLink className="w-5 h-5" style={{ color: colors.secondaryText }} />
           </a>
 
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="p-4 border rounded-lg" style={{ 
+            backgroundColor: isDark ? '#3b82f6' + '20' : '#3b82f6' + '10',
+            borderColor: isDark ? '#3b82f6' + '40' : '#3b82f6' + '30' 
+          }}>
             <div className="flex items-start gap-3">
-              <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <Info className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#3b82f6' }} />
               <div>
-                <div className="font-medium text-blue-900 mb-1">App Version</div>
-                <div className="text-sm text-blue-700">TabooTalks v1.0.0</div>
+                <div className="font-medium mb-1" style={{ color: isDark ? '#93c5fd' : '#1e40af' }}>
+                  App Version
+                </div>
+                <div className="text-sm" style={{ color: isDark ? '#60a5fa' : '#1d4ed8' }}>
+                  TabooTalks v1.0.0
+                </div>
               </div>
             </div>
           </div>
@@ -539,45 +779,82 @@ export default function SettingsPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="bg-white border border-red-200 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-red-700 mb-6">Danger Zone</h3>
+      <div className="border rounded-xl p-6" style={{ 
+        backgroundColor: colors.cardBackground,
+        borderColor: isDark ? colors.danger + '30' : colors.danger + '20' 
+      }}>
+        <h3 className="text-lg font-bold mb-6" style={{ color: colors.danger }}>
+          Danger Zone
+        </h3>
         
         <div className="space-y-4">
           <button
             onClick={handleLogout}
             disabled={processing}
-            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
+            className="w-full flex items-center justify-between p-4 rounded-lg transition-colors group"
+            style={{ 
+              backgroundColor: colors.activeBackground 
+            }}
+            onMouseEnter={(e) => {
+              if (!processing) {
+                e.currentTarget.style.backgroundColor = colors.hoverBackground;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!processing) {
+                e.currentTarget.style.backgroundColor = colors.activeBackground;
+              }
+            }}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <LogOut className="w-5 h-5 text-gray-600" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ 
+                backgroundColor: isDark ? colors.hoverBackground : colors.activeBackground 
+              }}>
+                <LogOut className="w-5 h-5" style={{ color: colors.secondaryText }} />
               </div>
               <div className="text-left">
-                <div className="font-medium text-gray-900">Log Out</div>
-                <div className="text-sm text-gray-600">Sign out of your account</div>
+                <div className="font-medium" style={{ color: colors.primaryText }}>
+                  Log Out
+                </div>
+                <div className="text-sm" style={{ color: colors.secondaryText }}>
+                  Sign out of your account
+                </div>
               </div>
             </div>
             {processing ? (
-              <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.secondaryText }} />
             ) : (
-              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600" />
+              <ChevronRight className="w-5 h-5" style={{ color: colors.secondaryText }} />
             )}
           </button>
 
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="w-full flex items-center justify-between p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors group"
+            className="w-full flex items-center justify-between p-4 rounded-lg transition-colors group"
+            style={{ 
+              backgroundColor: isDark ? colors.danger + '20' : colors.danger + '10' 
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = isDark ? colors.danger + '30' : colors.danger + '20';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = isDark ? colors.danger + '20' : colors.danger + '10';
+            }}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <Trash2 className="w-5 h-5 text-red-600" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ 
+                backgroundColor: isDark ? colors.danger + '30' : colors.danger + '20' 
+              }}>
+                <Trash2 className="w-5 h-5" style={{ color: colors.danger }} />
               </div>
               <div className="text-left">
-                <div className="font-medium text-red-700">Delete Account</div>
-                <div className="text-sm text-red-600">Permanently delete your account and data</div>
+                <div className="font-medium" style={{ color: colors.danger }}>Delete Account</div>
+                <div className="text-sm" style={{ color: isDark ? colors.danger + '90' : colors.danger + '70' }}>
+                  Permanently delete your account and data
+                </div>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-red-400 group-hover:text-red-600" />
+            <ChevronRight className="w-5 h-5" style={{ color: isDark ? colors.danger + '60' : colors.danger + '40' }} />
           </button>
         </div>
       </div>
@@ -585,25 +862,28 @@ export default function SettingsPage() {
   );
 
   // Loading state
-  if (authLoading) {
+  if (authLoading || !themeMounted) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
         <LayoutController />
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-12 h-12 text-purple-600 animate-spin" />
+          <Loader2 className="w-12 h-12 animate-spin" style={{ color: colors.secondary }} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen transition-colors" style={{ backgroundColor: colors.background }}>
       <LayoutController />
       
       {/* Success Toast */}
       {successMessage && (
         <div className="fixed top-4 right-4 z-50 animate-slide-in max-w-md">
-          <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-start gap-3">
+          <div className="px-6 py-4 rounded-lg shadow-lg flex items-start gap-3" style={{ 
+            backgroundColor: colors.success,
+            color: '#ffffff'
+          }}>
             <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <div className="font-medium">{successMessage}</div>
           </div>
@@ -613,7 +893,10 @@ export default function SettingsPage() {
       {/* Error Toast */}
       {errorMessage && (
         <div className="fixed top-4 right-4 z-50 animate-slide-in max-w-md">
-          <div className="bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-start gap-3">
+          <div className="px-6 py-4 rounded-lg shadow-lg flex items-start gap-3" style={{ 
+            backgroundColor: colors.danger,
+            color: '#ffffff'
+          }}>
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <div className="font-medium">{errorMessage}</div>
           </div>
@@ -625,16 +908,26 @@ export default function SettingsPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-              <p className="text-gray-600 mt-2">Manage your account preferences and privacy settings</p>
+              <h1 className="text-3xl font-bold" style={{ color: colors.primaryText }}>
+                Settings
+              </h1>
+              <p className="mt-2" style={{ color: colors.secondaryText }}>
+                Manage your account preferences and privacy settings
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className="text-sm text-gray-600">Logged in as</div>
-                <div className="font-bold text-gray-900">{profile?.username || 'User'}</div>
+                <div className="text-sm" style={{ color: colors.secondaryText }}>
+                  Logged in as
+                </div>
+                <div className="font-bold" style={{ color: colors.primaryText }}>
+                  {profile?.username || 'User'}
+                </div>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-blue-100 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ 
+                background: `linear-gradient(135deg, ${colors.secondary}20, ${colors.primary}20)` 
+              }}>
+                <User className="w-6 h-6" style={{ color: colors.secondary }} />
               </div>
             </div>
           </div>
@@ -643,21 +936,43 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sticky top-8">
+            <div className="rounded-xl shadow-sm border p-4 sticky top-8" style={{ 
+              backgroundColor: colors.panelBackground,
+              borderColor: colors.border 
+            }}>
               <div className="space-y-2">
                 {settingsSections.map((section) => (
                   <button
                     key={section.id}
                     onClick={() => setCurrentSection(section.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      currentSection === section.id
-                        ? 'bg-purple-50 text-purple-700 font-medium border border-purple-200'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+                    style={{ 
+                      backgroundColor: currentSection === section.id
+                        ? colors.secondary + '10'
+                        : 'transparent',
+                      color: currentSection === section.id
+                        ? colors.secondary
+                        : colors.primaryText,
+                      border: currentSection === section.id
+                        ? `1px solid ${colors.secondary}30`
+                        : 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (currentSection !== section.id) {
+                        e.currentTarget.style.backgroundColor = colors.hoverBackground;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentSection !== section.id) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
                   >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      currentSection === section.id ? 'bg-purple-100' : 'bg-gray-100'
-                    }`}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ 
+                      backgroundColor: currentSection === section.id 
+                        ? colors.secondary + '20' 
+                        : colors.activeBackground 
+                    }}>
                       {section.icon}
                     </div>
                     <span>{section.label}</span>
@@ -666,15 +981,15 @@ export default function SettingsPage() {
               </div>
               
               {/* Account Info */}
-              <div className="mt-8 pt-8 border-t border-gray-200">
+              <div className="mt-8 pt-8" style={{ borderTop: `1px solid ${colors.border}` }}>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Account Status</span>
-                    <span className="font-medium text-green-600">Active</span>
+                    <span style={{ color: colors.secondaryText }}>Account Status</span>
+                    <span className="font-medium" style={{ color: colors.success }}>Active</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Member Since</span>
-                    <span className="font-medium text-gray-900">
+                    <span style={{ color: colors.secondaryText }}>Member Since</span>
+                    <span className="font-medium" style={{ color: colors.primaryText }}>
                       {profile?.createdAt 
                         ? new Date(profile.createdAt).toLocaleDateString('en-US', { 
                             month: 'short', 
@@ -685,10 +1000,10 @@ export default function SettingsPage() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Email Status</span>
-                    <span className={`font-medium ${
-                      user?.emailVerification ? 'text-green-600' : 'text-yellow-600'
-                    }`}>
+                    <span style={{ color: colors.secondaryText }}>Email Status</span>
+                    <span className="font-medium" style={{ 
+                      color: user?.emailVerification ? colors.success : colors.warning 
+                    }}>
                       {user?.emailVerification ? 'Verified' : 'Pending'}
                     </span>
                   </div>
@@ -699,9 +1014,12 @@ export default function SettingsPage() {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="rounded-xl shadow-sm border p-6" style={{ 
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.border 
+            }}>
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold" style={{ color: colors.primaryText }}>
                   {settingsSections.find(s => s.id === currentSection)?.label || 'Settings'}
                 </h2>
               </div>
@@ -716,326 +1034,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-
-      {/* Username Change Modal */}
-      {showUsernameModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Change Username</h3>
-              <button
-                onClick={() => setShowUsernameModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-700" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Current Username
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-300 text-gray-700">
-                  {profile?.username}
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  New Username
-                </label>
-                <input
-                  type="text"
-                  value={newUsername}
-                  onChange={(e) => setNewUsername(e.target.value)}
-                  placeholder="Enter new username"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors"
-                />
-              </div>
-            </div>
-            
-            <div className="mt-8 flex gap-3">
-              <button
-                onClick={() => setShowUsernameModal(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveUsername}
-                disabled={!newUsername || processing}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                  newUsername && !processing
-                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {processing ? 'Updating...' : 'Update Username'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Email Change Modal */}
-      {showEmailModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Change Email Address</h3>
-              <button
-                onClick={() => setShowEmailModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-700" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Current Email
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-300 text-gray-700">
-                  {profile?.email}
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  New Email Address
-                </label>
-                <input
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="Enter new email address"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  You&apos;ll need to verify this email address after changing it.
-                </p>
-              </div>
-            </div>
-            
-            <div className="mt-8 flex gap-3">
-              <button
-                onClick={() => setShowEmailModal(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveEmail}
-                disabled={!newEmail || processing}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                  newEmail && !processing
-                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {processing ? 'Updating...' : 'Update Email'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Password Change Modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Change Password</h3>
-              <button
-                onClick={() => setShowPasswordModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-700" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Current Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showCurrentPassword ? "text" : "password"}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Enter current password"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  >
-                    {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  New Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showNewPassword ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  >
-                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Must be at least 8 characters with letters and numbers.
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm New Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-8 flex gap-3">
-              <button
-                onClick={() => setShowPasswordModal(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSavePassword}
-                disabled={!currentPassword || !newPassword || !confirmPassword || processing}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                  currentPassword && newPassword && confirmPassword && !processing
-                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {processing ? 'Updating...' : 'Update Password'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Account Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-red-700">Delete Account</h3>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-700" />
-              </button>
-            </div>
-            
-            <div className="space-y-6">
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-6 h-6 text-red-600 mt-0.5" />
-                  <div>
-                    <div className="font-bold text-red-800 mb-2">Warning: Account Deletion</div>
-                    <div className="text-sm text-red-700">
-                      Deleting your account will permanently remove:
-                    </div>
-                    <ul className="text-sm text-red-700 mt-2 space-y-1">
-                      <li>• All your profile information</li>
-                      <li>• Chat history and messages</li>
-                      <li>• Photos and media</li>
-                      <li>• Account settings and preferences</li>
-                      <li>• All remaining credits and purchases</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Please type &ldquo;DELETE&rdquo; to confirm
-                  </label>
-                  <input
-                    type="text"
-                    value={deleteConfirmText}
-                    onChange={(e) => setDeleteConfirmText(e.target.value)}
-                    placeholder="DELETE"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-colors"
-                  />
-                </div>
-                
-                <div>
-                  <label className="flex items-center gap-3">
-                    <input 
-                      type="checkbox" 
-                      checked={deleteAgreed}
-                      onChange={(e) => setDeleteAgreed(e.target.checked)}
-                      className="rounded border-gray-300 text-red-600 focus:ring-red-500" 
-                    />
-                    <span className="text-sm text-gray-700">
-                      I understand that this action is irreversible and I want to proceed with account deletion.
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-8 flex gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deleteConfirmText !== 'DELETE' || !deleteAgreed || processing}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                  deleteConfirmText === 'DELETE' && deleteAgreed && !processing
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {processing ? 'Deleting...' : 'Delete My Account'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
