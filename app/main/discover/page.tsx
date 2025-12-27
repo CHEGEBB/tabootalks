@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import LayoutController from '@/components/layout/LayoutController';
 import personaService, { ParsedPersonaProfile, PersonaFilters } from '@/lib/services/personaService';
+import { useTheme } from '@/lib/context/ThemeContext';
 import './discover.scss';
 
 // Available locations for filtering
@@ -61,6 +62,7 @@ const convertPersonaToDisplayProfile = (persona: ParsedPersonaProfile) => {
 
 export default function DiscoverPage() {
   const router = useRouter();
+  const { colors, isDark } = useTheme();
   const [profiles, setProfiles] = useState<any[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -428,19 +430,20 @@ export default function DiscoverPage() {
 
     return (
       <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden">
+        <div className="rounded-2xl max-w-md w-full overflow-hidden" style={{ backgroundColor: colors.cardBackground }}>
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Send Icebreaker</h3>
+              <h3 className="text-xl font-bold" style={{ color: colors.primaryText }}>Send Icebreaker</h3>
               <button
                 onClick={() => setShowIcebreakerModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 rounded-full transition-colors"
+                style={{ backgroundColor: isDark ? colors.hoverBackground : 'transparent' }}
               >
-                <XIcon className="w-5 h-5 text-gray-500" />
+                <XIcon className="w-5 h-5" style={{ color: colors.iconColor }} />
               </button>
             </div>
             
-            <div className="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-xl">
+            <div className="flex items-center gap-3 mb-6 p-3 rounded-xl" style={{ backgroundColor: colors.hoverBackground }}>
               <div className="relative w-12 h-12 rounded-full overflow-hidden">
                 <Image
                   src={selectedIcebreakerProfile.imageUrl}
@@ -450,8 +453,8 @@ export default function DiscoverPage() {
                 />
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">{selectedIcebreakerProfile.username}, {selectedIcebreakerProfile.age}</h4>
-                <p className="text-sm text-gray-600">{selectedIcebreakerProfile.location}</p>
+                <h4 className="font-semibold" style={{ color: colors.primaryText }}>{selectedIcebreakerProfile.username}, {selectedIcebreakerProfile.age}</h4>
+                <p className="text-sm" style={{ color: colors.secondaryText }}>{selectedIcebreakerProfile.location}</p>
               </div>
             </div>
             
@@ -460,34 +463,42 @@ export default function DiscoverPage() {
                 <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
                   <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">Icebreaker Sent!</h4>
-                <p className="text-gray-600">Your message has been sent to {selectedIcebreakerProfile.username}</p>
+                <h4 className="text-lg font-semibold mb-2" style={{ color: colors.primaryText }}>Icebreaker Sent!</h4>
+                <p style={{ color: colors.secondaryText }}>Your message has been sent to {selectedIcebreakerProfile.username}</p>
               </div>
             ) : (
               <>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: colors.secondaryText }}>
                     Your Message
                   </label>
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Start a conversation with an interesting question or comment..."
-                    className="w-full h-32 px-4 py-3 border text-gray-500 placeholder:text-gray-500 border-gray-300 rounded-xl focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none resize-none"
+                    className="w-full h-32 px-4 py-3 border placeholder:text-gray-400 rounded-xl focus:ring-2 outline-none resize-none"
+                    style={{ 
+                      backgroundColor: colors.inputBackground,
+                      color: colors.primaryText,
+                      borderColor: colors.border,
+                      
+                    }}
                   />
                 </div>
                 
                 <div className="flex gap-2 mb-6">
                   <button
                     onClick={selectRandomMessage}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-500 text-gray-100 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-medium transition-colors"
+                    style={{ backgroundColor: colors.secondary, color: 'white' }}
                   >
                     <MessageCircleCodeIcon className="w-4 h-4" />
                     Suggest
                   </button>
                   <button
                     onClick={() => setMessage('')}
-                    className="px-4 py-2 bg-red-500 text-gray-100 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                    className="px-4 py-2 rounded-lg font-medium transition-colors"
+                    style={{ backgroundColor: colors.danger, color: 'white' }}
                   >
                     Clear
                   </button>
@@ -496,14 +507,20 @@ export default function DiscoverPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowIcebreakerModal(false)}
-                    className="flex-1 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                    className="flex-1 py-3 border rounded-lg font-medium transition-colors"
+                    style={{ 
+                      backgroundColor: colors.background, 
+                      borderColor: colors.border,
+                      color: colors.primaryText
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSend}
                     disabled={!message.trim() || isSending}
-                    className="flex-1 py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: colors.secondary, color: 'white' }}
                   >
                     {isSending ? 'Sending...' : 'Send Icebreaker'}
                   </button>
@@ -518,13 +535,15 @@ export default function DiscoverPage() {
 
   // Skeleton loading component
   const ProfileSkeleton = () => (
-    <div className="profile-card bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse">
-      <div className="aspect-[4/5] bg-gray-200 rounded-t-xl"></div>
+    <div className="profile-card rounded-xl border overflow-hidden animate-pulse"
+      style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}
+    >
+      <div className="aspect-[4/5] rounded-t-xl" style={{ backgroundColor: colors.hoverBackground }}></div>
       <div className="p-4">
-        <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-        <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-        <div className="h-10 bg-gray-200 rounded w-full mb-2"></div>
-        <div className="h-10 bg-gray-200 rounded w-full"></div>
+        <div className="h-6 rounded w-3/4 mb-2" style={{ backgroundColor: colors.hoverBackground }}></div>
+        <div className="h-4 rounded w-1/2 mb-4" style={{ backgroundColor: colors.hoverBackground }}></div>
+        <div className="h-10 rounded w-full mb-2" style={{ backgroundColor: colors.hoverBackground }}></div>
+        <div className="h-10 rounded w-full" style={{ backgroundColor: colors.hoverBackground }}></div>
       </div>
     </div>
   );
@@ -533,7 +552,7 @@ export default function DiscoverPage() {
   const gridColumns = isMobile ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
 
   return (
-    <div className="min-h-screen bg-white no-overflow discover-container">
+    <div className="min-h-screen no-overflow discover-container" style={{ backgroundColor: colors.background }}>
       <LayoutController />
 
       {/* Icebreaker Modal */}
@@ -552,8 +571,8 @@ export default function DiscoverPage() {
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="responsive-text">
-              <h1 className="text-3xl font-bold text-gray-900">Discover</h1>
-              <p className="text-gray-600 mt-2">Find amazing people to connect with</p>
+              <h1 className="text-3xl font-bold" style={{ color: colors.primaryText }}>Discover</h1>
+              <p style={{ color: colors.secondaryText }} className="mt-2">Find amazing people to connect with</p>
             </div>
             
             {/* Mobile Controls */}
@@ -562,13 +581,13 @@ export default function DiscoverPage() {
                 onClick={() => setShowSearch(!showSearch)}
                 className="search-toggle p-2"
               >
-                <Search className="w-5 h-5 text-gray-600" />
+                <Search className="w-5 h-5" style={{ color: colors.iconColor }} />
               </button>
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="filters-toggle p-2 relative"
               >
-                <Filter className="w-5 h-5 text-gray-600" />
+                <Filter className="w-5 h-5" style={{ color: colors.iconColor }} />
                 {activeFilterCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-[#ff2e2e] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {activeFilterCount}
@@ -580,8 +599,8 @@ export default function DiscoverPage() {
                 className="p-2"
               >
                 {viewMode === 'grid' ? 
-                  <Grid className="w-5 h-5 text-gray-600" /> : 
-                  <List className="w-5 h-5 text-gray-600" />
+                  <Grid className="w-5 h-5" style={{ color: colors.iconColor }} /> : 
+                  <List className="w-5 h-5" style={{ color: colors.iconColor }} />
                 }
               </button>
             </div>
@@ -589,25 +608,38 @@ export default function DiscoverPage() {
             {/* Desktop Controls */}
             <div className="hidden sm:flex items-center gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{ color: colors.placeholderText }} />
                 <input
                   type="text"
                   placeholder="Search profiles..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg placeholder:text-gray-500 focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none w-64"
+                  className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 outline-none w-64"
+                  style={{ 
+                    backgroundColor: colors.inputBackground,
+                    borderColor: colors.border,
+                    color: colors.primaryText,
+                  }}
                 />
               </div>
-              <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+              <div className="flex items-center gap-2 p-1 rounded-lg" style={{ backgroundColor: colors.hoverBackground }}>
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded transition-colors ${viewMode === 'grid' ? 'bg-white text-[#5e17eb] shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`p-2 rounded transition-colors ${viewMode === 'grid' ? 'shadow-sm' : ''}`}
+                  style={{ 
+                    backgroundColor: viewMode === 'grid' ? colors.cardBackground : 'transparent', 
+                    color: viewMode === 'grid' ? colors.secondary : colors.secondaryText
+                  }}
                 >
                   <Grid className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded transition-colors ${viewMode === 'list' ? 'bg-white text-[#5e17eb] shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`p-2 rounded transition-colors ${viewMode === 'list' ? 'shadow-sm' : ''}`}
+                  style={{ 
+                    backgroundColor: viewMode === 'list' ? colors.cardBackground : 'transparent', 
+                    color: viewMode === 'list' ? colors.secondary : colors.secondaryText
+                  }}
                 >
                   <List className="w-5 h-5" />
                 </button>
@@ -619,72 +651,82 @@ export default function DiscoverPage() {
           {showSearch && (
             <div className="mt-4 sm:hidden">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{ color: colors.placeholderText }} />
                 <input
                   type="text"
                   placeholder="Search profiles..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none"
+                  className="w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 outline-none"
+                  style={{ 
+                    backgroundColor: colors.inputBackground,
+                    borderColor: colors.border,
+                    color: colors.primaryText
+                  }}
                 />
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex  flex-col lg:flex-row gap-8">
           {/* Sidebar with responsive classes */}
           <div className={`sidebar-container ${showFilters ? 'sidebar-open' : ''}`}>
             {showFilters && isMobile && (
               <button
                 onClick={closeMobileSidebar}
-                className="sidebar-close p-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+                className="sidebar-close p-2 rounded-lg"
+                style={{ backgroundColor: colors.hoverBackground }}
               >
-                <XIcon className="w-5 h-5 text-gray-600" />
+                <XIcon className="w-5 h-5" style={{ color: colors.iconColor }} />
               </button>
             )}
             
             <div className="space-y-8">
               {/* Profile Tabs */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h3 className="font-bold text-lg text-gray-900 mb-4">Profiles</h3>
+              <div className="rounded-xl border p-6" 
+                style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
+                <h3 className="font-bold text-lg mb-4" style={{ color: colors.primaryText }}>Profiles</h3>
                 <div className="space-y-3">
                   <button
                     onClick={() => setActiveTab('all')}
-                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-between ${
-                      activeTab === 'all'
-                        ? 'bg-[#5e17eb] text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-between`}
+                    style={{ 
+                      backgroundColor: activeTab === 'all' ? colors.secondary : colors.background,
+                      color: activeTab === 'all' ? 'white' : colors.primaryText
+                    }}
                   >
                     <span>All Profiles</span>
-                    <span className="text-sm opacity-80 bg-white/20 px-2 py-1 rounded">
+                    <span className="text-sm opacity-80 px-2 py-1 rounded" 
+                      style={{ backgroundColor: activeTab === 'all' ? 'rgba(255, 255, 255, 0.2)' : colors.hoverBackground }}>
                       {totalProfiles}
                     </span>
                   </button>
                   <button
                     onClick={() => setActiveTab('online')}
-                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-between ${
-                      activeTab === 'online'
-                        ? 'bg-[#5e17eb] text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-between`}
+                    style={{ 
+                      backgroundColor: activeTab === 'online' ? colors.secondary : colors.background,
+                      color: activeTab === 'online' ? 'white' : colors.primaryText
+                    }}
                   >
                     <span>Online Now</span>
-                    <span className="text-sm opacity-80 bg-white/20 px-2 py-1 rounded">
+                    <span className="text-sm opacity-80 px-2 py-1 rounded" 
+                      style={{ backgroundColor: activeTab === 'online' ? 'rgba(255, 255, 255, 0.2)' : colors.hoverBackground }}>
                       {profiles.filter(p => p.isOnline).length}
                     </span>
                   </button>
                   <button
                     onClick={() => setActiveTab('following')}
-                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-between ${
-                      activeTab === 'following'
-                        ? 'bg-[#5e17eb] text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-between`}
+                    style={{ 
+                      backgroundColor: activeTab === 'following' ? colors.secondary : colors.background,
+                      color: activeTab === 'following' ? 'white' : colors.primaryText
+                    }}
                   >
                     <span>Following</span>
-                    <span className="text-sm opacity-80 bg-white/20 px-2 py-1 rounded">
+                    <span className="text-sm opacity-80 px-2 py-1 rounded"
+                      style={{ backgroundColor: activeTab === 'following' ? 'rgba(255, 255, 255, 0.2)' : colors.hoverBackground }}>
                       {profiles.filter(p => p.followingCount > 0).length}
                     </span>
                   </button>
@@ -692,13 +734,15 @@ export default function DiscoverPage() {
               </div>
 
               {/* Enhanced Filters */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="rounded-xl border p-6" 
+                style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-bold text-lg text-gray-900">Filters</h3>
+                  <h3 className="font-bold text-lg" style={{ color: colors.primaryText }}>Filters</h3>
                   {activeFilterCount > 0 && (
                     <button
                       onClick={clearFilters}
-                      className="text-sm text-[#5e17eb] hover:text-[#4a13c4] font-medium"
+                      className="text-sm font-medium"
+                      style={{ color: colors.secondary }}
                     >
                       Clear all
                     </button>
@@ -708,35 +752,35 @@ export default function DiscoverPage() {
                 <div className="space-y-6">
                   {/* Gender Selection */}
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-3">Looking for</h4>
+                    <h4 className="font-medium mb-3" style={{ color: colors.primaryText }}>Looking for</h4>
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => updateFilter('gender', 'female')}
-                        className={`py-2 rounded-lg font-medium transition-all duration-200 ${
-                          filters.gender === 'female'
-                            ? 'bg-[#5e17eb] text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
+                        className={`py-2 rounded-lg font-medium transition-all duration-200`}
+                        style={{ 
+                          backgroundColor: filters.gender === 'female' ? colors.secondary : colors.hoverBackground,
+                          color: filters.gender === 'female' ? 'white' : colors.primaryText
+                        }}
                       >
                         Women
                       </button>
                       <button
                         onClick={() => updateFilter('gender', 'male')}
-                        className={`py-2 rounded-lg font-medium transition-all duration-200 ${
-                          filters.gender === 'male'
-                            ? 'bg-[#5e17eb] text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
+                        className={`py-2 rounded-lg font-medium transition-all duration-200`}
+                        style={{ 
+                          backgroundColor: filters.gender === 'male' ? colors.secondary : colors.hoverBackground,
+                          color: filters.gender === 'male' ? 'white' : colors.primaryText
+                        }}
                       >
                         Men
                       </button>
                       <button
                         onClick={() => updateFilter('gender', '')}
-                        className={`py-2 rounded-lg font-medium transition-all duration-200 ${
-                          !filters.gender
-                            ? 'bg-[#5e17eb] text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
+                        className={`py-2 rounded-lg font-medium transition-all duration-200`}
+                        style={{ 
+                          backgroundColor: !filters.gender ? colors.secondary : colors.hoverBackground,
+                          color: !filters.gender ? 'white' : colors.primaryText
+                        }}
                       >
                         All
                       </button>
@@ -745,7 +789,7 @@ export default function DiscoverPage() {
 
                   {/* Age Range */}
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-3">
+                    <h4 className="font-medium mb-3" style={{ color: colors.primaryText }}>
                       Age: {filters.minAge} - {filters.maxAge}
                     </h4>
                     <div className="space-y-4">
@@ -757,8 +801,13 @@ export default function DiscoverPage() {
                             max="80"
                             value={filters.minAge}
                             onChange={(e) => updateFilter('minAge', parseInt(e.target.value) || 18)}
-                            className="w-full px-3 text-gray-600 py-2 border border-gray-300 placeholder:text-gray-400 rounded-lg focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none"
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 outline-none"
                             placeholder="Min"
+                            style={{ 
+                              backgroundColor: colors.inputBackground,
+                              borderColor: colors.border,
+                              color: colors.primaryText
+                            }}
                           />
                         </div>
                         <div className="flex-1">
@@ -768,8 +817,13 @@ export default function DiscoverPage() {
                             max="80"
                             value={filters.maxAge}
                             onChange={(e) => updateFilter('maxAge', parseInt(e.target.value) || 40)}
-                            className="w-full px-3 py-2 border text-gray-600 border-gray-300 rounded-lg focus:border-[#5e17eb] focus:ring-2 focus:ring-[#5e17eb]/20 outline-none"
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 outline-none"
                             placeholder="Max"
+                            style={{ 
+                              backgroundColor: colors.inputBackground,
+                              borderColor: colors.border,
+                              color: colors.primaryText
+                            }}
                           />
                         </div>
                       </div>
@@ -780,7 +834,8 @@ export default function DiscoverPage() {
                           max="80"
                           value={filters.maxAge}
                           onChange={(e) => updateFilter('maxAge', parseInt(e.target.value))}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                          className="w-full h-2 rounded-lg appearance-none cursor-pointer slider"
+                          style={{ backgroundColor: colors.hoverBackground }}
                         />
                       </div>
                     </div>
@@ -788,7 +843,7 @@ export default function DiscoverPage() {
 
                   {/* Distance */}
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-3">
+                    <h4 className="font-medium mb-3" style={{ color: colors.primaryText }}>
                       Distance: Up to {filters.maxDistance} km
                     </h4>
                     <input
@@ -797,13 +852,14 @@ export default function DiscoverPage() {
                       max="100"
                       value={filters.maxDistance}
                       onChange={(e) => updateFilter('maxDistance', parseInt(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer slider"
+                      style={{ backgroundColor: colors.hoverBackground }}
                     />
                   </div>
 
                   {/* Location */}
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-3">Location</h4>
+                    <h4 className="font-medium mb-3" style={{ color: colors.primaryText }}>Location</h4>
                     <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                       {locations.map((loc) => (
                         <button
@@ -815,17 +871,15 @@ export default function DiscoverPage() {
                               updateFilter('location', [...filters.location, loc]);
                             }
                           }}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3 ${
-                            filters.location.includes(loc)
-                              ? 'bg-[#5e17eb] text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3`}
+                          style={{ 
+                            backgroundColor: filters.location.includes(loc) ? colors.secondary : colors.hoverBackground,
+                            color: filters.location.includes(loc) ? 'white' : colors.primaryText
+                          }}
                         >
-                          <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                            filters.location.includes(loc)
-                              ? 'border-white'
-                              : 'border-gray-300'
-                          }`}>
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center`} 
+                            style={{ borderColor: filters.location.includes(loc) ? 'white' : colors.border }}
+                          >
                             {filters.location.includes(loc) && (
                               <div className="w-2 h-2 bg-white rounded-sm"></div>
                             )}
@@ -838,7 +892,7 @@ export default function DiscoverPage() {
 
                   {/* Interests */}
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-3">Interests</h4>
+                    <h4 className="font-medium mb-3" style={{ color: colors.primaryText }}>Interests</h4>
                     <div className="flex flex-wrap gap-2">
                       {commonInterests.map((interest) => (
                         <button
@@ -850,11 +904,11 @@ export default function DiscoverPage() {
                               updateFilter('interests', [...filters.interests, interest]);
                             }
                           }}
-                          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                            filters.interests.includes(interest)
-                              ? 'bg-[#5e17eb] text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
+                          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200`}
+                          style={{ 
+                            backgroundColor: filters.interests.includes(interest) ? colors.secondary : colors.hoverBackground,
+                            color: filters.interests.includes(interest) ? 'white' : colors.primaryText
+                          }}
                         >
                           {interest}
                         </button>
@@ -866,17 +920,15 @@ export default function DiscoverPage() {
                   <div className="space-y-3">
                     <button
                       onClick={() => updateFilter('verifiedOnly', !filters.verifiedOnly)}
-                      className={`w-full px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3 ${
-                        filters.verifiedOnly
-                          ? 'bg-[#5e17eb] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                      className={`w-full px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3`}
+                      style={{ 
+                        backgroundColor: filters.verifiedOnly ? colors.secondary : colors.hoverBackground,
+                        color: filters.verifiedOnly ? 'white' : colors.primaryText
+                      }}
                     >
-                      <div className={`w-5 h-5 rounded border flex items-center justify-center ${
-                        filters.verifiedOnly
-                          ? 'border-white'
-                          : 'border-gray-300'
-                      }`}>
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center`}
+                        style={{ borderColor: filters.verifiedOnly ? 'white' : colors.border }}
+                      >
                         {filters.verifiedOnly && (
                           <div className="w-3 h-3 bg-white rounded-sm"></div>
                         )}
@@ -885,17 +937,15 @@ export default function DiscoverPage() {
                     </button>
                     <button
                       onClick={() => updateFilter('premiumOnly', !filters.premiumOnly)}
-                      className={`w-full px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3 ${
-                        filters.premiumOnly
-                          ? 'bg-[#5e17eb] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                      className={`w-full px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3`}
+                      style={{ 
+                        backgroundColor: filters.premiumOnly ? colors.secondary : colors.hoverBackground,
+                        color: filters.premiumOnly ? 'white' : colors.primaryText
+                      }}
                     >
-                      <div className={`w-5 h-5 rounded border flex items-center justify-center ${
-                        filters.premiumOnly
-                          ? 'border-white'
-                          : 'border-gray-300'
-                      }`}>
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center`}
+                        style={{ borderColor: filters.premiumOnly ? 'white' : colors.border }}
+                      >
                         {filters.premiumOnly && (
                           <div className="w-3 h-3 bg-white rounded-sm"></div>
                         )}
@@ -935,25 +985,27 @@ export default function DiscoverPage() {
               </div>
 
               {/* Get More with Credits */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h3 className="font-bold text-lg text-gray-900 mb-4">Get More with Credits</h3>
+              <div className="rounded-xl border p-6" 
+                style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
+                <h3 className="font-bold text-lg mb-4" style={{ color: colors.primaryText }}>Get More with Credits</h3>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-                    <div className="w-2 h-2 rounded-full bg-[#5e17eb]"></div>
-                    <span className="text-gray-700">Chat with anyone you like</span>
+                  <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: colors.hoverBackground }}>
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.secondary }}></div>
+                    <span style={{ color: colors.primaryText }}>Chat with anyone you like</span>
                   </div>
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-                    <div className="w-2 h-2 rounded-full bg-[#ff2e2e]"></div>
-                    <span className="text-gray-700">Send Virtual Gifts</span>
+                  <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: colors.hoverBackground }}>
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.primary }}></div>
+                    <span style={{ color: colors.primaryText }}>Send Virtual Gifts</span>
                   </div>
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                    <span className="text-gray-700">Get Premium Features</span>
+                  <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: colors.hoverBackground }}>
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.warning }}></div>
+                    <span style={{ color: colors.primaryText }}>Get Premium Features</span>
                   </div>
                 </div>
                 <button 
                   onClick={() => router.push('/main/credits')}
-                  className="w-full mt-6 py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors"
+                  className="w-full mt-6 py-3 rounded-lg font-medium transition-colors"
+                  style={{ backgroundColor: colors.secondary, color: 'white' }}
                 >
                   Get Credits
                 </button>
@@ -965,43 +1017,46 @@ export default function DiscoverPage() {
           <div className="main-content-area flex-1 min-w-0">
             {/* Mobile Tabs */}
             <div className="lg:hidden mb-6">
-              <div className="flex bg-gray-100 rounded-lg p-1">
+              <div className="flex rounded-lg p-1" style={{ backgroundColor: colors.hoverBackground }}>
                 <button
                   onClick={() => setActiveTab('all')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                    activeTab === 'all'
-                      ? 'bg-white text-[#5e17eb] shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2`}
+                  style={{ 
+                    backgroundColor: activeTab === 'all' ? colors.cardBackground : 'transparent', 
+                    color: activeTab === 'all' ? colors.secondary : colors.secondaryText 
+                  }}
                 >
                   All
-                  <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">
+                  <span className="text-xs rounded-full px-2 py-0.5" 
+                    style={{ backgroundColor: colors.hoverBackground, color: colors.secondaryText }}>
                     {filteredProfiles.length}
                   </span>
                 </button>
                 <button
                   onClick={() => setActiveTab('online')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                    activeTab === 'online'
-                      ? 'bg-white text-[#5e17eb] shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2`}
+                  style={{ 
+                    backgroundColor: activeTab === 'online' ? colors.cardBackground : 'transparent', 
+                    color: activeTab === 'online' ? colors.secondary : colors.secondaryText 
+                  }}
                 >
                   Online
-                  <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">
+                  <span className="text-xs rounded-full px-2 py-0.5" 
+                    style={{ backgroundColor: colors.hoverBackground, color: colors.secondaryText }}>
                     {profiles.filter(p => p.isOnline).length}
                   </span>
                 </button>
                 <button
                   onClick={() => setActiveTab('following')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                    activeTab === 'following'
-                      ? 'bg-white text-[#5e17eb] shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2`}
+                  style={{ 
+                    backgroundColor: activeTab === 'following' ? colors.cardBackground : 'transparent', 
+                    color: activeTab === 'following' ? colors.secondary : colors.secondaryText 
+                  }}
                 >
                   Following
-                  <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">
+                  <span className="text-xs rounded-full px-2 py-0.5" 
+                    style={{ backgroundColor: colors.hoverBackground, color: colors.secondaryText }}>
                     {profiles.filter(p => p.followingCount > 0).length}
                   </span>
                 </button>
@@ -1011,20 +1066,20 @@ export default function DiscoverPage() {
             {/* Results Info */}
             <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="responsive-text">
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-xl font-bold" style={{ color: colors.primaryText }}>
                   {activeTab === 'all' && 'All Profiles'}
                   {activeTab === 'online' && 'Online Now'}
                   {activeTab === 'following' && 'Following'}
-                  <span className="text-[#5e17eb] ml-2">({filteredProfiles.length})</span>
+                  <span style={{ color: colors.secondary }} className="ml-2">({filteredProfiles.length})</span>
                 </h2>
                 {searchQuery && (
-                  <p className="text-gray-600 text-sm mt-1">
+                  <p style={{ color: colors.secondaryText }} className="text-sm mt-1">
                     Results for &ldquo;{searchQuery}&rdquo;
                   </p>
                 )}
               </div>
               <div className="hidden sm:flex items-center gap-4">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm" style={{ color: colors.secondaryText }}>
                   Showing {Math.min(filteredProfiles.length, endIndex)} of {filteredProfiles.length}
                 </div>
                 <select 
@@ -1032,7 +1087,8 @@ export default function DiscoverPage() {
                     // Sort functionality can be added here
                     console.log('Sort by:', e.target.value);
                   }}
-                  className="bg-transparent border-none focus:ring-0 text-gray-900 font-medium"
+                  className="bg-transparent border-none focus:ring-0 font-medium"
+                  style={{ color: colors.primaryText }}
                 >
                   <option>Sort: Newest</option>
                   <option>Sort: Distance</option>
@@ -1046,65 +1102,81 @@ export default function DiscoverPage() {
             {activeFilterCount > 0 && (
               <div className="mb-6 filter-chips">
                 {filters.gender && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm filter-chip"
+                    style={{ backgroundColor: `${colors.secondary}10`, color: colors.secondary }}
+                  >
                     {filters.gender === 'female' ? 'Women' : 'Men'}
-                    <button onClick={() => updateFilter('gender', '')} className="hover:text-[#4a13c4]">
+                    <button onClick={() => updateFilter('gender', '')}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
                 {filters.minAge > 18 && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm filter-chip"
+                    style={{ backgroundColor: `${colors.secondary}10`, color: colors.secondary }}
+                  >
                     Age from {filters.minAge}
-                    <button onClick={() => updateFilter('minAge', 18)} className="hover:text-[#4a13c4]">
+                    <button onClick={() => updateFilter('minAge', 18)}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
                 {filters.maxAge < 40 && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm filter-chip"
+                    style={{ backgroundColor: `${colors.secondary}10`, color: colors.secondary }}
+                  >
                     Age to {filters.maxAge}
-                    <button onClick={() => updateFilter('maxAge', 40)} className="hover:text-[#4a13c4]">
+                    <button onClick={() => updateFilter('maxAge', 40)}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
                 {filters.maxDistance < 50 && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm filter-chip"
+                    style={{ backgroundColor: `${colors.secondary}10`, color: colors.secondary }}
+                  >
                     Within {filters.maxDistance}km
-                    <button onClick={() => updateFilter('maxDistance', 50)} className="hover:text-[#4a13c4]">
+                    <button onClick={() => updateFilter('maxDistance', 50)}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
                 {filters.location.map(loc => (
-                  <span key={loc} className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
+                  <span key={loc} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm filter-chip"
+                    style={{ backgroundColor: `${colors.secondary}10`, color: colors.secondary }}
+                  >
                     {loc}
-                    <button onClick={() => updateFilter('location', filters.location.filter(l => l !== loc))} className="hover:text-[#4a13c4]">
+                    <button onClick={() => updateFilter('location', filters.location.filter(l => l !== loc))}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 ))}
                 {filters.interests.map(interest => (
-                  <span key={interest} className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
+                  <span key={interest} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm filter-chip"
+                    style={{ backgroundColor: `${colors.secondary}10`, color: colors.secondary }}
+                  >
                     {interest}
-                    <button onClick={() => updateFilter('interests', filters.interests.filter(i => i !== interest))} className="hover:text-[#4a13c4]">
+                    <button onClick={() => updateFilter('interests', filters.interests.filter(i => i !== interest))}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 ))}
                 {filters.verifiedOnly && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm filter-chip"
+                    style={{ backgroundColor: `${colors.secondary}10`, color: colors.secondary }}
+                  >
                     Verified Only
-                    <button onClick={() => updateFilter('verifiedOnly', false)} className="hover:text-[#4a13c4]">
+                    <button onClick={() => updateFilter('verifiedOnly', false)}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 )}
                 {filters.premiumOnly && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5e17eb]/10 text-[#5e17eb] rounded-full text-sm filter-chip">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm filter-chip"
+                    style={{ backgroundColor: `${colors.secondary}10`, color: colors.secondary }}
+                  >
                     Premium Only
-                    <button onClick={() => updateFilter('premiumOnly', false)} className="hover:text-[#4a13c4]">
+                    <button onClick={() => updateFilter('premiumOnly', false)}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
@@ -1127,7 +1199,8 @@ export default function DiscoverPage() {
                     {currentProfiles.map(profile => (
                       <div
                         key={profile.id}
-                        className="profile-card bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 group"
+                        className="profile-card rounded-xl border overflow-hidden transition-all duration-300 group"
+                        style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}
                       >
                         {/* Profile Image */}
                         <div className="relative aspect-[4/5] card-image">
@@ -1215,17 +1288,19 @@ export default function DiscoverPage() {
 
                         {/* Action Buttons */}
                         <div className="p-4">
-                          <div className="action-buttons flex gap-2 mb-3">
+                        <div className="action-buttons flex flex-col sm:flex-row gap-2 mb-3">
                             <button
                               onClick={() => handleLike(profile.id)}
-                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-300"
+                              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium transition-colors duration-300"
+                              style={{ backgroundColor: colors.hoverBackground, color: colors.primaryText }}
                             >
                               <Heart className="w-4 h-4" />
                               Like
                             </button>
                             <button
                               onClick={() => handleChat(profile.id)}
-                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors duration-300"
+                              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium transition-colors duration-300"
+                              style={{ backgroundColor: colors.secondary, color: 'white' }}
                             >
                               <MessageCircle className="w-4 h-4" />
                               Chat
@@ -1235,15 +1310,25 @@ export default function DiscoverPage() {
                           <div className="action-buttons flex gap-2">
                             <button
                               onClick={() => handleViewProfile(profile.id)}
-                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:border-gray-400 hover:bg-gray-50 transition-colors duration-300"
+                              className="flex-1 flex items-center justify-center gap-2 py-2.5 border rounded-lg font-medium transition-colors duration-300"
+                              style={{ 
+                                backgroundColor: colors.background, 
+                                borderColor: colors.border, 
+                                color: colors.primaryText 
+                              }}
                             >
                               <Eye className="w-4 h-4" />
                               View Profile
                             </button>
                             <button
                               onClick={() => handleFollow(profile.id)}
-                              className="px-3 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors duration-300 flex items-center justify-center"
+                              className="px-3 py-2.5 border rounded-lg transition-colors duration-300 flex items-center justify-center"
                               title="Follow"
+                              style={{ 
+                                backgroundColor: colors.background, 
+                                borderColor: colors.border, 
+                                color: colors.primaryText 
+                              }}
                             >
                               <UserPlus className="w-5 h-5" />
                             </button>
@@ -1258,7 +1343,8 @@ export default function DiscoverPage() {
                     {currentProfiles.map(profile => (
                       <div
                         key={profile.id}
-                        className="profile-item bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-300 group"
+                        className="profile-item rounded-xl border p-4 transition-all duration-300 group"
+                        style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}
                       >
                         <div className="flex flex-col sm:flex-row gap-4">
                           {/* Profile Image */}
@@ -1279,7 +1365,7 @@ export default function DiscoverPage() {
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <h3 className="profile-name font-bold text-lg text-gray-900">
+                                  <h3 className="profile-name font-bold text-lg" style={{ color: colors.primaryText }}>
                                     {profile.username}, {profile.age}
                                   </h3>
                                   {profile.isVerified && (
@@ -1291,24 +1377,25 @@ export default function DiscoverPage() {
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-2 text-gray-600 text-sm mt-1">
+                                <div className="flex items-center gap-2 text-sm mt-1" style={{ color: colors.secondaryText }}>
                                   <MapPin className="w-4 h-4" />
                                   <span>{profile.location}</span>
                                   <span>•</span>
                                   <span>{profile.distance}</span>
                                   <span>•</span>
-                                  <span className="font-bold text-[#5e17eb]">{profile.compatibility}% match</span>
+                                  <span className="font-bold" style={{ color: colors.secondary }}>{profile.compatibility}% match</span>
                                 </div>
                               </div>
                             </div>
                             
-                            <p className="text-gray-700 mb-3 line-clamp-2">
+                            <p className="mb-3 line-clamp-2" style={{ color: colors.primaryText }}>
                               {profile.bio}
                             </p>
                             
                             <div className="flex flex-wrap gap-2 mb-4">
                               {profile.interests?.slice(0, 4).map((interest: string, idx: number) => (
-                                <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+                                <span key={idx} className="px-3 py-1 text-sm rounded-full" 
+                                  style={{ backgroundColor: colors.hoverBackground, color: colors.primaryText }}>
                                   {interest}
                                 </span>
                               ))}
@@ -1318,29 +1405,41 @@ export default function DiscoverPage() {
                             <div className="action-buttons flex flex-wrap gap-2">
                               <button
                                 onClick={() => handleLike(profile.id)}
-                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-300"
+                                className="px-4 py-2 rounded-lg font-medium transition-colors duration-300"
+                                style={{ backgroundColor: colors.hoverBackground, color: colors.primaryText }}
                               >
                                 <Heart className="w-4 h-4 inline mr-2" />
                                 Like
                               </button>
                               <button
                                 onClick={() => handleChat(profile.id)}
-                                className="px-4 py-2 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors duration-300"
+                                className="w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors duration-300"
+                                style={{ backgroundColor: colors.secondary, color: 'white' }}
                               >
                                 <MessageCircle className="w-4 h-4 inline mr-2" />
                                 Chat
                               </button>
                               <button
                                 onClick={() => handleViewProfile(profile.id)}
-                                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:border-gray-400 hover:bg-gray-50 transition-colors duration-300"
+                                className="px-4 py-2 border rounded-lg font-medium transition-colors duration-300"
+                                style={{ 
+                                  backgroundColor: colors.background, 
+                                  borderColor: colors.border, 
+                                  color: colors.primaryText 
+                                }}
                               >
                                 <Eye className="w-4 h-4 inline mr-2" />
                                 View Profile
                               </button>
                               <button
                                 onClick={() => handleFollow(profile.id)}
-                                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors duration-300"
+                                className="px-4 py-2 border rounded-lg transition-colors duration-300"
                                 title="Follow"
+                                style={{ 
+                                  backgroundColor: colors.background, 
+                                  borderColor: colors.border, 
+                                  color: colors.primaryText 
+                                }}
                               >
                                 <UserPlus className="w-5 h-5" />
                               </button>
@@ -1355,18 +1454,20 @@ export default function DiscoverPage() {
                 {/* No Results */}
                 {filteredProfiles.length === 0 && !isLoading && (
                   <div className="text-center py-16">
-                    <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-                      <Users className="w-12 h-12 text-gray-400" />
+                    <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center" 
+                      style={{ backgroundColor: colors.hoverBackground }}>
+                      <Users className="w-12 h-12" style={{ color: colors.tertiaryText }} />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No profiles found</h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    <h3 className="text-xl font-semibold mb-2" style={{ color: colors.primaryText }}>No profiles found</h3>
+                    <p style={{ color: colors.secondaryText }} className="mb-6 max-w-md mx-auto">
                       {searchQuery
                         ? `No profiles match "${searchQuery}". Try different search terms or adjust your filters.`
                         : 'Try adjusting your filters to find more people.'}
                     </p>
                     <button
                       onClick={clearFilters}
-                      className="px-6 py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors duration-300"
+                      className="px-6 py-3 rounded-lg font-medium transition-colors duration-300"
+                      style={{ backgroundColor: colors.secondary, color: 'white' }}
                     >
                       Clear All Filters
                     </button>
@@ -1379,7 +1480,8 @@ export default function DiscoverPage() {
                     <button
                       onClick={loadMoreProfiles}
                       disabled={isLoadingMore}
-                      className="px-8 py-3 bg-[#5e17eb] text-white rounded-lg font-medium hover:bg-[#4a13c4] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-8 py-3 rounded-lg font-medium transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: colors.secondary, color: 'white' }}
                     >
                       {isLoadingMore ? (
                         <span className="flex items-center gap-2">
@@ -1398,11 +1500,13 @@ export default function DiscoverPage() {
 
                 {/* Pagination */}
                 {filteredProfiles.length > 0 && totalPages > 1 && (
-                  <div className="pagination-container flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+                  <div className="pagination-container flex items-center justify-between mt-8 pt-6 border-t" 
+                    style={{ borderColor: colors.border }}>
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className="prev-button flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="prev-button flex items-center gap-2 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ color: colors.secondaryText }}
                     >
                       <ChevronRight className="w-4 h-4 rotate-180" />
                       Previous
@@ -1425,11 +1529,11 @@ export default function DiscoverPage() {
                           <button
                             key={pageNum}
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`w-10 h-10 rounded-lg font-medium transition-all duration-200 ${
-                              currentPage === pageNum
-                                ? 'bg-[#5e17eb] text-white'
-                                : 'text-gray-600 hover:bg-gray-100'
-                            }`}
+                            className={`w-10 h-10 rounded-lg font-medium transition-all duration-200`}
+                            style={{ 
+                              backgroundColor: currentPage === pageNum ? colors.secondary : 'transparent',
+                              color: currentPage === pageNum ? 'white' : colors.secondaryText
+                            }}
                           >
                             {pageNum}
                           </button>
@@ -1437,14 +1541,14 @@ export default function DiscoverPage() {
                       })}
                       {totalPages > 5 && currentPage < totalPages - 2 && (
                         <>
-                          <span className="text-gray-400">...</span>
+                          <span style={{ color: colors.tertiaryText }}>...</span>
                           <button
                             onClick={() => setCurrentPage(totalPages)}
-                            className={`w-10 h-10 rounded-lg font-medium ${
-                              currentPage === totalPages
-                                ? 'bg-[#5e17eb] text-white'
-                                : 'text-gray-600 hover:bg-gray-100'
-                            }`}
+                            className={`w-10 h-10 rounded-lg font-medium`}
+                            style={{ 
+                              backgroundColor: currentPage === totalPages ? colors.secondary : 'transparent',
+                              color: currentPage === totalPages ? 'white' : colors.secondaryText
+                            }}
                           >
                             {totalPages}
                           </button>
@@ -1455,7 +1559,8 @@ export default function DiscoverPage() {
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className="next-button flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="next-button flex items-center gap-2 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ color: colors.secondaryText }}
                     >
                       Next
                       <ChevronRight className="w-4 h-4" />
