@@ -10,6 +10,7 @@ import LayoutController from '@/components/layout/LayoutController';
 import personaService, { ParsedPersonaProfile } from '@/lib/services/personaService';
 import { useAuth } from '@/lib/hooks/useAuth';
 import router from 'next/router';
+import { useTheme } from '@/lib/context/ThemeContext';
 
 // Get icon for interest
 const getInterestIcon = (interest: string) => {
@@ -362,6 +363,8 @@ interface ImageModalProps {
 }
 
 const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, images, currentIndex, onIndexChange, alt }) => {
+  const { colors } = useTheme();
+  
   if (!isOpen || !images || images.length === 0) return null;
 
   const handlePrev = (e: React.MouseEvent) => {
@@ -433,6 +436,8 @@ const DEFAULT_AVATAR = '/default-avatar.png';
 export default function PeoplePage() {
   const router = useRouter();
   const { profile } = useAuth();
+  const { colors, isDark } = useTheme();
+  
   const [currentUserIndex, setCurrentUserIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [likedUsers, setLikedUsers] = useState<string[]>([]);
@@ -633,16 +638,16 @@ export default function PeoplePage() {
   // Loading skeleton
   if (isLoading || !currentUser) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
         <LayoutController />
         <div className="max-w-7xl mx-auto px-4 pt-20 pb-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <div className="bg-gray-200 rounded-xl h-[700px] animate-pulse"></div>
+              <div className="rounded-xl h-[700px] animate-pulse" style={{ backgroundColor: colors.hoverBackground }}></div>
             </div>
             <div className="space-y-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-gray-200 rounded-xl h-64 animate-pulse"></div>
+                <div key={i} className="rounded-xl h-64 animate-pulse" style={{ backgroundColor: colors.hoverBackground }}></div>
               ))}
             </div>
           </div>
@@ -652,18 +657,19 @@ export default function PeoplePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: colors.background }}>
       <LayoutController />
 
       {/* Clean Top Navigation */}
-      <div className="fixed top-18 lg:top-24 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-2 shadow-sm">
+      <div className="fixed top-18 lg:top-24 left-0 right-0 z-40 backdrop-blur-sm border-b px-4 py-2 shadow-sm" 
+           style={{ backgroundColor: `${colors.background}95`, borderColor: colors.border }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-purple-600" />
-              <span className="font-semibold text-gray-900 text-sm md:text-base">People</span>
+              <Users className="w-4 h-4" style={{ color: colors.secondary }} />
+              <span className="font-semibold text-sm md:text-base" style={{ color: colors.primaryText }}>People</span>
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs" style={{ color: colors.tertiaryText }}>
               {currentUserIndex + 1} of {users.length}
             </div>
           </div>
@@ -671,18 +677,22 @@ export default function PeoplePage() {
           <div className="flex items-center gap-1">
             <button
               onClick={prevProfile}
-              className="p-1.5 md:p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="button p-1.5 md:p-2 rounded-lg transition-colors"
               title="Previous profile"
+              style={{ color: colors.iconColor, backgroundColor: 'transparent'
+                     }}
             >
-              <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-700" />
+              <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
             </button>
 
             <button
               onClick={nextProfile}
-              className="p-1.5 md:p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="button not-[]:p-1.5 md:p-2 rounded-lg transition-colors"
               title="Next profile"
+              style={{ color: colors.iconColor, backgroundColor: 'transparent'
+                      }}
             >
-              <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-700" />
+              <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           </div>
         </div>
@@ -698,8 +708,9 @@ export default function PeoplePage() {
           {/* LEFT COLUMN: Image Container */}
           <div className="lg:col-span-2 space-y-4 md:space-y-6 relative">
             {/* MAIN IMAGE CONTAINER WITH SWIPE FUNCTIONALITY - TALLER RECTANGLE */}
-            <div className={`relative z-10 bg-gray-100 rounded-lg md:rounded-xl overflow-hidden shadow transition-all duration-300 ${isAnimatingOut ? 'opacity-0 translate-x-full' : 'opacity-100'}`}>
-              <div className="relative h-[600px] md:h-[750px]"> {/* Increased height */}
+            <div className={`relative z-10 rounded-lg md:rounded-xl overflow-hidden shadow transition-all duration-300 ${isAnimatingOut ? 'opacity-0 translate-x-full' : 'opacity-100'}`} 
+                 style={{ backgroundColor: colors.inputBackground }}>
+              <div className="relative h-[600px] md:h-[750px]">
                 <SwipeReject onReject={handleReject} onLike={handleLike} onHold={handleHold}>
                   <div className="relative w-full h-full">
                     {currentUser.photos[currentPhotoIndex] && (
@@ -719,7 +730,11 @@ export default function PeoplePage() {
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce-slow">
                     <button
                       onClick={handleChat}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full font-bold text-xl md:text-2xl shadow-2xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 animate-pulse flex items-center gap-3 border-4 border-white"
+                      className="text-white px-8 py-4 rounded-full font-bold text-xl md:text-2xl shadow-2xl transition-all duration-300 animate-pulse flex items-center gap-3 border-4 border-white"
+                      style={{ 
+                        background: `linear-gradient(to right, ${colors.secondary}, ${colors.primary})`, 
+                        borderColor: colors.background 
+                      }}
                     >
                       <MessageCircle className="w-6 h-6 md:w-8 md:h-8" />
                       Chat Now
@@ -735,7 +750,8 @@ export default function PeoplePage() {
                         e.stopPropagation();
                         setCurrentPhotoIndex(prev => (prev - 1 + currentUser.photos.length) % currentUser.photos.length);
                       }}
-                      className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-black z-20"
+                      className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 text-white w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 z-20"
+                      style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
                     >
                       <ChevronLeft className="w-4 h-4 md:w-6 md:h-6" />
                     </button>
@@ -744,7 +760,8 @@ export default function PeoplePage() {
                         e.stopPropagation();
                         setCurrentPhotoIndex(prev => (prev + 1) % currentUser.photos.length);
                       }}
-                      className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 bg-black/80 text-white w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-black z-20"
+                      className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 text-white w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 z-20"
+                      style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
                     >
                       <ChevronRight className="w-4 h-4 md:w-6 md:h-6" />
                     </button>
@@ -752,7 +769,8 @@ export default function PeoplePage() {
                 )}
 
                 {/* Photo Counter */}
-                <div className="absolute top-2 md:top-4 right-2 md:right-4 bg-black/80 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium z-20">
+                <div className="absolute top-2 md:top-4 right-2 md:right-4 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium z-20"
+                     style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
                   {currentPhotoIndex + 1} / {currentUser.photos.length}
                 </div>
 
@@ -763,7 +781,8 @@ export default function PeoplePage() {
                       e.stopPropagation();
                       handleSkip();
                     }}
-                    className="bg-black/80 hover:bg-black text-white w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300"
+                    className="text-white w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
                     title="Skip profile"
                   >
                     <X className="w-3 h-3 md:w-4 md:h-4" />
@@ -773,7 +792,8 @@ export default function PeoplePage() {
                       e.stopPropagation();
                       handleLike();
                     }}
-                    className="bg-black/80 hover:bg-black text-white w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300"
+                    className="text-white w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
                     title="Like profile"
                   >
                     <Heart className={`w-3 h-3 md:w-4 md:h-4 ${likedUsers.includes(currentUser.id) ? 'text-red-400 fill-red-400' : ''}`} />
@@ -781,7 +801,8 @@ export default function PeoplePage() {
                 </div>
 
                 {/* User Info Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/90 to-transparent p-4 md:p-6 z-20">
+                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20"
+                     style={{ background: 'linear-gradient(to top, black, rgba(0,0,0,0.9), transparent)' }}>
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
@@ -809,36 +830,41 @@ export default function PeoplePage() {
             </div>
 
             {/* PROFILE DETAILS CONTAINER */}
-            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
+            <div className="rounded-lg md:rounded-xl shadow border p-4 md:p-6" 
+                 style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
               {/* Basic Info Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
-                <div className="bg-blue-50 border border-blue-100 rounded-lg md:rounded-xl p-3 md:p-4">
+                <div className="border rounded-lg md:rounded-xl p-3 md:p-4" 
+                     style={{ backgroundColor: isDark ? colors.panelBackground : '#EBF8FF', borderColor: isDark ? colors.borderLight : '#BEE3F8' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Globe className="w-4 h-4 text-blue-600" />
-                    <div className="text-xs md:text-sm text-blue-600 font-medium">Location</div>
+                    <Globe className="w-4 h-4" style={{ color: colors.secondary }} />
+                    <div className="text-xs md:text-sm font-medium" style={{ color: colors.secondary }}>Location</div>
                   </div>
-                  <div className="text-base md:text-xl font-bold text-gray-900">{currentUser.location}</div>
+                  <div className="text-base md:text-xl font-bold" style={{ color: colors.primaryText }}>{currentUser.location}</div>
                 </div>
-                <div className="bg-purple-50 border border-purple-100 rounded-lg md:rounded-xl p-3 md:p-4">
+                <div className="border rounded-lg md:rounded-xl p-3 md:p-4" 
+                     style={{ backgroundColor: isDark ? colors.panelBackground : '#F5F3FF', borderColor: isDark ? colors.borderLight : '#DDD6FE' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4 text-purple-600" />
-                    <div className="text-xs md:text-sm text-purple-600 font-medium">Birth Date</div>
+                    <Calendar className="w-4 h-4" style={{ color: colors.secondary }} />
+                    <div className="text-xs md:text-sm font-medium" style={{ color: colors.secondary }}>Birth Date</div>
                   </div>
-                  <div className="text-base md:text-xl font-bold text-gray-900">{currentUser.birthDate}</div>
+                  <div className="text-base md:text-xl font-bold" style={{ color: colors.primaryText }}>{currentUser.birthDate}</div>
                 </div>
-                <div className="bg-pink-50 border border-pink-100 rounded-lg md:rounded-xl p-3 md:p-4">
+                <div className="border rounded-lg md:rounded-xl p-3 md:p-4" 
+                     style={{ backgroundColor: isDark ? colors.panelBackground : '#FDF2F8', borderColor: isDark ? colors.borderLight : '#FBCFE8' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <User className="w-4 h-4 text-pink-600" />
-                    <div className="text-xs md:text-sm text-pink-600 font-medium">Status</div>
+                    <User className="w-4 h-4" style={{ color: colors.primary }} />
+                    <div className="text-xs md:text-sm font-medium" style={{ color: colors.primary }}>Status</div>
                   </div>
-                  <div className="text-base md:text-xl font-bold text-gray-900">{currentUser.maritalStatus}</div>
+                  <div className="text-base md:text-xl font-bold" style={{ color: colors.primaryText }}>{currentUser.maritalStatus}</div>
                 </div>
-                <div className="bg-indigo-50 border border-indigo-100 rounded-lg md:rounded-xl p-3 md:p-4">
+                <div className="border rounded-lg md:rounded-xl p-3 md:p-4" 
+                     style={{ backgroundColor: isDark ? colors.panelBackground : '#EEF2FF', borderColor: isDark ? colors.borderLight : '#C7D2FE' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Briefcase className="w-4 h-4 text-indigo-600" />
-                    <div className="text-xs md:text-sm text-indigo-600 font-medium">Profession</div>
+                    <Briefcase className="w-4 h-4" style={{ color: colors.secondary }} />
+                    <div className="text-xs md:text-sm font-medium" style={{ color: colors.secondary }}>Profession</div>
                   </div>
-                  <div className="text-base md:text-xl font-bold text-gray-900">{currentUser.profession}</div>
+                  <div className="text-base md:text-xl font-bold" style={{ color: colors.primaryText }}>{currentUser.profession}</div>
                 </div>
               </div>
 
@@ -846,13 +872,18 @@ export default function PeoplePage() {
               <div className="mb-4 md:mb-6">
                 <div className="flex items-center gap-2 mb-2 md:mb-3">
                   <Star className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
-                  <h2 className="text-lg md:text-xl font-bold text-gray-900">Interests</h2>
+                  <h2 className="text-lg md:text-xl font-bold" style={{ color: colors.primaryText }}>Interests</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {currentUser.interests.map((interest: string, index: number) => (
                     <div
                       key={index}
-                      className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl text-gray-700 text-sm md:text-base font-medium hover:bg-gray-100 transition-colors"
+                      className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 border rounded-lg md:rounded-xl text-sm md:text-base font-medium transition-colors"
+                      style={{ 
+                        backgroundColor: colors.panelBackground, 
+                        borderColor: colors.borderLight, 
+                        color: colors.secondaryText 
+                      }}
                     >
                       {getInterestIcon(interest)}
                       <span>{interest}</span>
@@ -865,21 +896,30 @@ export default function PeoplePage() {
               <div className="mb-4 md:mb-6">
                 <div className="flex items-center gap-2 mb-2 md:mb-3">
                   <Star className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
-                  <h2 className="text-lg md:text-xl font-bold text-gray-900">Looking For</h2>
+                  <h2 className="text-lg md:text-xl font-bold" style={{ color: colors.primaryText }}>Looking For</h2>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-3 md:mb-4">
                   {currentUser.lookingFor.map((item: string, index: number) => (
                     <div
                       key={index}
-                      className="p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl hover:bg-gray-100 transition-colors cursor-pointer text-center"
+                      className="p-2 md:p-3 border rounded-lg md:rounded-xl transition-colors cursor-pointer text-center"
+                      style={{ 
+                        backgroundColor: colors.panelBackground, 
+                        borderColor: colors.borderLight,
+                        color: colors.secondaryText
+                      }}
                     >
-                      <div className="font-medium text-gray-900 text-sm md:text-base">{item}</div>
+                      <div className="font-medium text-sm md:text-base" style={{ color: colors.primaryText }}>{item}</div>
                     </div>
                   ))}
                 </div>
-                <div className="p-3 md:p-4 bg-purple-50 border border-purple-200 rounded-lg md:rounded-xl">
-                  <div className="text-base md:text-lg font-bold text-gray-900">
-                    Personality Type: <span className="text-purple-600">{currentUser.personalityType}</span>
+                <div className="p-3 md:p-4 border rounded-lg md:rounded-xl"
+                     style={{ 
+                       backgroundColor: isDark ? colors.activeBackground : '#F5F3FF', 
+                       borderColor: isDark ? colors.secondary : '#DDD6FE' 
+                     }}>
+                  <div className="text-base md:text-lg font-bold">
+                    Personality Type: <span style={{ color: colors.secondary }}>{currentUser.personalityType}</span>
                   </div>
                 </div>
               </div>
@@ -887,26 +927,28 @@ export default function PeoplePage() {
               {/* About Me */}
               <div>
                 <div className="flex items-center gap-2 mb-2 md:mb-3">
-                  <X className="w-4 h-4 md:w-5 md:h-5 text-red-500" />
-                  <h2 className="text-lg md:text-xl font-bold text-gray-900">About Me</h2>
+                  <X className="w-4 h-4 md:w-5 md:h-5" style={{ color: colors.danger }} />
+                  <h2 className="text-lg md:text-xl font-bold" style={{ color: colors.primaryText }}>About Me</h2>
                 </div>
                 <div className="flex flex-wrap gap-2 md:gap-3 mb-3 md:mb-4">
                   {currentUser.about.map((trait: string, index: number) => (
                     <div
                       key={index}
-                      className="px-3 md:px-4 py-1.5 md:py-2.5 bg-purple-600 text-white rounded-lg md:rounded-xl font-bold text-sm md:text-lg shadow-sm"
+                      className="px-3 md:px-4 py-1.5 md:py-2.5 text-white rounded-lg md:rounded-xl font-bold text-sm md:text-lg shadow-sm"
+                      style={{ backgroundColor: colors.secondary }}
                     >
                       {trait}
                     </div>
                   ))}
                 </div>
-                <div className="text-gray-700 text-sm md:text-lg leading-relaxed">
+                <div className="text-sm md:text-lg leading-relaxed" style={{ color: colors.secondaryText }}>
                   <p className={showFullDescription ? '' : 'line-clamp-3'}>
                     {currentUser.description}
                   </p>
                   <button
                     onClick={() => setShowFullDescription(!showFullDescription)}
-                    className="text-purple-600 font-bold hover:underline mt-2 text-sm md:text-lg"
+                    className="font-bold hover:underline mt-2 text-sm md:text-lg"
+                    style={{ color: colors.secondary }}
                   >
                     {showFullDescription ? 'See Less' : 'See More'}
                   </button>
@@ -915,30 +957,34 @@ export default function PeoplePage() {
             </div>
 
             {/* SEND MESSAGE BUTTON - Below Main Image */}
-            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-3 md:p-4">
+            <div className="rounded-lg md:rounded-xl shadow border p-3 md:p-4" 
+                 style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
               <button
                 onClick={handleChat}
-                className="w-full py-3 md:py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg md:rounded-xl font-bold text-base md:text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg"
+                className="w-full py-3 md:py-4 text-white rounded-lg md:rounded-xl font-bold text-base md:text-lg transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg"
+                style={{ background: `linear-gradient(to right, ${colors.secondary}, ${colors.primary})` }}
               >
                 <MessageCircle className="w-5 h-5 md:w-6 md:h-6" />
                 Send Message to {currentUser.name}
               </button>
             </div>
             {/* SEND GIFT SECTION */}
-            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
+            <div className="rounded-lg md:rounded-xl shadow border p-4 md:p-6" 
+                 style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2">
                 <div>
-                  <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <Gift className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+                  <h2 className="text-lg md:text-xl font-bold flex items-center gap-2" style={{ color: colors.primaryText }}>
+                    <Gift className="w-5 h-5 md:w-6 md:h-6" style={{ color: colors.secondary }} />
                     Virtual Gifts for Special Ones
                   </h2>
-                  <p className="text-gray-600 text-sm md:text-base mt-1">
+                  <p className="text-sm md:text-base mt-1" style={{ color: colors.secondaryText }}>
                     Liven up your chat with {currentUser.name}
                   </p>
                 </div>
                 <button
-                   onClick={() => router.push(`/main/virtual-gifts/${currentUser.id}`)}
-                  className="text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-full transition-colors w-fit"
+                  onClick={() => router.push(`/main/virtual-gifts/${currentUser.id}`)}
+                  className="text-sm font-medium text-white px-4 py-2 rounded-full transition-colors w-fit"
+                  style={{ backgroundColor: colors.secondary }}
                 >
                   Choose Virtual Gift
                 </button>
@@ -956,7 +1002,7 @@ export default function PeoplePage() {
                       className="rounded-lg object-cover"
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-900">Rose</span>
+                  <span className="text-sm font-medium" style={{ color: colors.primaryText }}>Rose</span>
                 </div>
 
                 {/* Gift 2 - Just image, no click */}
@@ -970,7 +1016,7 @@ export default function PeoplePage() {
                       className="rounded-lg object-cover"
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-900">Wishwell</span>
+                  <span className="text-sm font-medium" style={{ color: colors.primaryText }}>Wishwell</span>
                 </div>
 
                 {/* Gift 3 - Just image, no click */}
@@ -984,7 +1030,7 @@ export default function PeoplePage() {
                       className="rounded-lg object-cover"
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-900">flowers</span>
+                  <span className="text-sm font-medium" style={{ color: colors.primaryText }}>flowers</span>
                 </div>
 
                 {/* Gift 4 - Just image, no click */}
@@ -998,7 +1044,7 @@ export default function PeoplePage() {
                       className="rounded-lg object-cover"
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-900">Love potion</span>
+                  <span className="text-sm font-medium" style={{ color: colors.primaryText }}>Love potion</span>
                 </div>
               </div>
             </div>
@@ -1006,9 +1052,10 @@ export default function PeoplePage() {
 
             {/* PHOTOS CONTAINER - MODAL ONLY FOR THESE IMAGES */}
             {currentUser.photosCount > 0 && (
-              <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
+              <div className="rounded-lg md:rounded-xl shadow border p-4 md:p-6" 
+                   style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
                 <div className="flex items-center justify-between mb-4 md:mb-6">
-                  <h2 className="text-lg md:text-2xl font-bold text-gray-900">Photos ({currentUser.photosCount})</h2>
+                  <h2 className="text-lg md:text-2xl font-bold" style={{ color: colors.primaryText }}>Photos ({currentUser.photosCount})</h2>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
@@ -1038,15 +1085,17 @@ export default function PeoplePage() {
           {/* RIGHT COLUMN: People You Might Like + Sidebar */}
           <div className="space-y-4 md:space-y-6">
             {/* ENHANCED: People You Might Like - SHOW 5 RANDOM PEOPLE */}
-            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
+            <div className="rounded-lg md:rounded-xl shadow border p-4 md:p-6" 
+                 style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
               <div className="flex items-center justify-between mb-3 md:mb-4">
-                <h3 className="text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
+                <h3 className="text-base md:text-lg font-bold flex items-center gap-2" style={{ color: colors.primaryText }}>
+                  <Users className="w-4 h-4 md:w-5 md:h-5" style={{ color: colors.secondary }} />
                   People You Might Like
                 </h3>
                 <button
-                  className="text-purple-600 text-xs md:text-sm font-medium hover:text-purple-700 transition-colors"
+                  className="text-xs md:text-sm font-medium transition-colors"
                   onClick={() => loadSuggestedPeople()}
+                  style={{ color: colors.secondary }}
                 >
                   Refresh
                 </button>
@@ -1056,7 +1105,11 @@ export default function PeoplePage() {
                 {suggestedPeople.slice(0, 5).map((person) => (
                   <div
                     key={person.id}
-                    className="p-3 md:p-4 bg-gray-50 border border-gray-200 rounded-lg md:rounded-xl hover:bg-gray-100 transition-all duration-300 cursor-pointer hover:scale-[1.02] group"
+                    className="p-3 md:p-4 border rounded-lg md:rounded-xl transition-all duration-300 cursor-pointer hover:scale-[1.02] group"
+                    style={{ 
+                      backgroundColor: colors.panelBackground, 
+                      borderColor: colors.border 
+                    }}
                     onClick={() => {
                       const userIndex = users.findIndex(u => u.id === person.id);
                       if (userIndex !== -1) {
@@ -1071,7 +1124,8 @@ export default function PeoplePage() {
                   >
                     <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-3">
                       <div className="relative flex-shrink-0">
-                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 border-white shadow relative group-hover:border-purple-300 transition-colors">
+                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 shadow relative group-hover:border-purple-300 transition-colors"
+                             style={{ borderColor: isDark ? colors.borderLight : colors.background }}>
                           <Image
                             src={person.image}
                             alt={person.name}
@@ -1081,33 +1135,35 @@ export default function PeoplePage() {
                           />
                         </div>
                         {person.online && (
-                          <div className="absolute bottom-0 right-0 w-2 h-2 md:w-2.5 md:h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
+                          <div className="absolute bottom-0 right-0 w-2 h-2 md:w-2.5 md:h-2.5 bg-green-500 rounded-full border-2" 
+                               style={{ borderColor: isDark ? colors.border : colors.background }}></div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1 md:gap-2">
-                          <div className="font-bold text-gray-900 text-sm md:text-base truncate">
+                          <div className="font-bold text-sm md:text-base truncate" style={{ color: colors.primaryText }}>
                             {person.name}, {person.age}
                           </div>
                           {Math.random() > 0.5 && (
                             <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-blue-400 flex-shrink-0" />
                           )}
                         </div>
-                        <div className="text-gray-600 text-xs md:text-sm flex items-center gap-1 truncate mt-0.5">
+                        <div className="text-xs md:text-sm flex items-center gap-1 truncate mt-0.5" style={{ color: colors.secondaryText }}>
                           <MapPin className="w-2 h-2 md:w-3 md:h-3 flex-shrink-0" />
                           <span className="truncate">{person.location}</span>
                         </div>
                         {person.interests && (
                           <div className="flex items-center gap-1 mt-1">
                             {person.interests.slice(0, 2).map((interest: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined, idx: Key | null | undefined) => (
-                              <span key={idx} className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                              <span key={idx} className="text-xs px-1.5 py-0.5 rounded"
+                                    style={{ backgroundColor: colors.hoverBackground, color: colors.tertiaryText }}>
                                 {interest}
                               </span>
                             ))}
                           </div>
                         )}
                       </div>
-                      <div className="text-gray-500 text-xs flex items-center gap-1 flex-shrink-0">
+                      <div className="text-xs flex items-center gap-1 flex-shrink-0" style={{ color: colors.tertiaryText }}>
                         <Camera className="w-2 h-2 md:w-3 md:h-3" />
                         <span className="font-medium">{person.photos}</span>
                       </div>
@@ -1118,7 +1174,8 @@ export default function PeoplePage() {
                           e.stopPropagation();
                           router.push(`/main/chats/${person.id}`);
                         }}
-                        className="flex-1 py-2 md:py-2.5 bg-purple-600 text-white rounded-lg font-medium md:font-bold hover:bg-purple-700 transition-all duration-300 flex items-center justify-center gap-1 md:gap-2 text-sm"
+                        className="flex-1 py-2 md:py-2.5 text-white rounded-lg font-medium md:font-bold transition-all duration-300 flex items-center justify-center gap-1 md:gap-2 text-sm"
+                        style={{ backgroundColor: colors.secondary }}
                       >
                         <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
                         Chat
@@ -1130,7 +1187,11 @@ export default function PeoplePage() {
                             setLikedUsers([...likedUsers, person.id]);
                           }
                         }}
-                        className="px-3 md:px-4 py-2 md:py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all duration-300 flex items-center justify-center"
+                        className="px-3 md:px-4 py-2 md:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center"
+                        style={{ 
+                          backgroundColor: colors.hoverBackground, 
+                          color: colors.secondaryText 
+                        }}
                       >
                         <Heart className={`w-3 h-3 md:w-4 md:h-4 ${likedUsers.includes(person.id) ? 'text-red-500 fill-red-500' : ''}`} />
                       </button>
@@ -1146,7 +1207,12 @@ export default function PeoplePage() {
                     // Load more suggestions or navigate to a browse page
                     console.log('Show more people');
                   }}
-                  className="w-full mt-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg font-medium transition-colors border border-gray-200"
+                  className="w-full mt-3 py-2 rounded-lg font-medium transition-colors border"
+                  style={{ 
+                    backgroundColor: colors.hoverBackground, 
+                    color: colors.secondaryText,
+                    borderColor: colors.border
+                  }}
                 >
                   Show More
                 </button>
@@ -1154,47 +1220,72 @@ export default function PeoplePage() {
             </div>
 
             {/* Get More with Credits */}
-            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
-                <CreditCard className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
+            <div className="rounded-lg md:rounded-xl shadow border p-4 md:p-6" 
+                 style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
+              <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 flex items-center gap-2" style={{ color: colors.primaryText }}>
+                <CreditCard className="w-4 h-4 md:w-5 md:h-5" style={{ color: colors.secondary }} />
                 Get More with Credits
               </h3>
               <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
-                <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:border-purple-300 transition-colors">
-                  <MessageSquare className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
-                  <span className="text-gray-700 text-sm md:text-base">Chat with anyone you like</span>
+                <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 border rounded-lg transition-colors"
+                     style={{ 
+                       backgroundColor: colors.panelBackground, 
+                       borderColor: colors.border,
+                       color: colors.secondaryText
+                     }}>
+                  <MessageSquare className="w-4 h-4 md:w-5 md:h-5" style={{ color: colors.secondary }} />
+                  <span className="text-sm md:text-base">Chat with anyone you like</span>
                 </div>
-                <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:border-purple-300 transition-colors">
-                  <Gift className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
-                  <span className="text-gray-700 text-sm md:text-base">Send Virtual Gifts</span>
+                <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 border rounded-lg transition-colors"
+                     style={{ 
+                       backgroundColor: colors.panelBackground, 
+                       borderColor: colors.border,
+                       color: colors.secondaryText
+                     }}>
+                  <Gift className="w-4 h-4 md:w-5 md:h-5" style={{ color: colors.secondary }} />
+                  <span className="text-sm md:text-base">Send Virtual Gifts</span>
                 </div>
               </div>
               <button
                 onClick={() => setShowCreditsPopup(true)}
-                className="w-full py-2.5 md:py-3.5 bg-purple-600 text-white rounded-lg font-bold text-sm md:text-lg hover:bg-purple-700 transition-all duration-300 hover:scale-[1.02]"
+                className="w-full py-2.5 md:py-3.5 text-white rounded-lg font-bold text-sm md:text-lg transition-all duration-300 hover:scale-[1.02]"
+                style={{ backgroundColor: colors.secondary }}
               >
                 Get Credits
               </button>
             </div>
 
             {/* My Activity */}
-            <div className="bg-white rounded-lg md:rounded-xl shadow border border-gray-200 p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
-                <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
+            <div className="rounded-lg md:rounded-xl shadow border p-4 md:p-6" 
+                 style={{ backgroundColor: colors.cardBackground, borderColor: colors.border }}>
+              <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4 flex items-center gap-2" style={{ color: colors.primaryText }}>
+                <Users className="w-4 h-4 md:w-5 md:h-5" style={{ color: colors.secondary }} />
                 My Activity
               </h3>
               <div className="space-y-2 md:space-y-3">
-                <div className="flex items-center justify-between p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="font-medium text-gray-700 text-sm md:text-base">Chats</div>
-                  <div className="text-lg md:text-2xl font-bold text-purple-600">{userActivity.chats}</div>
+                <div className="flex items-center justify-between p-2 md:p-3 border rounded-lg transition-colors"
+                     style={{ 
+                       backgroundColor: colors.panelBackground, 
+                       borderColor: colors.border
+                     }}>
+                  <div className="font-medium text-sm md:text-base" style={{ color: colors.secondaryText }}>Chats</div>
+                  <div className="text-lg md:text-2xl font-bold" style={{ color: colors.secondary }}>{userActivity.chats}</div>
                 </div>
-                <div className="flex items-center justify-between p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="font-medium text-gray-900 text-sm md:text-base">Likes</div>
-                  <div className="text-lg md:text-2xl font-bold text-purple-600">{userActivity.likes}</div>
+                <div className="flex items-center justify-between p-2 md:p-3 border rounded-lg transition-colors"
+                     style={{ 
+                       backgroundColor: colors.panelBackground, 
+                       borderColor: colors.border
+                     }}>
+                  <div className="font-medium text-sm md:text-base" style={{ color: colors.primaryText }}>Likes</div>
+                  <div className="text-lg md:text-2xl font-bold" style={{ color: colors.secondary }}>{userActivity.likes}</div>
                 </div>
-                <div className="flex items-center justify-between p-2 md:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="font-medium text-gray-900 text-sm md:text-base">Following</div>
-                  <div className="text-lg md:text-2xl font-bold text-purple-600">{userActivity.following}</div>
+                <div className="flex items-center justify-between p-2 md:p-3 border rounded-lg transition-colors"
+                     style={{ 
+                       backgroundColor: colors.panelBackground, 
+                       borderColor: colors.border
+                     }}>
+                  <div className="font-medium text-sm md:text-base" style={{ color: colors.primaryText }}>Following</div>
+                  <div className="text-lg md:text-2xl font-bold" style={{ color: colors.secondary }}>{userActivity.following}</div>
                 </div>
               </div>
             </div>
@@ -1208,7 +1299,8 @@ export default function PeoplePage() {
           <div className="flex flex-col gap-3">
             <button
               onClick={handleChat}
-              className="bg-purple-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-purple-700 transition-all duration-300 hover:scale-110"
+              className="text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
+              style={{ backgroundColor: colors.secondary }}
               title="Start Chat"
             >
               <MessageCircle className="w-6 h-6" />
@@ -1216,7 +1308,8 @@ export default function PeoplePage() {
 
             <button
               onClick={handleLike}
-              className="bg-red-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all duration-300 hover:scale-110"
+              className="text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
+              style={{ backgroundColor: colors.danger }}
               title="Like"
             >
               <Heart className={`w-6 h-6 ${likedUsers.includes(currentUser.id) ? 'fill-white' : ''}`} />
@@ -1224,7 +1317,8 @@ export default function PeoplePage() {
 
             <button
               onClick={handleSkip}
-              className="bg-gray-800 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-900 transition-all duration-300 hover:scale-110"
+              className="text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
+              style={{ backgroundColor: isDark ? colors.border : '#333' }}
               title="Skip"
             >
               <X className="w-6 h-6" />
@@ -1238,7 +1332,12 @@ export default function PeoplePage() {
         <div className="flex gap-4">
           <button
             onClick={handleSkip}
-            className="bg-white text-gray-800 border border-gray-300 w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50 transition-all duration-300 hover:scale-110"
+            className="text-gray-800 border w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
+            style={{ 
+              backgroundColor: colors.background, 
+              borderColor: colors.border,
+              color: colors.primaryText
+            }}
             title="Skip (changes profile)"
           >
             <X className="w-5 h-5" />
@@ -1246,7 +1345,8 @@ export default function PeoplePage() {
 
           <button
             onClick={handleChat}
-            className="bg-purple-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-purple-700 transition-all duration-300 hover:scale-110"
+            className="text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
+            style={{ backgroundColor: colors.secondary }}
             title="Start Chat"
           >
             <MessageCircle className="w-5 h-5" />
@@ -1254,7 +1354,8 @@ export default function PeoplePage() {
 
           <button
             onClick={handleLike}
-            className="bg-red-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all duration-300 hover:scale-110"
+            className="text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
+            style={{ backgroundColor: colors.danger }}
             title="Like (does NOT change profile)"
           >
             <Heart className={`w-5 h-5 ${likedUsers.includes(currentUser.id) ? 'fill-white' : ''}`} />
@@ -1277,50 +1378,61 @@ export default function PeoplePage() {
       {/* Credits Popup */}
       {showCreditsPopup && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg md:rounded-xl max-w-md w-full p-4 md:p-6 shadow-2xl">
+          <div className="rounded-lg md:rounded-xl max-w-md w-full p-4 md:p-6 shadow-2xl" 
+               style={{ backgroundColor: colors.cardBackground }}>
             <div className="flex items-center justify-between mb-4 md:mb-6">
-              <h3 className="text-lg md:text-2xl font-bold text-gray-900">Get Credits</h3>
+              <h3 className="text-lg md:text-2xl font-bold" style={{ color: colors.primaryText }}>Get Credits</h3>
               <button
                 onClick={() => setShowCreditsPopup(false)}
-                className="p-1.5 md:p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-1.5 md:p-2 rounded-lg transition-colors"
+                style={{ color: colors.iconColor }}
               >
                 <X className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </div>
 
             <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
-              <div className="p-3 md:p-4 border border-gray-300 rounded-lg hover:border-purple-400 transition-colors cursor-pointer">
+              <div className="p-3 md:p-4 border rounded-lg transition-colors cursor-pointer"
+                   style={{ borderColor: colors.borderLight }}>
                 <div className="flex justify-between items-center">
                   <div>
-                    <div className="font-bold text-base md:text-lg">30 Credits</div>
-                    <div className="text-gray-600 text-xs md:text-sm">30 messages</div>
+                    <div className="font-bold text-base md:text-lg" style={{ color: colors.primaryText }}>30 Credits</div>
+                    <div className="text-xs md:text-sm" style={{ color: colors.secondaryText }}>30 messages</div>
                   </div>
-                  <div className="text-lg md:text-xl font-bold text-purple-600">$9.99</div>
+                  <div className="text-lg md:text-xl font-bold" style={{ color: colors.secondary }}>$9.99</div>
                 </div>
               </div>
 
-              <div className="p-3 md:p-4 border-2 border-purple-600 rounded-lg bg-purple-50">
+              <div className="p-3 md:p-4 border-2 rounded-lg"
+                   style={{ 
+                     borderColor: colors.secondary, 
+                     backgroundColor: isDark ? colors.activeBackground : '#F5F3FF'
+                   }}>
                 <div className="flex justify-between items-center">
                   <div>
-                    <div className="font-bold text-base md:text-lg">100 Credits</div>
-                    <div className="text-gray-600 text-xs md:text-sm">100 messages</div>
+                    <div className="font-bold text-base md:text-lg" style={{ color: colors.primaryText }}>100 Credits</div>
+                    <div className="text-xs md:text-sm" style={{ color: colors.secondaryText }}>100 messages</div>
                   </div>
-                  <div className="text-lg md:text-xl font-bold text-purple-600">$19.99</div>
+                  <div className="text-lg md:text-xl font-bold" style={{ color: colors.secondary }}>$19.99</div>
                 </div>
               </div>
 
-              <div className="p-3 md:p-4 border border-gray-300 rounded-lg hover:border-purple-400 transition-colors cursor-pointer">
+              <div className="p-3 md:p-4 border rounded-lg transition-colors cursor-pointer"
+                   style={{ borderColor: colors.borderLight }}>
                 <div className="flex justify-between items-center">
                   <div>
-                    <div className="font-bold text-base md:text-lg">350 Credits</div>
-                    <div className="text-gray-600 text-xs md:text-sm">350 messages</div>
+                    <div className="font-bold text-base md:text-lg" style={{ color: colors.primaryText }}>350 Credits</div>
+                    <div className="text-xs md:text-sm" style={{ color: colors.secondaryText }}>350 messages</div>
                   </div>
-                  <div className="text-lg md:text-xl font-bold text-purple-600">$39.99</div>
+                  <div className="text-lg md:text-xl font-bold" style={{ color: colors.secondary }}>$39.99</div>
                 </div>
               </div>
             </div>
 
-            <button className="w-full py-2.5 md:py-3.5 bg-purple-600 text-white rounded-lg font-bold text-sm md:text-lg hover:bg-purple-700 transition-all duration-300 hover:scale-[1.02]">
+            <button 
+              className="w-full py-2.5 md:py-3.5 text-white rounded-lg font-bold text-sm md:text-lg transition-all duration-300 hover:scale-[1.02]"
+              style={{ backgroundColor: colors.secondary }}
+            >
               Continue to Payment
             </button>
           </div>

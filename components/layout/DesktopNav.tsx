@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, MessageCircle, Search, Users, CreditCard, GiftIcon, User, Settings, LogOut } from 'lucide-react';
+import { Home, MessageCircle, Search, Users, CreditCard, GiftIcon, User, Settings, LogOut, Sun, Moon } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
@@ -16,7 +16,7 @@ interface DesktopNavProps {
 export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isDark, colors } = useTheme();
+  const { isDark, colors, toggleTheme, theme } = useTheme();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
@@ -256,6 +256,43 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-6">
+            {/* Theme Toggle Switcher */}
+            <button
+              onClick={toggleTheme}
+              className="relative w-14 h-8 rounded-full p-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              style={{
+                backgroundColor: isDark ? colors.secondary : colors.border,
+                border: `2px solid ${isDark ? colors.secondary : colors.border}`,
+                boxShadow: `0 0 10px ${isDark ? `${colors.secondary}40` : 'rgba(0,0,0,0.1)'}`
+              }}
+              aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+            >
+              <div className="relative w-full h-full">
+                {/* Sun Icon (Light Mode) */}
+                <div className={`absolute left-1 top-1/2 -translate-y-1/2 transition-all duration-300 ${isDark ? 'opacity-0 scale-0' : 'opacity-100 scale-100'}`}>
+                  <Sun size={16} className="text-yellow-500" />
+                </div>
+                
+                {/* Moon Icon (Dark Mode) */}
+                <div className={`absolute right-1 top-1/2 -translate-y-1/2 transition-all duration-300 ${isDark ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}>
+                  <Moon size={16} className="text-blue-200" />
+                </div>
+                
+                {/* Toggle Circle */}
+                <div
+                  className={`absolute top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-white shadow-lg transition-all duration-300 flex items-center justify-center ${
+                    isDark ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                >
+                  {isDark ? (
+                    <Moon size={12} className="text-gray-800" />
+                  ) : (
+                    <Sun size={12} className="text-yellow-500" />
+                  )}
+                </div>
+              </div>
+            </button>
+
             {/* Gift Icon */}
             <button 
               onClick={handleGift}
@@ -381,7 +418,25 @@ export default function DesktopNav({ activeTab, setActiveTab }: DesktopNavProps)
                         </div>
                       </div>
                       
-                      {/* Menu Items */}
+                      {/* Theme Toggle in Dropdown */}
+                      <button 
+                        onClick={toggleTheme}
+                        className="flex items-center w-full px-4 py-3 text-left transition hover:bg-opacity-50"
+                        style={{
+                          color: colors.primaryText,
+                          backgroundColor: colors.hoverBackground
+                        }}
+                      >
+                        <div className="mr-3">
+                          {isDark ? (
+                            <Sun size={18} className="text-yellow-500" />
+                          ) : (
+                            <Moon size={18} className="text-indigo-600" />
+                          )}
+                        </div>
+                        <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                      </button>
+                      
                       <button 
                         onClick={() => handleProfileDropdown('my-account')}
                         className="flex items-center w-full px-4 py-3 text-left transition hover:bg-opacity-50"

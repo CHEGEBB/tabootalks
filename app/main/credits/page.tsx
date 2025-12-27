@@ -36,7 +36,8 @@ import creditService from '@/lib/services/creditService';
 import { databases } from '@/lib/appwrite/config';
 import { DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/config';
 import { Query } from 'appwrite';
-// import { useSearchParams } from 'next/navigation';
+import { useTheme } from '@/lib/context/ThemeContext';
+import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
 // Credit packages with Stripe Price IDs
 const CREDIT_PACKAGES = [
@@ -144,8 +145,9 @@ const FAQ_ITEMS = [
 
 export default function CreditsPage() {
   const { user, profile, loading: authLoading } = useAuth();
-  // Remove useSearchParams and use window.location instead
-  // const searchParams = useSearchParams();
+  const { isDark } = useTheme();
+  const colors = useThemeColors();
+  
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(CREDIT_PACKAGES[1]);
   const [userCredits, setUserCredits] = useState({
@@ -419,13 +421,20 @@ export default function CreditsPage() {
   // Loading state
   if (authLoading || loadingCredits) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen" style={{ background: colors.background }}>
         <LayoutController />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading your credits...</p>
+              <div 
+                className="w-16 h-16 rounded-full animate-spin mx-auto mb-4"
+                style={{ 
+                  borderWidth: '4px',
+                  borderColor: colors.borderLight, 
+                  borderTopColor: colors.primary 
+                }}
+              ></div>
+              <p style={{ color: colors.secondaryText }}>Loading your credits...</p>
             </div>
           </div>
         </div>
@@ -434,7 +443,7 @@ export default function CreditsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: colors.background }}>
       <LayoutController />
       
       {/* Success Toast */}
@@ -466,9 +475,9 @@ export default function CreditsPage() {
       {/* Processing Overlay */}
       {(processing || verifyingPayment) && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-8 text-center">
+          <div style={{ background: colors.cardBackground }} className="rounded-xl p-8 text-center">
             <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
-            <p className="text-gray-900 font-medium">
+            <p style={{ color: colors.primaryText }} className="font-medium">
               {verifyingPayment ? 'Verifying your payment...' : 'Redirecting to secure checkout...'}
             </p>
           </div>
@@ -511,25 +520,25 @@ export default function CreditsPage() {
           </div>
 
           {/* What are credits section */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div style={{ background: colors.cardBackground, borderColor: colors.border }} className="rounded-xl p-6 shadow-sm border">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div style={{ background: isDark ? 'rgba(94, 23, 235, 0.2)' : '#f3e8ff' }} className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
                 <HelpCircle className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-3">What are credits?</h2>
+                <h2 style={{ color: colors.primaryText }} className="text-xl font-bold mb-3">What are credits?</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-start">
-                    <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                    <div style={{ background: isDark ? 'rgba(94, 23, 235, 0.2)' : '#f3e8ff' }} className="w-6 h-6 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
                       <span className="text-purple-600 font-bold text-sm">•</span>
                     </div>
-                    <p className="text-gray-700">Credits are the internal currency used for paid services on the site.</p>
+                    <p style={{ color: colors.secondaryText }}>Credits are the internal currency used for paid services on the site.</p>
                   </div>
                   <div className="flex items-start">
-                    <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                    <div style={{ background: isDark ? 'rgba(94, 23, 235, 0.2)' : '#f3e8ff' }} className="w-6 h-6 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
                       <span className="text-purple-600 font-bold text-sm">•</span>
                     </div>
-                    <p className="text-gray-700">Upon signing up, you get some credits for free. Afterward, top up your balance.</p>
+                    <p style={{ color: colors.secondaryText }}>Upon signing up, you get some credits for free. Afterward, top up your balance.</p>
                   </div>
                 </div>
               </div>
@@ -543,42 +552,48 @@ export default function CreditsPage() {
           <div className="lg:col-span-2 space-y-8">
             
             {/* Your Credits Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Your Credits</h2>
+            <div style={{ background: colors.cardBackground, borderColor: colors.border }} className="rounded-xl shadow-sm border p-6">
+              <h2 style={{ color: colors.primaryText }} className="text-xl font-bold mb-6">Your Credits</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-5 bg-purple-50 border border-purple-100 rounded-xl">
+                <div style={{ 
+                  background: isDark ? 'rgba(94, 23, 235, 0.1)' : '#f3e8ff',
+                  borderColor: isDark ? 'rgba(94, 23, 235, 0.3)' : '#e9d5ff' 
+                }} className="p-5 border rounded-xl">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="text-lg font-semibold text-purple-700">Complimentary</div>
-                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <div className="text-lg font-semibold text-purple-600">Complimentary</div>
+                    <div style={{ background: isDark ? 'rgba(94, 23, 235, 0.2)' : '#f3e8ff' }} className="w-8 h-8 rounded-lg flex items-center justify-center">
                       <Gift className="w-4 h-4 text-purple-600" />
                     </div>
                   </div>
-                  <div className="text-3xl font-bold text-gray-900 mb-2">{userCredits.complimentary}</div>
-                  <p className="text-sm text-gray-600">
+                  <div style={{ color: colors.primaryText }} className="text-3xl font-bold mb-2">{userCredits.complimentary}</div>
+                  <p style={{ color: colors.tertiaryText }} className="text-sm">
                     Credits you get as Welcome Credits or with special offers
                   </p>
                 </div>
                 
-                <div className="p-5 bg-blue-50 border border-blue-100 rounded-xl">
+                <div style={{ 
+                  background: isDark ? 'rgba(37, 99, 235, 0.1)' : '#eff6ff',
+                  borderColor: isDark ? 'rgba(37, 99, 235, 0.3)' : '#dbeafe' 
+                }} className="p-5 border rounded-xl">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="text-lg font-semibold text-blue-700">Purchased</div>
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <div className="text-lg font-semibold text-blue-600">Purchased</div>
+                    <div style={{ background: isDark ? 'rgba(37, 99, 235, 0.2)' : '#dbeafe' }} className="w-8 h-8 rounded-lg flex items-center justify-center">
                       <CreditCard className="w-4 h-4 text-blue-600" />
                     </div>
                   </div>
-                  <div className="text-3xl font-bold text-gray-900 mb-2">{userCredits.purchased}</div>
-                  <p className="text-sm text-gray-600">
+                  <div style={{ color: colors.primaryText }} className="text-3xl font-bold mb-2">{userCredits.purchased}</div>
+                  <p style={{ color: colors.tertiaryText }} className="text-sm">
                     Credits you purchased and can use anytime
                   </p>
                 </div>
               </div>
               
-              <div className="mt-6 pt-6 border-t border-gray-200">
+              <div style={{ borderColor: colors.borderLight }} className="mt-6 pt-6 border-t">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-gray-600">Total Available</div>
-                    <div className="text-2xl font-bold text-gray-900">{userCredits.total} Credits</div>
+                    <div style={{ color: colors.secondaryText }} className="text-sm">Total Available</div>
+                    <div style={{ color: colors.primaryText }} className="text-2xl font-bold">{userCredits.total} Credits</div>
                   </div>
                   <button
                     onClick={() => handlePurchase(CREDIT_PACKAGES[1])}
@@ -592,10 +607,10 @@ export default function CreditsPage() {
             </div>
 
             {/* Credit Purchase Offers */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div style={{ background: colors.cardBackground, borderColor: colors.border }} className="rounded-xl shadow-sm border p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Credit Purchase Offers</h2>
-                <div className="text-sm text-gray-600 flex items-center gap-1">
+                <h2 style={{ color: colors.primaryText }} className="text-xl font-bold">Credit Purchase Offers</h2>
+                <div style={{ color: colors.secondaryText }} className="text-sm flex items-center gap-1">
                   <Shield className="w-3 h-3 text-green-600" />
                   Secured by Stripe
                 </div>
@@ -605,11 +620,16 @@ export default function CreditsPage() {
                 {CREDIT_PACKAGES.map((pkg) => (
                   <div 
                     key={pkg.id}
-                    className={`p-5 border rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-md ${
-                      pkg.popular 
-                        ? 'border-yellow-400 bg-yellow-50' 
-                        : 'border-gray-200 hover:border-purple-300'
-                    }`}
+                    className={`p-5 border rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-md`}
+                    style={{
+                      background: pkg.popular 
+                        ? isDark ? 'rgba(250, 204, 21, 0.05)' : '#fef9c3' 
+                        : colors.cardBackground,
+                      borderColor: pkg.popular 
+                        ? '#facc15' 
+                        : colors.border,
+                      ...(pkg.popular ? {} : { '&:hover': { borderColor: colors.secondary } })
+                    }}
                     onClick={() => handlePurchase(pkg)}
                   >
                     {pkg.badge && (
@@ -624,9 +644,11 @@ export default function CreditsPage() {
                     <div className="flex justify-between items-center">
                       <div>
                         <div className="flex items-center gap-3 mb-2">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            pkg.popular ? 'bg-yellow-100' : 'bg-purple-100'
-                          }`}>
+                          <div style={{ 
+                            background: pkg.popular 
+                              ? isDark ? 'rgba(250, 204, 21, 0.2)' : '#fef08a' 
+                              : isDark ? 'rgba(94, 23, 235, 0.2)' : '#f3e8ff'
+                          }} className="w-10 h-10 rounded-lg flex items-center justify-center">
                             {pkg.popular ? (
                               <Crown className="w-5 h-5 text-yellow-600" />
                             ) : (
@@ -634,24 +656,24 @@ export default function CreditsPage() {
                             )}
                           </div>
                           <div>
-                            <div className="font-bold text-lg text-gray-900">{pkg.name}</div>
-                            <div className="text-sm text-gray-600">{pkg.credits} Credits • {pkg.messages} Messages</div>
+                            <div style={{ color: colors.primaryText }} className="font-bold text-lg">{pkg.name}</div>
+                            <div style={{ color: colors.secondaryText }} className="text-sm">{pkg.credits} Credits • {pkg.messages} Messages</div>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600 mt-2">{pkg.description}</p>
+                        <p style={{ color: colors.tertiaryText }} className="text-sm mt-2">{pkg.description}</p>
                       </div>
                       
                       <div className="text-right">
                         {pkg.saving > 0 && (
                           <div className="mb-1">
-                            <span className="text-xs text-gray-500 line-through">€{pkg.originalPrice.toFixed(2)}</span>
+                            <span style={{ color: colors.tertiaryText }} className="text-xs line-through">€{pkg.originalPrice.toFixed(2)}</span>
                             <span className="ml-2 text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded">
                               Save {pkg.saving}%
                             </span>
                           </div>
                         )}
-                        <div className="text-2xl font-bold text-gray-900">€{pkg.price.toFixed(2)}</div>
-                        <div className="text-xs text-gray-500 mt-1">One-time payment</div>
+                        <div style={{ color: colors.primaryText }} className="text-2xl font-bold">€{pkg.price.toFixed(2)}</div>
+                        <div style={{ color: colors.tertiaryText }} className="text-xs mt-1">One-time payment</div>
                       </div>
                     </div>
                   </div>
@@ -660,20 +682,26 @@ export default function CreditsPage() {
             </div>
 
             {/* Why do you need credits? */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Why do you need credits?</h2>
+            <div style={{ background: colors.cardBackground, borderColor: colors.border }} className="rounded-xl shadow-sm border p-6">
+              <h2 style={{ color: colors.primaryText }} className="text-xl font-bold mb-6">Why do you need credits?</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {SERVICE_PRICING.map((service, index) => (
                   <div 
                     key={index}
-                    className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors group"
+                    style={{ 
+                      background: colors.cardBackground, 
+                      borderColor: colors.border,
+                      transition: 'all 0.2s ease',
+                     
+                    }}
+                    className="p-4 border rounded-lg group"
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                      <div style={{ background: isDark ? 'rgba(94, 23, 235, 0.2)' : '#f3e8ff' }} className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                         {service.icon}
                       </div>
-                      <div className="font-medium text-gray-900">{service.name}</div>
+                      <div style={{ color: colors.primaryText }} className="font-medium">{service.name}</div>
                     </div>
                     <div className="text-xl font-bold text-purple-600">{service.price}</div>
                   </div>
@@ -686,15 +714,22 @@ export default function CreditsPage() {
           <div className="space-y-8">
             
             {/* My Activity */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <div style={{ background: colors.cardBackground, borderColor: colors.border }} className="rounded-xl shadow-sm border p-6">
+              <h2 style={{ color: colors.primaryText }} className="text-xl font-bold mb-6 flex items-center gap-2">
                 <ActivityIcon className="w-5 h-5 text-purple-600" />
                 My Activity
               </h2>
               
               {loadingActivity ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="w-8 h-8 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                  <div 
+                    className="w-8 h-8 rounded-full animate-spin"
+                    style={{ 
+                      borderWidth: '2px',
+                      borderColor: colors.borderLight,
+                      borderTopColor: colors.secondary
+                    }}
+                  ></div>
                 </div>
               ) : (
                 <>
@@ -702,46 +737,54 @@ export default function CreditsPage() {
                     {ACTIVITY_ITEMS.map((item) => (
                       <div 
                         key={item.name} 
+                        style={{ 
+                        }}
                         className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors group cursor-pointer"
                         title={item.description}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+                          <div style={{ 
+                            background: colors.inputBackground,
+                          }} className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors">
                             {item.icon}
                           </div>
                           <div>
-                            <span className="font-medium text-gray-700">{item.name}</span>
-                            <p className="text-xs text-gray-500">{item.description}</p>
+                            <span style={{ color: colors.secondaryText }} className="font-medium">{item.name}</span>
+                            <p style={{ color: colors.tertiaryText }} className="text-xs">{item.description}</p>
                           </div>
                         </div>
-                        <div className="font-bold text-gray-900">{item.count}</div>
+                        <div style={{ color: colors.primaryText }} className="font-bold">{item.count}</div>
                       </div>
                     ))}
                   </div>
                   
-                  <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div style={{ borderColor: colors.borderLight }} className="mt-6 pt-6 border-t">
                     <div className="text-center">
-                      <div className="text-sm text-gray-600 mb-1">Daily Usage</div>
+                      <div style={{ color: colors.secondaryText }} className="text-sm mb-1">Daily Usage</div>
                       <div className="text-2xl font-bold text-purple-600">{activityStats.dailyUsage} Credits</div>
-                      <div className="text-xs text-gray-500 mt-1">Average per day</div>
+                      <div style={{ color: colors.tertiaryText }} className="text-xs mt-1">Average per day</div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mt-4">
-                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-3">
+                    <div style={{ 
+                      background: isDark ? 'rgba(37, 99, 235, 0.1)' : 'linear-gradient(to right, #f0f9ff, #e0f2fe)'
+                    }} className="rounded-xl p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <Target className="w-3 h-3 text-blue-600" />
-                        <p className="text-xs text-gray-600">Response Time</p>
+                        <p style={{ color: colors.tertiaryText }} className="text-xs">Response Time</p>
                       </div>
-                      <p className="text-sm font-bold text-gray-900">{activityStats.averageResponseTime}</p>
+                      <p style={{ color: colors.primaryText }} className="text-sm font-bold">{activityStats.averageResponseTime}</p>
                     </div>
 
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-3">
+                    <div style={{ 
+                      background: isDark ? 'rgba(16, 185, 129, 0.1)' : 'linear-gradient(to right, #ecfdf5, #d1fae5)'
+                    }} className="rounded-xl p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <BarChart3 className="w-3 h-3 text-green-600" />
-                        <p className="text-xs text-gray-600">Most Active</p>
+                        <p style={{ color: colors.tertiaryText }} className="text-xs">Most Active</p>
                       </div>
-                      <p className="text-sm font-bold text-gray-900">{activityStats.mostActiveHour}</p>
+                      <p style={{ color: colors.primaryText }} className="text-sm font-bold">{activityStats.mostActiveHour}</p>
                     </div>
                   </div>
                 </>
@@ -749,8 +792,8 @@ export default function CreditsPage() {
             </div>
 
             {/* FAQ Accordion */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <div style={{ background: colors.cardBackground, borderColor: colors.border }} className="rounded-xl shadow-sm border p-6">
+              <h2 style={{ color: colors.primaryText }} className="text-xl font-bold mb-6 flex items-center gap-2">
                 <HelpCircle className="w-5 h-5 text-purple-600" />
                 Frequently Asked Questions
               </h2>
@@ -759,19 +802,21 @@ export default function CreditsPage() {
                 {FAQ_ITEMS.map((item, index) => (
                   <div 
                     key={index}
-                    className="border border-gray-200 rounded-lg overflow-hidden"
+                    style={{ borderColor: colors.border }}
+                    className="border rounded-lg overflow-hidden"
                   >
                     <button
                       onClick={() => toggleFaq(index)}
+                      style={{ background: colors.hoverBackground  }}
                       className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div style={{ background: colors.inputBackground }} className="w-8 h-8 rounded-lg flex items-center justify-center">
                           {item.icon}
                         </div>
-                        <span className="font-medium text-gray-900">{item.question}</span>
+                        <span style={{ color: colors.primaryText }} className="font-medium">{item.question}</span>
                       </div>
-                      <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${
+                      <ChevronDown style={{ color: colors.secondaryText }} className={`w-5 h-5 transition-transform ${
                         expandedFaq === index ? 'rotate-180' : ''
                       }`} />
                     </button>
@@ -779,7 +824,7 @@ export default function CreditsPage() {
                     {expandedFaq === index && (
                       <div className="px-4 pb-4">
                         <div className="pl-11">
-                          <p className="text-gray-700">{item.answer}</p>
+                          <p style={{ color: colors.secondaryText }}>{item.answer}</p>
                         </div>
                       </div>
                     )}
@@ -789,8 +834,11 @@ export default function CreditsPage() {
             </div>
 
             {/* Get More Benefits */}
-            <div className="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Get More with Credits</h3>
+            <div style={{ 
+              background: isDark ? 'linear-gradient(to bottom right, rgba(94, 23, 235, 0.1), rgba(37, 99, 235, 0.1))' : 'linear-gradient(to bottom right, #f3e8ff, #eff6ff)',
+              borderColor: isDark ? 'rgba(94, 23, 235, 0.3)' : '#e9d5ff'
+            }} className="border rounded-xl p-6">
+              <h3 style={{ color: colors.primaryText }} className="text-lg font-bold mb-4">Get More with Credits</h3>
               
               <div className="space-y-3">
                 {[
@@ -800,10 +848,10 @@ export default function CreditsPage() {
                   'Priority messaging'
                 ].map((benefit, index) => (
                   <div key={index} className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div style={{ background: isDark ? 'rgba(94, 23, 235, 0.2)' : '#f3e8ff' }} className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0">
                       <Check className="w-3 h-3 text-purple-600" />
                     </div>
-                    <span className="text-gray-700">{benefit}</span>
+                    <span style={{ color: colors.secondaryText }}>{benefit}</span>
                   </div>
                 ))}
               </div>
@@ -822,24 +870,30 @@ export default function CreditsPage() {
       {/* Package Selection Modal */}
       {showPurchaseModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6">
+          <div style={{ background: colors.cardBackground }} className="rounded-xl max-w-lg w-full p-6">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="text-xl font-bold text-gray-900">Confirm Purchase</h3>
-                <p className="text-gray-600 mt-1">You&apos;ll be redirected to Stripe for secure payment</p>
+                <h3 style={{ color: colors.primaryText }} className="text-xl font-bold">Confirm Purchase</h3>
+                <p style={{ color: colors.secondaryText }} className="mt-1">You&apos;ll be redirected to Stripe for secure payment</p>
               </div>
               <button
                 onClick={() => setShowPurchaseModal(false)}
+                style={{  background: colors.hoverBackground }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-gray-700" />
+                <X style={{ color: colors.secondaryText }} className="w-5 h-5" />
               </button>
             </div>
             
             {/* Selected Package */}
-            <div className="p-6 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl mb-6">
+            <div style={{ 
+              background: isDark 
+                ? 'linear-gradient(to right, rgba(94, 23, 235, 0.1), rgba(37, 99, 235, 0.1))' 
+                : 'linear-gradient(to right, #f3e8ff, #eff6ff)',
+              borderColor: isDark ? 'rgba(94, 23, 235, 0.3)' : '#e9d5ff'
+            }} className="p-6 border rounded-xl mb-6">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center">
+                <div style={{ background: isDark ? 'rgba(94, 23, 235, 0.2)' : '#f3e8ff' }} className="w-16 h-16 rounded-xl flex items-center justify-center">
                   {selectedPackage.popular ? (
                     <Crown className="w-8 h-8 text-yellow-600" />
                   ) : (
@@ -847,26 +901,26 @@ export default function CreditsPage() {
                   )}
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold text-gray-900">{selectedPackage.name}</h4>
-                  <p className="text-gray-600">{selectedPackage.description}</p>
+                  <h4 style={{ color: colors.primaryText }} className="text-xl font-bold">{selectedPackage.name}</h4>
+                  <p style={{ color: colors.secondaryText }}>{selectedPackage.description}</p>
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 py-4 border-t border-purple-200">
+              <div style={{ borderColor: isDark ? 'rgba(94, 23, 235, 0.3)' : '#e9d5ff' }} className="grid grid-cols-2 gap-4 py-4 border-t">
                 <div>
-                  <p className="text-sm text-gray-600">Credits</p>
-                  <p className="text-xl font-bold text-gray-900">{selectedPackage.credits}</p>
+                  <p style={{ color: colors.secondaryText }} className="text-sm">Credits</p>
+                  <p style={{ color: colors.primaryText }} className="text-xl font-bold">{selectedPackage.credits}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Price</p>
-                  <p className="text-xl font-bold text-gray-900">€{selectedPackage.price.toFixed(2)}</p>
+                  <p style={{ color: colors.secondaryText }} className="text-sm">Price</p>
+                  <p style={{ color: colors.primaryText }} className="text-xl font-bold">€{selectedPackage.price.toFixed(2)}</p>
                 </div>
               </div>
               
               {selectedPackage.saving > 0 && (
-                <div className="mt-4 pt-4 border-t border-purple-200">
+                <div style={{ borderColor: isDark ? 'rgba(94, 23, 235, 0.3)' : '#e9d5ff' }} className="mt-4 pt-4 border-t">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">You save</span>
+                    <span style={{ color: colors.secondaryText }} className="text-sm">You save</span>
                     <span className="text-lg font-bold text-green-600">
                       {selectedPackage.saving}% (€{(selectedPackage.originalPrice - selectedPackage.price).toFixed(2)})
                     </span>
@@ -877,15 +931,15 @@ export default function CreditsPage() {
             
             {/* Payment Info */}
             <div className="space-y-3 mb-6">
-              <div className="flex items-center gap-3 text-sm text-gray-600">
+              <div className="flex items-center gap-3 text-sm" style={{ color: colors.secondaryText }}>
                 <Shield className="w-5 h-5 text-green-500" />
                 <span>Secure payment processed by Stripe</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-600">
+              <div className="flex items-center gap-3 text-sm" style={{ color: colors.secondaryText }}>
                 <Lock className="w-5 h-5 text-green-500" />
                 <span>Your payment information is encrypted</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-600">
+              <div className="flex items-center gap-3 text-sm" style={{ color: colors.secondaryText }}>
                 <Check className="w-5 h-5 text-green-500" />
                 <span>Credits added automatically after payment</span>
               </div>
@@ -914,7 +968,7 @@ export default function CreditsPage() {
                 )}
               </button>
               
-              <p className="text-center text-xs text-gray-500">
+              <p style={{ color: colors.tertiaryText }} className="text-center text-xs">
                 By continuing, you agree to our Terms of Service and Privacy Policy
               </p>
             </div>
